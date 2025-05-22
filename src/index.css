@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #000000;
+    --color-secondary: #ffffff;
+  }
+  
+  html {
+    @apply antialiased;
+  }
+  
+  body {
+    @apply text-black bg-white;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-black;
+  }
+  
+  button, 
+  [type='button'], 
+  [type='reset'], 
+  [type='submit'] {
+    @apply bg-black text-white hover:bg-gray-900 transition-colors;
+  }
+  
+  input, 
+  select, 
+  textarea {
+    @apply border-gray-300 focus:border-black focus:ring-1 focus:ring-black;
+  }
+  
+  a {
+    @apply text-black hover:text-gray-700;
+  }
+}
