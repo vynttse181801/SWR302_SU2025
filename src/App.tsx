@@ -10,6 +10,9 @@ import RegisterPage from './pages/Register';
 import LoginPage from './pages/Login';
 import AppointmentPage from './pages/Appointment';
 import BookingPage from './pages/Booking';
+import AppointmentServicePage from './pages/services/Appointment';
+import TestResultsServicePage from './pages/services/TestResults';
+import MedicationServicePage from './pages/services/Medication';
 import { navLinks } from './constants';
 
 function App() {
@@ -21,6 +24,9 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/services" element={<ServiceDetails />} />
+            <Route path="/services/appointment" element={<AppointmentServicePage />} />
+            <Route path="/services/test-results" element={<TestResultsServicePage />} />
+            <Route path="/services/medication" element={<MedicationServicePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/register" element={<RegisterPage />} />
