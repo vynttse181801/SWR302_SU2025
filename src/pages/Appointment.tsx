@@ -1,66 +1,90 @@
 import React from 'react';
+import { Calendar, Activity, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const AppointmentPage = () => {
-  return (    <div className="bg-white min-h-screen">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-4">
-          <a href="/dich-vu" className="text-sm text-gray-600 hover:text-black">&larr; Quay lại trang dịch vụ</a>
-        </div>
-        <h1 className="text-2xl font-bold mb-1">Đặt lịch khám</h1>
-        <p className="text-gray-600 mb-6">Đặt lịch khám với bác sĩ chuyên khoa HIV</p>
-        <div className="bg-white border border-gray-200 rounded-lg p-8 max-w-4xl mx-auto">
-          <h2 className="text-lg font-semibold mb-4">Thông tin đặt lịch</h2>
-          <p className="text-gray-600 mb-6">Vui lòng điền đầy đủ thông tin để đặt lịch khám</p>
-          <form className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Họ và tên</label>
-                <input type="text" className="w-full border rounded px-3 py-2 text-sm" placeholder="Nguyễn Văn A" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Số điện thoại</label>
-                <input type="text" className="w-full border rounded px-3 py-2 text-sm" placeholder="0123456789" required />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
-              <input type="email" className="w-full border rounded px-3 py-2 text-sm" placeholder="example@gmail.com" required />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Ngày khám</label>
-                <input type="date" className="w-full border rounded px-3 py-2 text-sm" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Thời gian</label>
-                <input type="time" className="w-full border rounded px-3 py-2 text-sm" required />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Bác sĩ</label>
-              <select className="w-full border rounded px-3 py-2 text-sm" required>
-                <option value="">Chọn bác sĩ</option>
-                <option value="bs1">Bác sĩ Nguyễn A</option>
-                <option value="bs2">Bác sĩ Trần B</option>
-                <option value="bs3">Bác sĩ Lê C</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Lý do khám</label>
-              <textarea className="w-full border rounded px-3 py-2 text-sm" rows={3} placeholder="Mô tả ngắn gọn lý do bạn muốn đặt lịch khám" />
-            </div>
-            <button type="submit" className="w-full px-6 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors font-semibold">Đặt lịch khám</button>
-          </form>
-          <p className="text-xs text-gray-500 mt-4">
-            Bằng cách đặt lịch, bạn đồng ý với <a href="#" className="underline">điều khoản dịch vụ</a> của chúng tôi.
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="py-16 bg-white border-t border-gray-200">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-black mb-4">
+            Đặt lịch khám
+          </h1>
+          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+            Đặt lịch khám với bác sĩ chuyên khoa HIV theo thời gian phù hợp với bạn
           </p>
+          <Link 
+            to="/booking"
+            className="px-6 py-3 bg-black text-white rounded-md hover:bg-gray-900 transition-colors inline-block"
+          >
+            Đặt lịch khám ngay
+          </Link>
         </div>
-      </div>
-      <footer className="mt-10 border-t pt-6 text-center text-xs text-gray-500">
-        © 2023 HIV Care. Tất cả quyền được bảo lưu. &nbsp; | &nbsp;
-        <a href="#" className="hover:underline">Chính sách bảo mật</a> &nbsp; | &nbsp;
-        <a href="#" className="hover:underline">Điều khoản sử dụng</a>
-      </footer>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            <div className="md:w-1/2">
+              <h2 className="text-2xl font-bold text-black mb-4">
+                Đặt lịch khám với bác sĩ chuyên khoa HIV
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Hệ thống đặt lịch trực tuyến giúp bạn tìm kiếm thời gian và cơ sở phù hợp
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Calendar className="w-6 h-6 text-black mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-black">Chọn thời gian phù hợp</h3>
+                    <p className="text-sm text-gray-600">Linh hoạt chọn thời gian khám phù hợp với lịch trình của bạn</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Activity className="w-6 h-6 text-black mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-black">Nhận kết quả nhanh chóng</h3>
+                    <p className="text-sm text-gray-600">Kết quả khám và xét nghiệm được cập nhật trực tuyến</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MessageCircle className="w-6 h-6 text-black mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-black">Trao đổi với bác sĩ</h3>
+                    <p className="text-sm text-gray-600">Trao đổi trực tiếp với bác sĩ về tình trạng sức khỏe của bạn</p>
+                  </div>
+                </div>
+              </div>
+              <Link to="/booking" className="mt-8 px-6 py-3 bg-black text-white rounded-md hover:bg-gray-900 transition-colors inline-block">
+                Đặt lịch khám ngay
+              </Link>
+            </div>
+            <div className="md:w-1/2">
+              <div className="bg-gray-100 h-96 rounded-lg border border-gray-200"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section className="py-16 bg-black text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6">
+            Sẵn sàng đặt lịch khám?
+          </h2>
+          <p className="text-white/90 max-w-2xl mx-auto mb-8">
+            Đặt lịch khám ngay hôm nay để được tư vấn và chăm sóc bởi đội ngũ bác sĩ chuyên môn cao
+          </p>
+          <Link 
+            to="/booking"
+            className="px-6 py-3 bg-white text-black rounded-md hover:bg-gray-100 transition-colors"
+          >
+            Đặt lịch khám ngay
+          </Link>
+        </div>
+      </section>
     </div>
   );
 };
