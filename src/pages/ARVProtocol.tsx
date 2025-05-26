@@ -2,22 +2,49 @@ import React from 'react';
 import { Clock, AlertCircle, Activity, Heart } from 'lucide-react';
 
 const ARVProtocol = () => {
-  const protocols = [
+  const firstLineRegimens = {
+    preferred: [
+      {
+        combination: "TDF + 3TC + DTG",
+        note: "Phác đồ ưu tiên hàng đầu – hiệu quả cao, ít tác dụng phụ, liều 1 lần/ngày"
+      },
+      {
+        combination: "TDF + FTC + DTG",
+        note: "Có thể thay thế 3TC bằng FTC (emtricitabine – tương đương 3TC)"
+      }
+    ],
+    alternative: [
+      {
+        combination: "TDF + 3TC + EFV",
+        note: "Dễ tiếp cận hơn, nhưng nhiều tác dụng phụ thần kinh hơn DTG"
+      },
+      {
+        combination: "AZT + 3TC + EFV",
+        note: "Dùng khi không dung nạp TDF hoặc có suy thận"
+      },
+      {
+        combination: "TDF + 3TC + NVP",
+        note: "Ít dùng hơn, chỉ thay thế khi EFV chống chỉ định"
+      }
+    ]
+  };
+
+  const secondLineRegimens = [
     {
-      type: "Phác đồ bậc 1",
-      combinations: [
-        "TLD (Tenofovir + Lamivudine + Dolutegravir)",
-        "TLE (Tenofovir + Lamivudine + Efavirenz)"
-      ],
-      notes: "Đây là phác đồ ưu tiên cho người bệnh mới bắt đầu điều trị"
+      combination: "AZT + 3TC + ATV/r",
+      note: "Bậc 1 là TDF + 3TC + DTG hoặc EFV"
     },
     {
-      type: "Phác đồ bậc 2",
-      combinations: [
-        "ATV/r (Atazanavir/ritonavir) + 2 NRTI",
-        "LPV/r (Lopinavir/ritonavir) + 2 NRTI"
-      ],
-      notes: "Áp dụng khi phác đồ bậc 1 thất bại"
+      combination: "TDF + 3TC + LPV/r",
+      note: "Bậc 1 là AZT + 3TC + EFV"
+    },
+    {
+      combination: "AZT + 3TC + LPV/r",
+      note: "Phổ biến khi có thất bại NNRTI"
+    },
+    {
+      combination: "TDF + 3TC + ATV/r",
+      note: "Nếu AZT không dung nạp hoặc thiếu nguồn cung"
     }
   ];
 
@@ -58,21 +85,127 @@ const ARVProtocol = () => {
           </div>
 
           <div className="space-y-8">
-            {/* Các phác đồ điều trị */}
+            {/* Phác đồ bậc 1 */}
             <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-              <h2 className="text-xl font-bold mb-6">Phác đồ điều trị</h2>
-              <div className="space-y-6">
-                {protocols.map((protocol, index) => (
-                  <div key={index} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
-                    <h3 className="font-semibold text-lg mb-3">{protocol.type}</h3>
-                    <ul className="list-disc list-inside space-y-2 text-gray-600 mb-3">
-                      {protocol.combinations.map((combo, idx) => (
-                        <li key={idx}>{combo}</li>
+              <h2 className="text-xl font-bold mb-6">💊 PHÁC ĐỒ ARV BẬC 1 (First-line Regimens)</h2>
+              
+              {/* Phác đồ ưu tiên */}
+              <div className="mb-8">
+                <h3 className="font-semibold text-lg mb-4">✅ Phác đồ ưu tiên (dành cho người lớn & trẻ vị thành niên ≥ 10 tuổi hoặc ≥ 30kg)</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="px-4 py-2 text-left">STT</th>
+                        <th className="px-4 py-2 text-left">Thành phần phác đồ</th>
+                        <th className="px-4 py-2 text-left">Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {firstLineRegimens.preferred.map((regimen, index) => (
+                        <tr key={index} className="border-b">
+                          <td className="px-4 py-2">{index + 1}</td>
+                          <td className="px-4 py-2 font-medium">{regimen.combination}</td>
+                          <td className="px-4 py-2 text-gray-600">{regimen.note}</td>
+                        </tr>
                       ))}
-                    </ul>
-                    <p className="text-sm text-gray-500">{protocol.notes}</p>
-                  </div>
-                ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-sm text-gray-500">
+                  <p>TDF: Tenofovir Disoproxil Fumarate</p>
+                  <p>3TC: Lamivudine</p>
+                  <p>DTG: Dolutegravir</p>
+                </div>
+              </div>
+
+              {/* Phác đồ thay thế */}
+              <div>
+                <h3 className="font-semibold text-lg mb-4">🔄 Phác đồ thay thế (dùng khi không có DTG hoặc có chống chỉ định)</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="px-4 py-2 text-left">STT</th>
+                        <th className="px-4 py-2 text-left">Thành phần phác đồ</th>
+                        <th className="px-4 py-2 text-left">Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {firstLineRegimens.alternative.map((regimen, index) => (
+                        <tr key={index} className="border-b">
+                          <td className="px-4 py-2">{index + 1}</td>
+                          <td className="px-4 py-2 font-medium">{regimen.combination}</td>
+                          <td className="px-4 py-2 text-gray-600">{regimen.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-sm text-gray-500">
+                  <p>EFV: Efavirenz</p>
+                  <p>AZT: Zidovudine</p>
+                  <p>NVP: Nevirapine</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Phác đồ bậc 2 */}
+            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+              <h2 className="text-xl font-bold mb-6">💊 PHÁC ĐỒ ARV BẬC 2 (Second-line Regimens)</h2>
+              <p className="text-gray-600 mb-4">
+                Áp dụng khi phác đồ bậc 1 thất bại (tải lượng HIV &gt; 1000 copies/mL 2 lần liên tiếp sau ít nhất 6 tháng điều trị kèm hỗ trợ tuân thủ đầy đủ).
+              </p>
+
+              <div className="mb-6">
+                <h3 className="font-semibold text-lg mb-2">✅ Nguyên tắc xây dựng</h3>
+                <ul className="list-disc list-inside text-gray-600 space-y-1">
+                  <li>Thay đổi toàn bộ nhóm thuốc NNRTI hoặc PI.</li>
+                  <li>Không sử dụng lại thuốc thất bại.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-lg mb-4">🧩 Phác đồ bậc 2 phổ biến</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="px-4 py-2 text-left">STT</th>
+                        <th className="px-4 py-2 text-left">Thành phần phác đồ</th>
+                        <th className="px-4 py-2 text-left">Dùng khi phác đồ bậc 1 là...</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {secondLineRegimens.map((regimen, index) => (
+                        <tr key={index} className="border-b">
+                          <td className="px-4 py-2">{index + 1}</td>
+                          <td className="px-4 py-2 font-medium">{regimen.combination}</td>
+                          <td className="px-4 py-2 text-gray-600">{regimen.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-sm text-gray-500">
+                  <p>ATV/r: Atazanavir/ritonavir</p>
+                  <p>LPV/r: Lopinavir/ritonavir</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Phác đồ đặc biệt */}
+            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+              <h2 className="text-xl font-bold mb-6">👶 Phác đồ đặc biệt</h2>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Trẻ em &lt; 10 tuổi hoặc &lt; 30kg</h3>
+                  <p className="text-gray-600">Có phác đồ riêng theo cân nặng.</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Phụ nữ mang thai</h3>
+                  <p className="text-gray-600">Ưu tiên TDF + 3TC + DTG nếu có thể (DTG an toàn từ tuần 8 thai kỳ).</p>
+                </div>
               </div>
             </div>
 
@@ -111,7 +244,7 @@ const ARVProtocol = () => {
             </div>
 
             {/* Thông tin liên hệ */}
-            <div className="bg-gray-100 rounded-lg p-6 text-center">
+            <div className="text-center">
               <p className="text-gray-600 text-sm">
                 Nếu bạn có bất kỳ thắc mắc nào về phác đồ điều trị, vui lòng liên hệ:
                 <br />
