@@ -5,41 +5,37 @@ const benefits = [
   {
     id: 1,
     title: "Bảo mật và riêng tư",
-    description: "Chúng tôi đảm bảo thông tin và dữ liệu của bạn được bảo mật tuyệt đối và chỉ được tiếp cận bởi người có quyền.",
-    icon: <Shield className="w-8 h-8 text-black" />
+    description: "Chúng tôi đảm bảo thông tin và dữ liệu của bạn được bảo mật tuyệt đối và chỉ được tiếp cận bởi người có quyền.",    icon: <Shield className="w-8 h-8 text-blue-600" />
   },
   {
     id: 2,
     title: "Tiện nghi và dễ sử dụng",
     description: "Giao diện thân thiện, dễ sử dụng giúp bạn dễ dàng theo dõi sức khỏe của mình.",
-    icon: <UserCheck className="w-8 h-8 text-primary-600" />
+    icon: <UserCheck className="w-8 h-8 text-purple-600" />
   },
   {
     id: 3,
     title: "Đổi ngày kết quả xét nghiệm",
-    description: "Dễ dàng theo dõi kết quả xét nghiệm, cập nhật thông tin sức khỏe và lịch hẹn tái khám.",
-    icon: <Clock className="w-8 h-8 text-primary-600" />
+    description: "Dễ dàng theo dõi kết quả xét nghiệm, cập nhật thông tin sức khỏe và lịch hẹn tái khám.",    icon: <Clock className="w-8 h-8 text-green-600" />
   },
   {
     id: 4,
     title: "Theo dõi sức khỏe toàn diện",
     description: "Hệ thống giúp theo dõi toàn diện sức khỏe của bạn, dự đoán và cảnh báo những thay đổi về sức khỏe trước khi trở nên nghiêm trọng.",
-    icon: <Activity className="w-8 h-8 text-primary-600" />
+    icon: <Activity className="w-8 h-8 text-red-600" />
   },
   {
     id: 5,
     title: "Cộng đồng hỗ trợ",
-    description: "Kết nối với cộng đồng người cùng hoàn cảnh để chia sẻ kinh nghiệm và hỗ trợ tinh thần.",
-    icon: <Users className="w-8 h-8 text-primary-600" />
+    description: "Kết nối với cộng đồng người cùng hoàn cảnh để chia sẻ kinh nghiệm và hỗ trợ tinh thần.",    icon: <Users className="w-8 h-8 text-indigo-600" />
   }
 ];
 
 const Benefits: React.FC = () => {
   return (
-    <section className="py-12 md:py-20 bg-white border-t border-b border-gray-200">
+    <section className="py-12 md:py-20 bg-gradient-to-b from-white to-blue-50 border-t border-b border-gray-200">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-black mb-4">
+        <div className="text-center mb-12">          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
             Lợi ích của hệ thống
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
@@ -49,7 +45,7 @@ const Benefits: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {benefits.map((benefit) => (
-            <div key={benefit.id} className="flex items-start">
+            <div key={benefit.id} className="flex items-start p-6 rounded-xl hover:bg-white hover:shadow-lg transition-all duration-300 ease-in-out">
               <div className="mr-4 mt-1">
                 {benefit.icon}
               </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Quote } from 'lucide-react';
 
 type Testimonial = {
   id: number;
@@ -34,35 +35,65 @@ const testimonials: Testimonial[] = [
 
 const Testimonials: React.FC = () => {
   return (
-    <section className="py-12 md:py-20 bg-white">
+    <section className="py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-black mb-4">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 gradient-heading">
             Phản hồi từ người dùng
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
             Những chia sẻ từ người sử dụng về những trải nghiệm khi sử dụng hệ thống của chúng tôi.
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial) => (
-            <div 
-              key={testimonial.id} 
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 rounded-full bg-gray-100 text-black flex items-center justify-center font-bold mr-3">
-                  {testimonial.avatar}
-                </div>
-                <div>
-                  <h4 className="font-semibold text-black">{testimonial.name}</h4>
-                  <p className="text-sm text-gray-500">{testimonial.role}</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {testimonials.map((testimonial, index) => {
+            // Determine gradient colors based on index
+            const gradients = [
+              'from-primary-500/10 to-secondary-500/10',
+              'from-secondary-500/10 to-accent-500/10',
+              'from-accent-500/10 to-primary-500/10'
+            ];
+            
+            return (
+              <div key={testimonial.id} className="relative group">
+                {/* Background blur effect */}
+                <div className={`absolute -inset-0.5 bg-gradient-to-r ${gradients[index]} rounded-2xl blur opacity-50 group-hover:opacity-75 transition duration-300`}></div>
+                
+                {/* Card content */}
+                <div className="relative bg-white rounded-xl p-8 shadow-sm">
+                  {/* Quote icon */}
+                  <div className="absolute -top-4 -right-4">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center 
+                      ${index === 0 ? 'bg-primary-100 text-primary-600' : 
+                        index === 1 ? 'bg-secondary-100 text-secondary-600' : 
+                        'bg-accent-100 text-accent-600'}`}>
+                      <Quote size={16} />
+                    </div>
+                  </div>
+
+                  {/* Testimonial text */}
+                  <p className="text-gray-600 mb-6 leading-relaxed">
+                    {testimonial.text}
+                  </p>
+
+                  {/* Author info */}
+                  <div className="flex items-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium
+                      ${index === 0 ? 'bg-primary-600' : 
+                        index === 1 ? 'bg-secondary-600' : 
+                        'bg-accent-600'}`}>
+                      {testimonial.avatar}
+                    </div>
+                    <div className="ml-3">
+                      <div className="font-semibold text-gray-900">{testimonial.name}</div>
+                      <div className="text-sm text-gray-500">{testimonial.role}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <p className="text-gray-600 text-sm italic">"{testimonial.text}"</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

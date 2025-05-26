@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Microscope, Pill, Monitor, Bell, Clock } from 'lucide-react';
+import { Calendar, Microscope, Pill, Monitor, Bell, Clock, ArrowRight } from 'lucide-react';
 
 const ServicesPage = () => {
   const services = [
@@ -10,14 +10,17 @@ const ServicesPage = () => {
       title: "Tư vấn trực tuyến",
       description: "Kết nối với bác sĩ và chuyên gia y tế qua video call và tin nhắn",
       additionalText: ["Chat 24/7", "Video call bảo mật", "Hồ sơ điện tử"],
-      link: "/consultation"
+      link: "/consultation",
+      gradient: "from-primary-500 to-secondary-500"
     },
     {
-      id: 2,      icon: <Calendar className="w-12 h-12" />,
+      id: 2,
+      icon: <Calendar className="w-12 h-12" />,
       title: "Đặt lịch khám & xét nghiệm",
       description: "Đặt lịch khám và xét nghiệm HIV theo thời gian phù hợp với bạn",
       additionalText: ["Xét nghiệm nhanh", "Kết quả bảo mật", "Tư vấn miễn phí"],
-      link: "/test-booking"
+      link: "/test-booking",
+      gradient: "from-secondary-500 to-accent-500"
     },
     {
       id: 3,
@@ -25,21 +28,26 @@ const ServicesPage = () => {
       title: "Nhắc nhở lịch khám",
       description: "Hệ thống nhắc nhở thông minh giúp bạn không bỏ lỡ các buổi khám định kỳ",
       additionalText: ["Nhắc nhở qua SMS", "Thông báo trước 24h", "Lịch tái khám"],
-      link: "/consultation"
+      link: "/consultation",
+      gradient: "from-accent-500 to-primary-500"
     },
     {
-      id: 4,      icon: <Microscope className="w-12 h-12" />,
+      id: 4,
+      icon: <Microscope className="w-12 h-12" />,
       title: "Đặt lịch xét nghiệm",
       description: "Đặt lịch xét nghiệm HIV theo thời gian phù hợp với bạn",
       additionalText: ["Xét nghiệm định kỳ", "Xét nghiệm nhanh", "Bảo mật cao"],
-      link: "/test-booking"
+      link: "/test-booking",
+      gradient: "from-primary-500 to-secondary-500"
     },
     {
-      id: 5,      icon: <Pill className="w-12 h-12" />,
+      id: 5,
+      icon: <Pill className="w-12 h-12" />,
       title: "Quản lý thuốc ARV",
       description: "Tìm hiểu về phác đồ ARV, lưu ý khi sử dụng và cách quản lý thuốc hiệu quả",
       additionalText: ["Hướng dẫn sử dụng", "Theo dõi tác dụng phụ", "Tư vấn điều trị"],
-      link: "/arv-protocol"
+      link: "/arv-protocol",
+      gradient: "from-secondary-500 to-accent-500"
     },
     {
       id: 6,
@@ -47,59 +55,68 @@ const ServicesPage = () => {
       title: "Nhắc nhở uống thuốc",
       description: "Hệ thống nhắc nhở thông minh giúp bạn uống thuốc đúng giờ và không bỏ liều",
       additionalText: ["Nhắc nhở theo giờ", "Ghi chép liều dùng", "Báo cáo tuân thủ"],
-      link: "/consultation"
+      link: "/consultation",
+      gradient: "from-accent-500 to-primary-500"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="py-16 md:py-24 bg-gradient-to-b from-primary-50 to-white">
+        <div className="container mx-auto px-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-6 gradient-heading">
             Dịch vụ của chúng tôi
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Chúng tôi cung cấp các dịch vụ chăm sóc sức khỏe HIV toàn diện, từ tư vấn đến điều trị và theo dõi.
+          <p className="text-center text-gray-600 text-lg mb-12 max-w-3xl mx-auto leading-relaxed">
+            Chúng tôi cung cấp các dịch vụ chăm sóc sức khỏe HIV toàn diện, 
+            từ tư vấn đến điều trị và theo dõi sức khỏe.
           </p>
         </div>
+      </section>
 
-        <div className="max-w-3xl mx-auto space-y-6">
-          {services.map((service) => (
-            <Link
-              key={service.id}
-              to={service.link}
-              className="block bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-300"
-            >
-              <div className="flex items-start gap-6">
-                <div className="shrink-0 text-gray-900">
-                  {service.icon}
-                </div>
-                <div className="flex-grow">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {service.title}
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {service.description}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {service.additionalText.map((text, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-700"
-                      >
-                        {text}
-                      </span>
-                    ))}
+      {/* Services Grid */}
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {services.map((service) => (
+              <div key={service.id} className="group">
+                <div className="relative">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
+                  <div className="relative bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
+                    {/* Icon with gradient background */}
+                    <div className={`w-16 h-16 rounded-lg bg-gradient-to-r ${service.gradient} flex items-center justify-center text-white mb-6`}>
+                      {React.cloneElement(service.icon, { className: "w-8 h-8" })}
+                    </div>
+
+                    <h3 className="text-xl font-bold mb-3 text-gray-900">{service.title}</h3>
+                    <p className="text-gray-600 mb-4">{service.description}</p>
+
+                    {/* Features list */}
+                    <ul className="space-y-2 mb-6">
+                      {service.additionalText.map((text, index) => (
+                        <li key={index} className="flex items-center text-sm text-gray-600">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary-500 mr-2"></div>
+                          {text}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Call to action */}
+                    <Link
+                      to={service.link}
+                      className="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors group"
+                    >
+                      Tìm hiểu thêm
+                      <ArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                    </Link>
                   </div>
-                  <span className="text-sm font-medium text-gray-900 hover:text-gray-700">
-                    Tìm hiểu thêm →
-                  </span>
                 </div>
               </div>
-            </Link>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
