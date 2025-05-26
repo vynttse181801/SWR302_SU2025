@@ -9,7 +9,10 @@ import ContactPage from './pages/Contact';
 import RegisterPage from './pages/Register';
 import LoginPage from './pages/Login';
 import AppointmentPage from './pages/Appointment';
-import BookingPage from './pages/Booking';
+import ConsultationPage from './pages/Consultation';
+import TestResults from './pages/TestResults';
+import ARVProtocol from './pages/ARVProtocol';
+import TestBooking from './pages/TestBooking';
 import { navLinks } from './constants';
 
 function App() {
@@ -24,9 +27,10 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/appointment" element={<AppointmentPage />} />
-            <Route path="/booking" element={<BookingPage />} />
+            <Route path="/login" element={<LoginPage />} />            <Route path="/appointment" element={<AppointmentPage />} />
+            <Route path="/consultation" element={<ConsultationPage />} /><Route path="/results" element={<TestResults />} />
+            <Route path="/arv-protocol" element={<ARVProtocol />} />
+            <Route path="/test-booking" element={<TestBooking />} />
             <Route path="/quen-mat-khau" element={<div>Quên mật khẩu</div>} />
           </Routes>
         </main>
@@ -36,4 +40,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
