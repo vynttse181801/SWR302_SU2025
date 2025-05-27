@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { images } from '../constants/images';
 
 const Hero: React.FC = () => {
   return (
@@ -29,14 +30,41 @@ const Hero: React.FC = () => {
               </Link>
             </div>
           </div>
-          <div className="md:w-1/2">
+          
+          <div className="md:w-1/2 relative">
+            <div className="absolute -inset-4 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-2xl blur opacity-75"></div>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary-600/10 to-secondary-600/10 rounded-2xl"></div>
-              <div className="bg-gradient-to-r from-gray-100 to-white h-72 md:h-96 rounded-2xl shadow-lg relative overflow-hidden">
-                {/* Add hero image here */}
+              <img
+                src={images.doctorTeam}
+                alt="Đội ngũ y tế chuyên nghiệp"
+                className="rounded-xl shadow-xl w-full object-cover aspect-[4/3]"
+              />
+              {/* Floating card trên hình ảnh */}
+              <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-lg shadow-lg max-w-xs">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={images.privacyShield}
+                    alt="Bảo mật"
+                    className="w-12 h-12 object-contain"
+                  />
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Bảo mật tuyệt đối</h3>
+                    <p className="text-xs text-gray-600">Thông tin của bạn được bảo vệ an toàn</p>
+                  </div>
+                </div>
               </div>
-              <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent-500/10 rounded-full blur-2xl"></div>
-              <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-primary-600/10 rounded-full blur-3xl"></div>
+              {/* Floating card thứ 2 */}
+              <div className="absolute -top-6 -right-6 bg-white p-4 rounded-lg shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-600">
+                    24/7
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Hỗ trợ liên tục</h3>
+                    <p className="text-xs text-gray-600">Luôn sẵn sàng giúp đỡ bạn</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

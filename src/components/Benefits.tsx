@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Shield, Clock, Activity, UserCheck, Users } from 'lucide-react';
+import { images } from '../constants/images';
 
 const benefits = [
   {
@@ -33,28 +34,65 @@ const benefits = [
 
 const Benefits: React.FC = () => {
   return (
-    <section className="py-12 md:py-20 bg-gradient-to-b from-white to-blue-50 border-t border-b border-gray-200">
+    <section className="py-16 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-            Lợi ích của hệ thống
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Tối ưu hóa việc quản lý sức khỏe hệ thống quản lý và chăm sóc sức khỏe HIV của chúng tôi
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {benefits.map((benefit) => (
-            <div key={benefit.id} className="flex items-start p-6 rounded-xl hover:bg-white hover:shadow-lg transition-all duration-300 ease-in-out">
-              <div className="mr-4 mt-1">
-                {benefit.icon}
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-black">{benefit.title}</h3>
-                <p className="text-gray-600">{benefit.description}</p>
+        <div className="flex flex-col lg:flex-row items-center gap-12">
+          {/* Left side - Image */}
+          <div className="lg:w-1/2">
+            <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-2xl blur opacity-75"></div>
+              <div className="relative">
+                <img
+                  src={images.consultation}
+                  alt="Tư vấn sức khỏe"
+                  className="rounded-xl shadow-xl w-full object-cover aspect-[4/3]"
+                />
+                {/* Stats card */}
+                <div className="absolute -bottom-6 -right-6 bg-white p-6 rounded-lg shadow-xl">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary-600">24/7</div>
+                      <div className="text-sm text-gray-600">Hỗ trợ</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-secondary-600">100%</div>
+                      <div className="text-sm text-gray-600">Bảo mật</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Right side - Benefits list */}
+          <div className="lg:w-1/2">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 gradient-heading">
+              Tối ưu hóa việc quản lý sức khỏe
+            </h2>
+            <p className="text-gray-600 mb-8 text-lg">
+              Hệ thống quản lý và chăm sóc sức khỏe HIV của chúng tôi mang đến nhiều lợi ích thiết thực
+            </p>
+            
+            <div className="grid gap-6">
+              {benefits.map((benefit) => (
+                <div 
+                  key={benefit.id} 
+                  className="group relative"
+                >
+                  <div className="absolute -inset-4 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                  <div className="relative flex items-start p-4 rounded-xl hover:bg-white hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-primary-100 to-secondary-100 mr-4">
+                      {benefit.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2 text-gray-900">{benefit.title}</h3>
+                      <p className="text-gray-600">{benefit.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
