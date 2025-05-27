@@ -9,16 +9,24 @@ const RegisterPage = () => {
         <p className="text-center text-gray-600 mb-6">Nhập thông tin của bạn để tạo tài khoản</p>
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <div>
+            <label className="block text-sm font-medium mb-1">Tên tài khoản <span className="text-red-500">*</span></label>
+            <input 
+              type="text" 
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-black focus:ring-1 focus:ring-black" 
+              placeholder="Nhập tên tài khoản" 
+              required 
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Họ và tên</label>
             <input 
               type="text" 
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-black focus:ring-1 focus:ring-black" 
               placeholder="Nguyễn Văn A" 
-              required 
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Địa chỉ email</label>
+            <label className="block text-sm font-medium mb-1">Địa chỉ email <span className="text-red-500">*</span></label>
             <input 
               type="email" 
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-black focus:ring-1 focus:ring-black" 
@@ -27,7 +35,7 @@ const RegisterPage = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Mật khẩu</label>
+            <label className="block text-sm font-medium mb-1">Mật khẩu <span className="text-red-500">*</span></label>
             <input 
               type="password" 
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-black focus:ring-1 focus:ring-black" 
@@ -36,7 +44,7 @@ const RegisterPage = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Xác nhận mật khẩu</label>
+            <label className="block text-sm font-medium mb-1">Xác nhận mật khẩu <span className="text-red-500">*</span></label>
             <input 
               type="password" 
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-black focus:ring-1 focus:ring-black" 
@@ -49,14 +57,13 @@ const RegisterPage = () => {
             <input 
               type="date" 
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-black focus:ring-1 focus:ring-black" 
-              required 
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Giới tính</label>
             <div className="flex items-center gap-4 mt-1">
               <label className="flex items-center gap-1">
-                <input type="radio" name="gender" value="male" className="accent-black" required /> Nam
+                <input type="radio" name="gender" value="male" className="accent-black" /> Nam
               </label>
               <label className="flex items-center gap-1">
                 <input type="radio" name="gender" value="female" className="accent-black" /> Nữ
@@ -67,11 +74,12 @@ const RegisterPage = () => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Số điện thoại</label>
+            <label className="block text-sm font-medium mb-1">Số điện thoại <span className="text-red-500">*</span></label>
             <input 
               type="tel" 
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-black focus:ring-1 focus:ring-black" 
               placeholder="Nhập số điện thoại của bạn" 
+              required
             />
           </div>
           <div>
@@ -87,6 +95,9 @@ const RegisterPage = () => {
             <span className="text-sm">
               Tôi đồng ý với <a href="#" className="text-black hover:underline">Điều khoản dịch vụ</a> và <a href="#" className="text-black hover:underline">Chính sách bảo mật</a>
             </span>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            <span className="text-red-500">*</span> Thông tin bắt buộc
           </div>
           <button type="submit" className="w-full px-6 py-2 bg-black text-white rounded hover:bg-gray-900 transition-colors">
             Tạo tài khoản
