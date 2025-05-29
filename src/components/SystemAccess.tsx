@@ -8,7 +8,13 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const features = [
+interface Feature {
+	id: number;
+	title: string;
+	description: string;
+}
+
+const features: Feature[] = [
 	{
 		id: 1,
 		title: 'Cổng thông tin bệnh nhân',
