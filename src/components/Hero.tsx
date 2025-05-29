@@ -2,14 +2,27 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, Clock } from 'lucide-react';
 import { images } from '../constants/images';
+import SearchBar from './SearchBar';
 
 const Hero: React.FC = () => {
+  const handleSearch = (query: string) => {
+    // TODO: Implement search functionality
+    console.log('Searching for:', query);
+  };
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-primary-50/50 via-white to-transparent py-20 md:py-32">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/2 -right-1/4 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute -bottom-1/2 -left-1/4 w-96 h-96 bg-secondary-100 rounded-full blur-3xl opacity-50"></div>
+      </div>
+
+      {/* SearchBar absolutely at the top right */}
+      <div className="absolute top-8 right-4 sm:top-10 sm:right-10 z-20 pointer-events-none">
+        <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-md pointer-events-auto">
+          <SearchBar />
+        </div>
       </div>
 
       <div className="container mx-auto px-4 relative">
