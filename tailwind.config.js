@@ -54,7 +54,37 @@ export default {
           'sans-serif',
         ],
       },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' }
+        },
+        'fade-up': {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(20px)'
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)'
+          }
+        },
+        'tilt': {
+          '0%, 100%': { transform: 'rotate(-1deg)' },
+          '50%': { transform: 'rotate(1deg)' }
+        }
+      },
+      animation: {
+        'fade-in': 'fade-in 1s ease-out forwards',
+        'fade-up': 'fade-up 1s ease-out forwards',
+        'tilt': 'tilt 10s ease-in-out infinite'
+      },
+      dropShadow: {
+        'glow': '0 0 0.75rem rgba(14, 165, 233, 0.3)'
+      }
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms')
+  ],
 };

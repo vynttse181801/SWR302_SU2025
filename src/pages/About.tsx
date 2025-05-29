@@ -61,10 +61,10 @@ const AboutPage = () => {
       {/* Hero Section */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-primary-50 to-white">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-center mb-6 gradient-heading">
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-6 bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500 bg-clip-text text-transparent">
             Về chúng tôi
           </h1>
-          <p className="text-center text-gray-600 text-lg mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-center text-primary-700 text-lg mb-12 max-w-3xl mx-auto leading-relaxed">
             Tìm hiểu về sứ mệnh, tầm nhìn và đội ngũ của chúng tôi trong việc cung cấp dịch vụ chăm sóc sức khỏe HIV toàn diện.
           </p>
 
@@ -74,8 +74,8 @@ const AboutPage = () => {
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
                 <div className="relative bg-white p-8 rounded-xl">
-                  <h3 className="text-2xl font-bold mb-4 text-primary-700">Sứ mệnh</h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <h3 className="text-2xl font-bold mb-4 text-primary-600">Sứ mệnh</h3>
+                  <p className="text-primary-700 leading-relaxed">
                     Chúng tôi cam kết mang đến dịch vụ chăm sóc sức khỏe HIV chất lượng cao,
                     tạo môi trường an toàn và tích cực cho người sống chung với HIV/AIDS.
                   </p>
@@ -86,8 +86,8 @@ const AboutPage = () => {
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-secondary-100 to-accent-100 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
                 <div className="relative bg-white p-8 rounded-xl">
-                  <h3 className="text-2xl font-bold mb-4 text-secondary-700">Tầm nhìn</h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <h3 className="text-2xl font-bold mb-4 text-secondary-600">Tầm nhìn</h3>
+                  <p className="text-secondary-700 leading-relaxed">
                     Trở thành đơn vị tiên phong trong việc cung cấp giải pháp chăm sóc sức khỏe HIV
                     tích hợp công nghệ, nâng cao chất lượng cuộc sống cho cộng đồng.
                   </p>
@@ -101,10 +101,10 @@ const AboutPage = () => {
       {/* Team Section */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-white via-secondary-50 to-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 gradient-heading">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500 bg-clip-text text-transparent">
             Đội ngũ chuyên gia
           </h2>
-          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-primary-700 mb-12 max-w-2xl mx-auto">
             Những chuyên gia hàng đầu của chúng tôi luôn sẵn sàng hỗ trợ và đồng hành cùng bạn.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -116,9 +116,9 @@ const AboutPage = () => {
                     <div className="w-20 h-20 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 mx-auto mb-6 flex items-center justify-center text-white text-2xl font-bold">
                       {member.avatar}
                     </div>
-                    <h3 className="text-xl font-bold mb-2 text-gray-900">{member.name}</h3>
-                    <p className="text-primary-600 font-medium mb-4">{member.role}</p>
-                    <p className="text-gray-600">{member.desc}</p>
+                    <h3 className="text-xl font-bold mb-2 text-primary-700">{member.name}</h3>
+                    <p className="text-secondary-600 font-medium mb-4">{member.role}</p>
+                    <p className="text-primary-700">{member.desc}</p>
                   </div>
                 </div>
               </div>
@@ -130,10 +130,10 @@ const AboutPage = () => {
       {/* Timeline Section */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-white to-primary-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 gradient-heading">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500 bg-clip-text text-transparent">
             Chặng đường phát triển
           </h2>
-          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-primary-700 mb-12 max-w-2xl mx-auto">
             Những cột mốc quan trọng trong hành trình phát triển của HIV Care.
           </p>
           <div className="relative">
@@ -147,8 +147,8 @@ const AboutPage = () => {
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
                         <div className="relative bg-white p-6 rounded-xl">
                           <div className="text-primary-600 font-bold mb-2">{item.year}</div>
-                          <h3 className="text-xl font-bold mb-2 text-gray-900">{item.title}</h3>
-                          <p className="text-gray-600">{item.desc}</p>
+                          <h3 className="text-xl font-bold mb-2 text-primary-700">{item.title}</h3>
+                          <p className="text-primary-700">{item.desc}</p>
                         </div>
                       </div>
                     </div>
