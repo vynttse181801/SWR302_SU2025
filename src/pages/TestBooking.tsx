@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { images } from '../constants/images';
+import { useModal } from '../hooks/useModal';
+import Modal from '../components/Modal';
 
 const TestBooking = () => {
+  const navigate = useNavigate();
+  const { modalState, showModal, hideModal } = useModal();
   const [formData, setFormData] = useState({
     name: '',
     dob: '',
@@ -14,20 +19,49 @@ const TestBooking = () => {
     preferredTime: '',
     testType: 'regular',
     symptoms: '',
-    hasPreviousTest: false
+    hasPreviousTest: false,
+    doctorId: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: value
+      [e.target.name]: e.target.value
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.checked
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    try {
+      // Giả lập gọi API đăng ký
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Hiển thị thông báo thành công
+      showModal(
+        'Đặt lịch thành công!',
+        'Chúng tôi đã nhận được yêu cầu của bạn và sẽ liên hệ trong thời gian sớm nhất.',
+        'success',
+        'Xem chi tiết',
+        () => {
+          // Chuyển hướng đến trang Profile với tab test-history
+          navigate('/profile', { state: { activeTab: 'test-history' } });
+        }
+      );
+    } catch (error) {
+      // Hiển thị thông báo lỗi
+      showModal(
+        'Đặt lịch thất bại',
+        'Có lỗi xảy ra trong quá trình đặt lịch. Vui lòng thử lại sau.',
+        'error'
+      );
+    }
   };
 
   const testTypes = [
@@ -39,6 +73,30 @@ const TestBooking = () => {
   const timeSlots = [
     '08:00', '09:00', '10:00', '11:00',
     '14:00', '15:00', '16:00', '17:00'
+  ];
+
+  const doctors = [
+    {
+      id: '1',
+      name: 'BS. Nguyễn Văn A',
+      specialization: 'Chuyên khoa HIV',
+      experience: '15 năm kinh nghiệm',
+      avatar: 'https://i.pravatar.cc/150?img=1'
+    },
+    {
+      id: '2',
+      name: 'BS. Trần Thị B',
+      specialization: 'Chuyên khoa HIV',
+      experience: '12 năm kinh nghiệm',
+      avatar: 'https://i.pravatar.cc/150?img=2'
+    },
+    {
+      id: '3',
+      name: 'BS. Lê Văn C',
+      specialization: 'Chuyên khoa HIV',
+      experience: '10 năm kinh nghiệm',
+      avatar: 'https://i.pravatar.cc/150?img=3'
+    }
   ];
 
   return (
@@ -264,6 +322,53 @@ const TestBooking = () => {
                   </div>
                 </div>
 
+                {/* Doctor Selection */}
+                <div className="animate-fade-up" style={{ animationDelay: '0.65s' }}>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">
+                    Chọn bác sĩ <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {doctors.map((doctor) => (
+                      <label
+                        key={doctor.id}
+                        className="relative group cursor-pointer"
+                      >
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
+                        <div className={`relative p-4 rounded-lg transition-all duration-300
+                          ${formData.doctorId === doctor.id 
+                            ? 'border-2 border-primary-500 bg-primary-50/50' 
+                            : 'border border-gray-200 hover:border-primary-200'}`}
+                        >
+                          <input
+                            type="radio"
+                            name="doctorId"
+                            value={doctor.id}
+                            checked={formData.doctorId === doctor.id}
+                            onChange={handleChange}
+                            className="sr-only"
+                          />
+                          <div className="flex flex-col items-center">
+                            <img
+                              src={doctor.avatar}
+                              alt={doctor.name}
+                              className="w-16 h-16 rounded-full mb-3 object-cover"
+                            />
+                            <h3 className="font-semibold text-gray-900 text-center mb-1">
+                              {doctor.name}
+                            </h3>
+                            <p className="text-sm text-primary-600 mb-1">
+                              {doctor.specialization}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {doctor.experience}
+                            </p>
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Additional Information */}
                 <div className="animate-fade-up" style={{ animationDelay: '0.7s' }}>
                   <div>
@@ -287,10 +392,7 @@ const TestBooking = () => {
                         type="checkbox"
                         name="hasPreviousTest"
                         checked={formData.hasPreviousTest}
-                        onChange={(e) => handleChange({
-                          ...e,
-                          target: { ...e.target, value: e.target.checked }
-                        } as React.ChangeEvent<HTMLInputElement>)}
+                        onChange={handleCheckboxChange}
                         className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                       />
                       <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
@@ -355,6 +457,17 @@ const TestBooking = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Modal component */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        buttonText={modalState.buttonText}
+        onButtonClick={modalState.onButtonClick}
+      />
     </div>
   );
 };

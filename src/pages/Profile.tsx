@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   User, 
   Mail, 
@@ -24,6 +24,8 @@ import {
   ThumbsUp
 } from 'lucide-react';
 import { User as UserType } from '../types';
+import { useModal } from '../hooks/useModal';
+import Modal from '../components/Modal';
 
 type TabType = 'profile' | 'test-history' | 'consultation-history' | 'arv-protocol';
 
@@ -46,6 +48,8 @@ interface ServiceItem {
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { modalState, showModal, hideModal } = useModal();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -53,6 +57,10 @@ const ProfilePage: React.FC = () => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [reminderStatus, setReminderStatus] = useState({
+    medication: false,
+    followUp: false
+  });
   const [user, setUser] = useState<UserType>({
     id: '1',
     name: 'Nguyễn Văn A',
@@ -125,28 +133,63 @@ const ProfilePage: React.FC = () => {
     }
   ];
 
+  // Handle navigation state
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab as TabType);
+    }
+  }, [location.state]);
+
   const handleEdit = () => {
     setIsEditing(true);
   };
 
   const handleSave = () => {
-    // TODO: Implement save logic with API
+    // TODO: Implement API call to save user data
     setIsEditing(false);
+    showModal(
+      'Thành công',
+      'Thông tin cá nhân đã được cập nhật.',
+      'success'
+    );
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    // Reset form data to original values
+    setUser({
+      id: '1',
+      name: 'Nguyễn Văn A',
+      email: 'nguyenvana@example.com',
+      role: 'patient',
+      phone: '0123456789',
+      dateOfBirth: '1990-01-01',
+      gender: 'male',
+      address: '123 Đường ABC, Quận XYZ, TP.HCM',
+      avatar: 'NA',
+      medicalHistory: {
+        bloodType: 'A+',
+        allergies: ['Penicillin'],
+        chronicDiseases: ['None'],
+        medications: ['ARV']
+      },
+      lastCheckup: '2024-02-15',
+      nextAppointment: '2024-03-15'
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
     if (name.startsWith('medicalHistory.')) {
       const field = name.split('.')[1];
       setUser(prev => ({
         ...prev,
         medicalHistory: {
           ...prev.medicalHistory,
-          [field]: value
+          [field]: field === 'allergies' || field === 'chronicDiseases' || field === 'medications'
+            ? value.split(',').map(item => item.trim())
+            : value
         }
       }));
     } else {
@@ -418,10 +461,10 @@ const ProfilePage: React.FC = () => {
     switch (activeTab) {
       case 'profile':
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Personal Information */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
                   <User className="w-5 h-5 text-primary-600" />
                 </div>
@@ -442,6 +485,7 @@ const ProfilePage: React.FC = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg
                         focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
                         transition-all duration-300"
+                      placeholder="Nhập họ và tên"
                     />
                   ) : (
                     <div className="flex items-center gap-2 text-gray-700">
@@ -464,6 +508,7 @@ const ProfilePage: React.FC = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg
                         focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
                         transition-all duration-300"
+                      placeholder="Nhập email"
                     />
                   ) : (
                     <div className="flex items-center gap-2 text-gray-700">
@@ -486,6 +531,7 @@ const ProfilePage: React.FC = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg
                         focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
                         transition-all duration-300"
+                      placeholder="Nhập số điện thoại"
                     />
                   ) : (
                     <div className="flex items-center gap-2 text-gray-700">
@@ -557,6 +603,7 @@ const ProfilePage: React.FC = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg
                         focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
                         transition-all duration-300"
+                      placeholder="Nhập địa chỉ"
                     />
                   ) : (
                     <div className="flex items-start gap-2 text-gray-700">
@@ -569,8 +616,8 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Medical Information */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-secondary-100 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-secondary-600" />
                 </div>
@@ -591,6 +638,7 @@ const ProfilePage: React.FC = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg
                         focus:ring-2 focus:ring-secondary-500/20 focus:border-secondary-500
                         transition-all duration-300"
+                      placeholder="Nhập nhóm máu"
                     />
                   ) : (
                     <div className="flex items-center gap-2 text-gray-700">
@@ -701,8 +749,8 @@ const ProfilePage: React.FC = () => {
 
       case 'test-history':
         return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-lg bg-secondary-100 flex items-center justify-center">
                 <ClipboardList className="w-5 h-5 text-secondary-600" />
               </div>
@@ -719,8 +767,8 @@ const ProfilePage: React.FC = () => {
 
       case 'consultation-history':
         return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-lg bg-secondary-100 flex items-center justify-center">
                 <MessageSquare className="w-5 h-5 text-secondary-600" />
               </div>
@@ -737,64 +785,141 @@ const ProfilePage: React.FC = () => {
 
       case 'arv-protocol':
         return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-secondary-100 flex items-center justify-center">
-                <PillIcon className="w-5 h-5 text-secondary-600" />
+          <div className="p-6 relative">
+            {activeTab === 'arv-protocol' && (
+              <div className="absolute right-6 top-0 z-20 flex items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  reminderStatus.followUp 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {reminderStatus.followUp ? 'Đã bật nhắc nhở tái khám' : 'Chưa bật nhắc nhở tái khám'}
+                </span>
+                <button
+                  onClick={() => showModal(
+                    'Nhắc nhở tái khám',
+                    reminderStatus.followUp
+                      ? 'Bạn có muốn tắt thông báo nhắc nhở lịch tái khám không?'
+                      : 'Bạn có muốn nhận thông báo nhắc nhở lịch tái khám không?',
+                    'success',
+                    reminderStatus.followUp ? 'Tắt nhắc nhở' : 'Bật nhắc nhở',
+                    () => {
+                      setReminderStatus(prev => ({
+                        ...prev,
+                        followUp: !prev.followUp
+                      }));
+                      showModal(
+                        reminderStatus.followUp ? 'Đã tắt nhắc nhở' : 'Đã bật nhắc nhở',
+                        reminderStatus.followUp
+                          ? 'Bạn sẽ không nhận thông báo nhắc nhở tái khám nữa.'
+                          : 'Bạn sẽ nhận được thông báo nhắc nhở trước ngày tái khám 3 ngày.',
+                        'success'
+                      );
+                    }
+                  )}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors duration-300 ${
+                    reminderStatus.followUp
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                      : 'bg-secondary-50 text-secondary-600 hover:bg-secondary-100'
+                  }`}
+                >
+                  <CalendarIcon size={18} />
+                  <span>{reminderStatus.followUp ? 'Tắt nhắc nhở' : 'Nhắc nhở tái khám'}</span>
+                </button>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Phác đồ ARV</h2>
-            </div>
-            
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="space-y-6">
-                {/* Current Protocol */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Phác đồ hiện tại</h3>
+            )}
+            <div className="space-y-6">
+              {/* Current Protocol */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-4">Phác đồ hiện tại</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Ngày bắt đầu</p>
+                      <p className="font-medium text-gray-900">01/01/2024</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Bác sĩ điều trị</p>
+                      <p className="font-medium text-gray-900">BS. Nguyễn Văn B</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Medication Schedule */}
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-semibold text-gray-900">Lịch uống thuốc</h3>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      reminderStatus.medication 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {reminderStatus.medication ? 'Đã bật nhắc nhở' : 'Chưa bật nhắc nhở'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => showModal(
+                      'Nhắc nhở uống thuốc',
+                      reminderStatus.medication 
+                        ? 'Bạn có muốn tắt thông báo nhắc nhở uống thuốc không?'
+                        : 'Bạn có muốn nhận thông báo nhắc nhở uống thuốc hàng ngày không?',
+                      'success',
+                      reminderStatus.medication ? 'Tắt nhắc nhở' : 'Bật nhắc nhở',
+                      () => {
+                        setReminderStatus(prev => ({
+                          ...prev,
+                          medication: !prev.medication
+                        }));
+                        showModal(
+                          reminderStatus.medication ? 'Đã tắt nhắc nhở' : 'Đã bật nhắc nhở',
+                          reminderStatus.medication 
+                            ? 'Bạn sẽ không nhận thông báo nhắc nhở uống thuốc nữa.'
+                            : 'Bạn sẽ nhận được thông báo nhắc nhở uống thuốc hàng ngày.',
+                          'success'
+                        );
+                      }
+                    )}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors duration-300 ${
+                      reminderStatus.medication
+                        ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                        : 'bg-primary-50 text-primary-600 hover:bg-primary-100'
+                    }`}
+                  >
+                    <Clock size={18} />
+                    <span>{reminderStatus.medication ? 'Tắt nhắc nhở' : 'Nhắc nhở uống thuốc'}</span>
+                  </button>
+                </div>
+                <div className="space-y-4">
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600">Ngày bắt đầu</p>
-                        <p className="font-medium text-gray-900">01/01/2024</p>
+                        <h4 className="font-medium text-gray-900">TDF/3TC/DTG</h4>
+                        <p className="text-sm text-gray-600">1 viên/ngày</p>
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Bác sĩ điều trị</p>
-                        <p className="font-medium text-gray-900">BS. Nguyễn Văn B</p>
-                      </div>
+                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                        Đang sử dụng
+                      </span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Medication Schedule */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Lịch uống thuốc</h3>
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-900">TDF/3TC/DTG</h4>
-                          <p className="text-sm text-gray-600">1 viên/ngày</p>
-                        </div>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                          Đang sử dụng
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+              {/* Protocol History */}
+              <div className="flex justify-between items-center mb-4 relative">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-semibold text-gray-900">Lịch sử phác đồ</h3>
                 </div>
-
-                {/* Protocol History */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Lịch sử phác đồ</h3>
-                  <div className="space-y-4">
-                    <div className="border-b border-gray-100 pb-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-gray-900">Phác đồ cũ</h4>
-                          <p className="text-sm text-gray-600">ABC/3TC/EFV</p>
-                        </div>
-                        <span className="text-sm text-gray-500">01/01/2023 - 31/12/2023</span>
-                      </div>
+              </div>
+              <div className="space-y-4">
+                <div className="border-b border-gray-100 pb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium text-gray-900">Phác đồ cũ</h4>
+                      <p className="text-sm text-gray-600">ABC/3TC/EFV</p>
                     </div>
+                    <span className="text-sm text-gray-500">01/01/2023 - 31/12/2023</span>
                   </div>
                 </div>
               </div>
@@ -813,13 +938,13 @@ const ProfilePage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold gradient-heading mb-2">Tài khoản của tôi</h1>
+            <h1 className="text-3xl font-bold text-primary-600 mb-2">Tài khoản của tôi</h1>
             <p className="text-gray-600">Quản lý thông tin cá nhân và theo dõi dịch vụ y tế</p>
           </div>
 
-          <div className="flex gap-8">
+          <div className="flex flex-col lg:flex-row gap-8">
             {/* Sidebar */}
-            <div className="w-64 flex-shrink-0">
+            <div className="w-full lg:w-64 flex-shrink-0">
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <nav className="p-2">
                   {tabs.map((tab) => (
@@ -829,12 +954,12 @@ const ProfilePage: React.FC = () => {
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1
                         transition-all duration-300 ${
                           activeTab === tab.id
-                            ? `bg-${tab.color}-50 text-${tab.color}-600`
+                            ? `bg-${tab.color}-50 text-${tab.color}-600 font-medium`
                             : 'text-gray-600 hover:bg-gray-50'
                         }`}
                     >
                       <tab.icon size={20} />
-                      <span className="font-medium">{tab.label}</span>
+                      <span>{tab.label}</span>
                       {activeTab === tab.id && (
                         <ChevronRight size={16} className="ml-auto" />
                       )}
@@ -846,8 +971,8 @@ const ProfilePage: React.FC = () => {
 
             {/* Main Content */}
             <div className="flex-1">
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="p-8">
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="p-6">
                   {activeTab === 'profile' && (
                     <div className="flex justify-end mb-6">
                       <button
@@ -861,12 +986,43 @@ const ProfilePage: React.FC = () => {
                   )}
                   {renderTabContent()}
                 </div>
+                {isEditing && activeTab === 'profile' && (
+                  <div className="flex justify-center gap-4 py-6 px-6 bg-gray-50 border-t border-gray-100">
+                    <button
+                      onClick={handleCancel}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 text-gray-600 hover:text-gray-700
+                        bg-white hover:bg-gray-50 rounded-lg transition-all duration-300
+                        font-medium shadow-sm hover:shadow-md border border-gray-200"
+                    >
+                      <X size={18} />
+                      Hủy
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-500 text-white rounded-lg
+                        hover:bg-primary-600 transition-all duration-300 font-medium shadow-sm
+                        hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Save size={18} />
+                      Lưu thay đổi
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
       {renderRatingModal()}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        buttonText={modalState.buttonText}
+        onButtonClick={modalState.onButtonClick}
+      />
     </div>
   );
 };

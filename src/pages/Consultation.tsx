@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { Mail, Phone, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { images } from '../constants/images';
+import { useModal } from '../hooks/useModal';
+import Modal from '../components/Modal';
 
 const ConsultationPage = () => {
+  const navigate = useNavigate();
+  const { modalState, showModal, hideModal } = useModal();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -40,9 +45,31 @@ const ConsultationPage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    try {
+      // Giả lập gọi API đăng ký tư vấn
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Hiển thị thông báo thành công
+      showModal(
+        'Gửi yêu cầu thành công!',
+        'Chúng tôi đã nhận được yêu cầu của bạn và sẽ liên hệ trong thời gian sớm nhất.',
+        'success',
+        'Xem chi tiết',
+        () => {
+          // Chuyển hướng đến trang Profile với tab consultation-history
+          navigate('/profile', { state: { activeTab: 'consultation-history' } });
+        }
+      );
+    } catch (error) {
+      // Hiển thị thông báo lỗi
+      showModal(
+        'Gửi yêu cầu thất bại',
+        'Có lỗi xảy ra trong quá trình gửi yêu cầu. Vui lòng thử lại sau.',
+        'error'
+      );
+    }
   };
 
   const consultationTypes = [
@@ -291,6 +318,16 @@ const ConsultationPage = () => {
           </div>
         </div>
       </div>
+      {/* Add Modal component */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        buttonText={modalState.buttonText}
+        onButtonClick={modalState.onButtonClick}
+      />
     </div>
   );
 };

@@ -8,7 +8,6 @@ import AboutPage from './pages/About';
 import ContactPage from './pages/Contact';
 import RegisterPage from './pages/Register';
 import LoginPage from './pages/Login';
-import AppointmentPage from './pages/Appointment';
 import ConsultationPage from './pages/Consultation';
 import TestResults from './pages/TestResults';
 import ARVProtocol from './pages/ARVProtocol';
@@ -64,14 +63,6 @@ function App() {
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <ProfilePage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/appointment" 
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <AppointmentPage />
                 </ProtectedRoute>
               } 
             />

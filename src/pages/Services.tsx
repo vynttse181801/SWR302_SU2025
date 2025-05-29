@@ -33,15 +33,6 @@ const ServicesPage = () => {
     },
     {
       id: 4,
-      icon: <Microscope className="w-12 h-12" />,
-      title: "Đặt lịch xét nghiệm",
-      description: "Đặt lịch xét nghiệm HIV theo thời gian phù hợp với bạn",
-      additionalText: ["Xét nghiệm định kỳ", "Xét nghiệm nhanh", "Bảo mật cao"],
-      link: "/test-booking",
-      gradient: "from-primary-500 to-secondary-500"
-    },
-    {
-      id: 5,
       icon: <Pill className="w-12 h-12" />,
       title: "Quản lý thuốc ARV",
       description: "Tìm hiểu về phác đồ ARV, lưu ý khi sử dụng và cách quản lý thuốc hiệu quả",
@@ -50,7 +41,7 @@ const ServicesPage = () => {
       gradient: "from-secondary-500 to-accent-500"
     },
     {
-      id: 6,
+      id: 5,
       icon: <Clock className="w-12 h-12" />,
       title: "Nhắc nhở uống thuốc",
       description: "Hệ thống nhắc nhở thông minh giúp bạn uống thuốc đúng giờ và không bỏ liều",

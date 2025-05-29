@@ -22,7 +22,7 @@ const services: Service[] = [
     image: images.doctorTeam,
     icon: <Calendar className="w-6 h-6" />,
     features: ["Linh hoạt thời gian", "Bác sĩ chuyên khoa", "Nhắc nhở tự động"],
-    link: "/appointment",
+    link: "/test-booking",
     gradient: "from-primary-400 to-secondary-400"
   },
   {
