@@ -54,20 +54,20 @@ const ServicesPage = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-primary-50 to-white">
+      <section className="py-6 md:py-10 bg-gradient-to-b from-primary-50 to-white">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-center mb-6 bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl font-bold text-center mb-6 bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500 bg-clip-text text-transparent">
             Dịch vụ của chúng tôi
           </h1>
-          <p className="text-center text-primary-700 text-lg mb-12 max-w-3xl mx-auto leading-relaxed">
-            Chúng tôi cung cấp các dịch vụ chăm sóc sức khỏe HIV toàn diện, 
+          <p className="text-center text-primary-700 text-lg mb-6 max-w-3xl mx-auto leading-relaxed">
+            Chúng tôi cung cấp các dịch vụ chăm sóc sức khỏe HIV toàn diện,
             từ tư vấn đến điều trị và theo dõi sức khỏe.
           </p>
         </div>
       </section>
 
       {/* Services List */}
-      <section className="py-16 md:py-24">
+      <section className="py-6 md:py-10">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="space-y-8">
             {services.map((service) => (

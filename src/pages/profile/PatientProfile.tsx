@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   User, 
   Mail, 
@@ -21,11 +21,12 @@ import {
   ChevronRight,
   Star,
   StarHalf,
-  ThumbsUp
+  ThumbsUp,
+  Pencil
 } from 'lucide-react';
-import { User as UserType } from '../types';
-import { useModal } from '../hooks/useModal';
-import Modal from '../components/Modal';
+import { User as UserType } from '../../types';
+import { useModal } from '../../hooks/useModal';
+import Modal from '../../components/Modal';
 
 type TabType = 'profile' | 'test-history' | 'consultation-history' | 'arv-protocol';
 
@@ -44,6 +45,8 @@ interface ServiceItem {
   doctor: string;
   details: string;
   rating?: Rating;
+  doctorNote?: string;
+  resultNote?: string;
 }
 
 const ProfilePage: React.FC = () => {
@@ -57,6 +60,8 @@ const ProfilePage: React.FC = () => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [isEditingFeedback, setIsEditingFeedback] = useState(false);
+  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
   const [reminderStatus, setReminderStatus] = useState({
     medication: false,
     followUp: false
@@ -81,34 +86,33 @@ const ProfilePage: React.FC = () => {
     nextAppointment: '2024-03-15'
   });
 
-  // Sample data for test history
-  const testHistory: ServiceItem[] = [
+  const [testHistory, setTestHistory] = useState<ServiceItem[]>([
     {
       id: '1',
-      title: 'Xét nghiệm HIV',
-      date: '15/02/2024',
-      status: 'Hoàn thành',
-      doctor: 'BS. Nguyễn Văn B',
-      details: 'Kết quả: Âm tính',
+      title: 'Xét nghiệm máu',
+      date: '20/02/2024',
+      status: 'Đã hoàn thành',
+      doctor: 'BS. Lê Văn D',
+      details: 'Xét nghiệm công thức máu và sinh hóa',
       rating: {
         id: 'r1',
-        rating: 4.5,
-        comment: 'Dịch vụ rất tốt, nhân viên thân thiện',
-        date: '16/02/2024'
-      }
+        rating: 5,
+        comment: 'Dịch vụ rất tốt, nhân viên nhiệt tình',
+        date: '21/02/2024'
+      },
+      resultNote: 'Kết quả bình thường'
     },
     {
       id: '2',
-      title: 'Xét nghiệm máu tổng quát',
-      date: '01/02/2024',
-      status: 'Hoàn thành',
-      doctor: 'BS. Trần Thị C',
-      details: 'Kết quả: Bình thường'
+      title: 'Xét nghiệm HIV',
+      date: '15/02/2024',
+      status: 'Đã hoàn thành',
+      doctor: 'BS. Phạm Thị E',
+      details: 'Xét nghiệm HIV định kỳ'
     }
-  ];
+  ]);
 
-  // Sample data for consultation history
-  const consultationHistory: ServiceItem[] = [
+  const [consultationHistory, setConsultationHistory] = useState<ServiceItem[]>([
     {
       id: '1',
       title: 'Tư vấn điều trị ARV',
@@ -121,7 +125,9 @@ const ProfilePage: React.FC = () => {
         rating: 5,
         comment: 'Bác sĩ tư vấn rất nhiệt tình và chuyên nghiệp',
         date: '21/02/2024'
-      }
+      },
+      doctorNote: 'Bệnh nhân đáp ứng tốt với phác đồ điều trị. Cần tiếp tục theo dõi các tác dụng phụ và tuân thủ lịch uống thuốc.',
+      resultNote: 'Kết quả điều trị tốt'
     },
     {
       id: '2',
@@ -129,9 +135,11 @@ const ProfilePage: React.FC = () => {
       date: '15/02/2024',
       status: 'Đã hoàn thành',
       doctor: 'BS. Phạm Thị E',
-      details: 'Tư vấn về chế độ dinh dưỡng phù hợp'
+      details: 'Tư vấn về chế độ dinh dưỡng phù hợp',
+      doctorNote: 'Đã hướng dẫn chế độ ăn giàu protein và vitamin. Khuyến nghị tăng cường rau xanh và hoa quả.',
+      resultNote: 'Kết quả dinh dưỡng tốt'
     }
-  ];
+  ]);
 
   // Handle navigation state
   useEffect(() => {
@@ -200,43 +208,53 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleRatingClick = (service: ServiceItem) => {
+  const handleOpenRatingModal = (service: ServiceItem) => {
     setSelectedService(service);
-    setRating(service.rating?.rating || 0);
-    setComment(service.rating?.comment || '');
+    if (service.rating) {
+      setRating(service.rating.rating);
+      setComment(service.rating.comment);
+      setIsEditingFeedback(true);
+      setEditingFeedbackId(service.rating.id);
+    } else {
+      setRating(0);
+      setComment('');
+      setIsEditingFeedback(false);
+      setEditingFeedbackId(null);
+    }
     setShowRatingModal(true);
   };
 
-  const handleRatingSubmit = () => {
-    if (selectedService) {
-      // TODO: Implement API call to save rating
-      const newRating: Rating = {
-        id: selectedService.rating?.id || `r${Date.now()}`,
-        rating,
-        comment,
-        date: new Date().toLocaleDateString('vi-VN')
-      };
+  const handleSubmitFeedback = () => {
+    if (!selectedService) return;
 
-      // Update the service item with new rating
-      if (activeTab === 'test-history') {
-        const updatedHistory = testHistory.map(item => 
-          item.id === selectedService.id ? { ...item, rating: newRating } : item
-        );
-        // TODO: Update state with API call
-        console.log('Updated test history:', updatedHistory);
-      } else if (activeTab === 'consultation-history') {
-        const updatedHistory = consultationHistory.map(item => 
-          item.id === selectedService.id ? { ...item, rating: newRating } : item
-        );
-        // TODO: Update state with API call
-        console.log('Updated consultation history:', updatedHistory);
-      }
+    const newRating: Rating = {
+      id: editingFeedbackId || `rating-${Date.now()}`,
+      rating,
+      comment,
+      date: new Date().toISOString()
+    };
 
-      setShowRatingModal(false);
-      setRating(0);
-      setComment('');
-      setSelectedService(null);
+    // Update the service's rating
+    if (activeTab === 'test-history') {
+      setTestHistory((prev: ServiceItem[]) => prev.map(test => 
+        test.id === selectedService.id 
+          ? { ...test, rating: newRating }
+          : test
+      ));
+    } else if (activeTab === 'consultation-history') {
+      setConsultationHistory((prev: ServiceItem[]) => prev.map(consult => 
+        consult.id === selectedService.id 
+          ? { ...consult, rating: newRating }
+          : consult
+      ));
     }
+
+    setShowRatingModal(false);
+    showModal(
+      'Thành công',
+      isEditingFeedback ? 'Đánh giá đã được cập nhật.' : 'Cảm ơn bạn đã gửi đánh giá.',
+      'success'
+    );
   };
 
   const renderRatingStars = (rating: number, interactive = false) => {
@@ -343,7 +361,7 @@ const ProfilePage: React.FC = () => {
                 Hủy
               </button>
               <button
-                onClick={handleRatingSubmit}
+                onClick={handleSubmitFeedback}
                 className="px-6 py-2 bg-primary-500 text-white rounded-lg
                   hover:bg-primary-600 transition-all duration-300
                   flex items-center gap-2 font-medium shadow-sm
@@ -377,7 +395,7 @@ const ProfilePage: React.FC = () => {
           </span>
           {item.rating && (
             <button
-              onClick={() => handleRatingClick(item)}
+              onClick={() => handleOpenRatingModal(item)}
               className="p-2 text-gray-400 hover:text-primary-600 transition-colors duration-300"
               title="Chỉnh sửa đánh giá"
             >
@@ -416,7 +434,7 @@ const ProfilePage: React.FC = () => {
           </div>
         ) : (
           <button
-            onClick={() => handleRatingClick(item)}
+            onClick={() => handleOpenRatingModal(item)}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 
               bg-gray-50 hover:bg-gray-100 rounded-lg text-primary-600 
               hover:text-primary-700 transition-all duration-300
@@ -439,13 +457,13 @@ const ProfilePage: React.FC = () => {
     },
     {
       id: 'test-history',
-      label: 'Lịch sử xét nghiệm',
+      label: 'Lịch xét nghiệm',
       icon: ClipboardList,
       color: 'secondary'
     },
     {
       id: 'consultation-history',
-      label: 'Lịch sử tư vấn',
+      label: 'Lịch tư vấn',
       icon: MessageSquare,
       color: 'secondary'
     },
@@ -456,6 +474,35 @@ const ProfilePage: React.FC = () => {
       color: 'secondary'
     }
   ];
+
+  const [selectedTestStatus, setSelectedTestStatus] = useState<string>('all');
+  const [selectedConsultationStatus, setSelectedConsultationStatus] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedTestToCancel, setSelectedTestToCancel] = useState<ServiceItem | null>(null);
+
+  const handleCancelTest = (test: ServiceItem) => {
+    setSelectedTestToCancel(test);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelTest = () => {
+    if (selectedTestToCancel) {
+      const updatedTestHistory = testHistory.map(test => 
+        test.id === selectedTestToCancel.id 
+          ? { ...test, status: 'Đã hủy' }
+          : test
+      );
+      setTestHistory(updatedTestHistory);
+      setShowCancelModal(false);
+      setSelectedTestToCancel(null);
+      showModal(
+        'Thành công',
+        'Đã hủy lịch xét nghiệm thành công.',
+        'success'
+      );
+    }
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -748,37 +795,192 @@ const ProfilePage: React.FC = () => {
         );
 
       case 'test-history':
+        const filteredTestHistory = testHistory.filter(test => {
+          if (selectedTestStatus === 'all') return true;
+          return test.status === selectedTestStatus;
+        });
+
         return (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-secondary-100 flex items-center justify-center">
-                <ClipboardList className="w-5 h-5 text-secondary-600" />
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <CalendarIcon className="w-5 h-5 text-primary-600" />
+                <input
+                  type="date"
+                  value={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Lịch sử xét nghiệm</h2>
+              <div className="flex items-center space-x-4">
+                <select
+                  value={selectedTestStatus}
+                  onChange={(e) => setSelectedTestStatus(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                >
+                  <option value="all">Tất cả</option>
+                  <option value="Hoàn thành">Đã hoàn thành</option>
+                  <option value="Đang chờ">Đang chờ</option>
+                  <option value="Đã hủy">Đã hủy</option>
+                </select>
+              </div>
             </div>
-            
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="space-y-4">
-                {testHistory.map(renderServiceItem)}
-              </div>
+
+            <div className="grid gap-4">
+              {filteredTestHistory.length > 0 ? (
+                filteredTestHistory.map((test) => (
+                  <div
+                    key={test.id}
+                    className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-200"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center">
+                          <User className="w-6 h-6 text-primary-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900">{test.title}</h3>
+                          <p className="text-sm text-gray-500">{test.details}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className={`px-3 py-1 rounded-full text-sm ${
+                          test.status === 'Đã hoàn thành' ? 'bg-green-100 text-green-800' :
+                          test.status === 'Đã hủy' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {test.status}
+                        </span>
+                        <div className="text-sm text-gray-500">
+                          {test.date}
+                        </div>
+                      </div>
+                    </div>
+                    {renderFeedbackSection(test)}
+                    {test.status === 'Đã hoàn thành' && test.resultNote && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-full bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-4 h-4 text-secondary-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className="text-sm font-medium text-gray-900">Kết quả</h4>
+                              <span className="text-xs text-gray-500">{test.doctor}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 whitespace-pre-line">{test.resultNote}</p>
+                            <div className="mt-2">
+                              <Link
+                                to="/test-results"
+                                className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-800"
+                              >
+                                Xem kết quả
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  Không có lịch xét nghiệm nào
+                </div>
+              )}
             </div>
           </div>
         );
 
       case 'consultation-history':
+        const filteredConsultationHistory = consultationHistory.filter(consultation => {
+          if (selectedConsultationStatus === 'all') return true;
+          return consultation.status === selectedConsultationStatus;
+        });
+
         return (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-secondary-100 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-secondary-600" />
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <CalendarIcon className="w-5 h-5 text-primary-600" />
+                <input
+                  type="date"
+                  value={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Lịch sử tư vấn</h2>
+              <div className="flex items-center space-x-4">
+                <select
+                  value={selectedConsultationStatus}
+                  onChange={(e) => setSelectedConsultationStatus(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                >
+                  <option value="all">Tất cả</option>
+                  <option value="Đã hoàn thành">Đã hoàn thành</option>
+                  <option value="Đang chờ">Đang chờ</option>
+                  <option value="Đã hủy">Đã hủy</option>
+                </select>
+              </div>
             </div>
-            
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="space-y-4">
-                {consultationHistory.map(renderServiceItem)}
-              </div>
+
+            <div className="grid gap-4">
+              {filteredConsultationHistory.length > 0 ? (
+                filteredConsultationHistory.map((consult) => (
+                  <div
+                    key={consult.id}
+                    className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-200"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center">
+                          <User className="w-6 h-6 text-primary-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900">{consult.title}</h3>
+                          <p className="text-sm text-gray-500">{consult.details}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className={`px-3 py-1 rounded-full text-sm ${
+                          consult.status === 'Đã hoàn thành' ? 'bg-green-100 text-green-800' :
+                          consult.status === 'Đã hủy' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {consult.status}
+                        </span>
+                        <div className="text-sm text-gray-500">
+                          {consult.date}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Doctor's Note Section */}
+                    {consult.status === 'Đã hoàn thành' && consult.doctorNote && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-full bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-4 h-4 text-secondary-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className="text-sm font-medium text-gray-900">Ghi chú của bác sĩ</h4>
+                              <span className="text-xs text-gray-500">{consult.doctor}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 whitespace-pre-line">{consult.doctorNote}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {renderFeedbackSection(consult)}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  Không có lịch tư vấn nào
+                </div>
+              )}
             </div>
           </div>
         );
@@ -932,6 +1134,40 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const renderFeedbackSection = (service: ServiceItem) => {
+    if (service.status !== 'Đã hoàn thành') return null;
+
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-100">
+        {service.rating ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {renderRatingStars(service.rating.rating)}
+                <span className="text-sm text-gray-500">{service.rating.date}</span>
+              </div>
+              <button
+                onClick={() => handleOpenRatingModal(service)}
+                className="text-primary-600 hover:text-primary-700 transition-colors"
+              >
+                <Pencil size={16} />
+              </button>
+            </div>
+            <p className="text-gray-700">{service.rating.comment}</p>
+          </div>
+        ) : (
+          <button
+            onClick={() => handleOpenRatingModal(service)}
+            className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors"
+          >
+            <ThumbsUp size={16} />
+            <span>Đánh giá dịch vụ</span>
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 via-white to-primary-50 py-12">
       <div className="container mx-auto px-4">
@@ -1022,6 +1258,15 @@ const ProfilePage: React.FC = () => {
         type={modalState.type}
         buttonText={modalState.buttonText}
         onButtonClick={modalState.onButtonClick}
+      />
+      <Modal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title="Xác nhận hủy lịch"
+        message={`Bạn có chắc chắn muốn hủy lịch xét nghiệm "${selectedTestToCancel?.title}" không?`}
+        type="error"
+        buttonText="Xác nhận"
+        onButtonClick={confirmCancelTest}
       />
     </div>
   );

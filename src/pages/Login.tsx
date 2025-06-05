@@ -1,40 +1,55 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { images } from '../constants/images';
-import { LoginPageProps, User } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { User } from '../types';
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
+  const [error, setError] = useState('');
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual login logic with API
-    // For now, we'll simulate a successful login
-    const mockUser: User = {
-      id: '1',
-      name: 'Nguyễn Văn A',
-      email: formData.email,
-      role: 'patient'
-    };
-    onLogin(mockUser);
-    navigate('/');
+    setError('');
+
+    try {
+      // Here you would typically make an API call to authenticate
+      // For now, we'll simulate a successful login
+      const mockUser: User = {
+        id: '1',
+        email: formData.email,
+        name: 'Test User',
+        role: 'doctor',
+        phone: '',
+        dateOfBirth: '',
+        gender: 'other',
+        address: '',
+      };
+
+      login(mockUser);
+      navigate('/doctor-profile');
+    } catch (error) {
+      setError('Invalid email or password');
+    }
   };
 
   return (
@@ -63,6 +78,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             
             <div className="relative bg-black/30 backdrop-blur-xl rounded-xl shadow-2xl p-8 border border-white/20">
               <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span className="block sm:inline">{error}</span>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-white mb-1">
                     Email
@@ -71,7 +92,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     type="email" 
                     name="email"
                     value={formData.email}
-                    onChange={handleChange}
+                    onChange={handleInputChange}
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all duration-300
                     hover:bg-white/[0.15] focus:bg-white/[0.15]" 
                     placeholder="example@gmail.com"
@@ -88,7 +109,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all duration-300
                       hover:bg-white/[0.15] focus:bg-white/[0.15]" 
                       placeholder="Nhập mật khẩu của bạn"

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { images } from '../constants/images';
 import { useModal } from '../hooks/useModal';
 import Modal from '../components/Modal';
+import { FaUserMd } from 'react-icons/fa';
 
 const ConsultationPage = () => {
   const navigate = useNavigate();
@@ -12,18 +13,52 @@ const ConsultationPage = () => {
     name: '',
     phone: '',
     email: '',
-    consultationType: 'phone',
     preferredTime: '',
-    description: ''
+    description: '',
+    doctorId: ''
   });
 
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<{date: string, slots: string[]}[]>([]);
+
+  // Add mock doctors data
+  const doctors = [
+    { id: '1', name: 'Bác sĩ Nguyễn Văn A', specialty: 'Nội tổng quát' },
+    { id: '2', name: 'Bác sĩ Trần Thị B', specialty: 'Nhi khoa' },
+    { id: '3', name: 'Bác sĩ Lê Văn C', specialty: 'Da liễu' }
+  ];
+
+  // Mock data for doctor's available time slots
+  const mockAvailableSlots = {
+    '1': [
+      { date: '2024-03-20', slots: ['09:00', '10:00', '11:00', '14:00', '15:00'] },
+      { date: '2024-03-21', slots: ['09:00', '10:00', '11:00', '14:00', '15:00'] },
+      { date: '2024-03-22', slots: ['09:00', '10:00', '11:00', '14:00', '15:00'] }
+    ],
+    '2': [
+      { date: '2024-03-20', slots: ['13:00', '14:00', '15:00', '16:00'] },
+      { date: '2024-03-21', slots: ['13:00', '14:00', '15:00', '16:00'] },
+      { date: '2024-03-22', slots: ['13:00', '14:00', '15:00', '16:00'] }
+    ],
+    '3': [
+      { date: '2024-03-20', slots: ['08:00', '09:00', '10:00', '11:00'] },
+      { date: '2024-03-21', slots: ['08:00', '09:00', '10:00', '11:00'] },
+      { date: '2024-03-22', slots: ['08:00', '09:00', '10:00', '11:00'] }
+    ]
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    // Update available time slots when doctor is selected
+    if (name === 'doctorId') {
+      setAvailableTimeSlots(mockAvailableSlots[value as keyof typeof mockAvailableSlots] || []);
+      setFormData(prev => ({ ...prev, preferredTime: '' })); // Reset selected time
+    }
   };
 
   const toggleAnonymous = () => {
@@ -32,8 +67,8 @@ const ConsultationPage = () => {
       setFormData({
         ...formData,
         name: 'Ẩn danh',
-        phone: 'xxx-xxx-xxxx',
-        email: 'anonymous@example.com'
+        phone: '',
+        email: ''
       });
     } else {
       setFormData({
@@ -163,41 +198,6 @@ const ConsultationPage = () => {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Consultation Types */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-up" style={{ animationDelay: '0.3s' }}>
-                  {consultationTypes.map((type) => (
-                    <label
-                      key={type.id}
-                      className="relative group cursor-pointer"
-                    >
-                      <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
-                      <div className={`relative flex flex-col items-center p-6 rounded-lg transition-all duration-300
-                        ${formData.consultationType === type.id 
-                          ? 'border-2 border-primary-500 bg-primary-50/50' 
-                          : 'border border-gray-200 hover:border-primary-200'}`}
-                      >
-                        <input
-                          type="radio"
-                          name="consultationType"
-                          value={type.id}
-                          checked={formData.consultationType === type.id}
-                          onChange={handleChange}
-                          className="sr-only"
-                        />
-                        <div className={`text-primary-600 mb-3 transform ${formData.consultationType === type.id ? 'scale-110' : ''} transition-transform duration-300`}>
-                          {type.icon}
-                        </div>
-                        <h3 className="font-semibold text-gray-900 text-center mb-2">
-                          {type.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 text-center">
-                          {type.description}
-                        </p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-
                 {/* Personal Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-up" style={{ animationDelay: '0.4s' }}>
                   <div>
@@ -221,7 +221,7 @@ const ConsultationPage = () => {
 
                   <div>
                     <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Số điện thoại {formData.consultationType === 'phone' && !isAnonymous && <span className="text-red-500">*</span>}
+                      Số điện thoại
                     </label>
                     <input
                       type="tel"
@@ -229,21 +229,20 @@ const ConsultationPage = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      required={formData.consultationType === 'phone' && !isAnonymous}
                       disabled={isAnonymous}
                       className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-300 ${
                         isAnonymous ? 'bg-gray-100' : ''
                       }`}
-                      placeholder={isAnonymous ? 'xxx-xxx-xxxx' : 'Nhập số điện thoại của bạn'}
+                      placeholder={isAnonymous ? 'Không hiển thị' : 'Nhập số điện thoại của bạn (không bắt buộc)'}
                     />
                   </div>
                 </div>
 
-                {/* Email and Time */}
+                {/* Email and Doctor Selection */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-up" style={{ animationDelay: '0.5s' }}>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email {formData.consultationType === 'email' && !isAnonymous && <span className="text-red-500">*</span>}
+                      Email <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
@@ -251,28 +250,88 @@ const ConsultationPage = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      required={formData.consultationType === 'email' && !isAnonymous}
-                      disabled={isAnonymous}
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-300 ${
-                        isAnonymous ? 'bg-gray-100' : ''
-                      }`}
-                      placeholder={isAnonymous ? 'anonymous@example.com' : 'Nhập địa chỉ email của bạn'}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-300"
+                      placeholder="Nhập địa chỉ email của bạn"
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="preferredTime" className="block text-sm font-medium text-gray-700 mb-1">
-                      Thời gian mong muốn được tư vấn
-                    </label>
-                    <input
-                      type="datetime-local"
-                      id="preferredTime"
-                      name="preferredTime"
-                      value={formData.preferredTime}
+                  {/* Doctor Selection */}
+                  <div className="animate-fade-up" style={{ animationDelay: '0.6s' }}>
+                    <div className="flex justify-between items-center mb-4">
+                      <label htmlFor="doctorId" className="block text-sm font-medium text-gray-700">
+                        Chọn bác sĩ <span className="text-red-500">*</span>
+                      </label>
+                      <button
+                        onClick={() => window.location.href = '/doctors'}
+                        className="flex items-center text-primary-600 hover:text-primary-700 transition-colors duration-300"
+                      >
+                        <FaUserMd className="mr-2" />
+                        Xem thông tin bác sĩ
+                      </button>
+                    </div>
+                    <select
+                      id="doctorId"
+                      name="doctorId"
+                      value={formData.doctorId}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-300"
-                    />
+                    >
+                      <option value="">Chọn bác sĩ</option>
+                      {doctors.map((doctor) => (
+                        <option key={doctor.id} value={doctor.id}>
+                          {doctor.name} - {doctor.specialty}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+                </div>
+
+                {/* Time Selection */}
+                <div className="animate-fade-up" style={{ animationDelay: '0.5s' }}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Thời gian tư vấn <span className="text-red-500">*</span>
+                  </label>
+                  {formData.doctorId ? (
+                    <div className="space-y-4">
+                      {availableTimeSlots.map((daySlot) => (
+                        <div key={daySlot.date} className="border border-gray-200 rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-3">
+                            {new Date(daySlot.date).toLocaleDateString('vi-VN', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                            {daySlot.slots.map((time) => {
+                              const dateTime = `${daySlot.date}T${time}`;
+                              const isSelected = formData.preferredTime === dateTime;
+                              return (
+                                <button
+                                  key={dateTime}
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, preferredTime: dateTime }))}
+                                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                                    isSelected
+                                      ? 'bg-primary-600 text-white'
+                                      : 'bg-gray-50 text-gray-700 hover:bg-primary-50 hover:text-primary-600'
+                                  }`}
+                                >
+                                  {time}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic">
+                      Vui lòng chọn bác sĩ để xem thời gian tư vấn
+                    </div>
+                  )}
                 </div>
 
                 {/* Description */}
@@ -303,9 +362,7 @@ const ConsultationPage = () => {
                   <div className="mt-6 space-y-2">
                     <p className="flex items-center gap-2 text-sm text-gray-600">
                       <span className="text-primary-500">✓</span>
-                      {formData.consultationType === 'phone' 
-                        ? 'Chúng tôi sẽ gọi điện cho bạn trong thời gian bạn đã chọn'
-                        : 'Bạn sẽ nhận được email phản hồi từ chuyên gia của chúng tôi'}
+                      Bạn sẽ nhận được email phản hồi từ bác sĩ đã chọn
                     </p>
                     <p className="flex items-center gap-2 text-sm text-gray-600">
                       <span className="text-primary-500">✓</span>

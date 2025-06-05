@@ -1,6 +1,5 @@
 import React from 'react';
 import Hero from '../components/Hero';
-import SystemAccess from '../components/SystemAccess';
 import Benefits from '../components/Benefits';
 import Services from '../components/Services';
 import Testimonials from '../components/Testimonials';
@@ -17,9 +16,6 @@ const HomePage = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary-50/30 to-transparent"></div>
         <Benefits />
       </div>
-
-      {/* System Access Section - Truy cập hệ thống */}
-      <SystemAccess />
 
       {/* Services Section - Dịch vụ */}
       <div className="relative">

@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
+import { FaUserMd } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { images } from '../constants/images';
 import { useModal } from '../hooks/useModal';
 import Modal from '../components/Modal';
+import nguyenVanA from '../assets/images/nguyen-van-a.jpg';
+import tranThiB from '../assets/images/tran-thi-b.jpg';
+import leVanC from '../assets/images/le-van-c.jpg';
 
 const TestBooking = () => {
   const navigate = useNavigate();
@@ -23,11 +27,39 @@ const TestBooking = () => {
     doctorId: ''
   });
 
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<{date: string, slots: string[]}[]>([]);
+
+  // Mock data for doctor's available time slots
+  const mockAvailableSlots = {
+    '1': [
+      { date: '2024-03-20', slots: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00'] },
+      { date: '2024-03-21', slots: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00'] },
+      { date: '2024-03-22', slots: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00'] }
+    ],
+    '2': [
+      { date: '2024-03-20', slots: ['13:00', '14:00', '15:00', '16:00', '17:00'] },
+      { date: '2024-03-21', slots: ['13:00', '14:00', '15:00', '16:00', '17:00'] },
+      { date: '2024-03-22', slots: ['13:00', '14:00', '15:00', '16:00', '17:00'] }
+    ],
+    '3': [
+      { date: '2024-03-20', slots: ['08:00', '09:00', '10:00', '11:00', '14:00'] },
+      { date: '2024-03-21', slots: ['08:00', '09:00', '10:00', '11:00', '14:00'] },
+      { date: '2024-03-22', slots: ['08:00', '09:00', '10:00', '11:00', '14:00'] }
+    ]
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    // Update available time slots when doctor is selected
+    if (name === 'doctorId') {
+      setAvailableTimeSlots(mockAvailableSlots[value as keyof typeof mockAvailableSlots] || []);
+      setFormData(prev => ({ ...prev, preferredDate: '', preferredTime: '' })); // Reset selected date and time
+    }
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,27 +113,29 @@ const TestBooking = () => {
       name: 'BS. Nguyễn Văn A',
       specialization: 'Chuyên khoa HIV',
       experience: '15 năm kinh nghiệm',
-      avatar: 'https://i.pravatar.cc/150?img=1'
+      avatar: nguyenVanA
     },
     {
       id: '2',
       name: 'BS. Trần Thị B',
       specialization: 'Chuyên khoa HIV',
       experience: '12 năm kinh nghiệm',
-      avatar: 'https://i.pravatar.cc/150?img=2'
+      avatar: tranThiB
     },
     {
       id: '3',
       name: 'BS. Lê Văn C',
       specialization: 'Chuyên khoa HIV',
       experience: '10 năm kinh nghiệm',
-      avatar: 'https://i.pravatar.cc/150?img=3'
+      avatar: leVanC
     }
   ];
 
+  console.log('Doctor avatars:', doctors.map(d => ({ name: d.name, avatar: d.avatar })));
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 via-white to-primary-50 py-12 relative overflow-hidden">
-      {/* Background decorations */}
+      {/* Background decorations */}  
       <div className="absolute inset-0">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-100 rounded-full mix-blend-multiply blur-3xl opacity-50 animate-blob"></div>
         <div className="absolute -bottom-8 right-1/4 w-96 h-96 bg-secondary-100 rounded-full mix-blend-multiply blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
@@ -154,11 +188,11 @@ const TestBooking = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-4">
                     Chọn loại xét nghiệm <span className="text-red-500">*</span>
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-4">
                     {testTypes.map((type) => (
                       <label
                         key={type.id}
-                        className="relative group cursor-pointer"
+                        className="relative group cursor-pointer block"
                       >
                         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
                         <div className={`relative p-4 rounded-lg transition-all duration-300
@@ -174,8 +208,21 @@ const TestBooking = () => {
                             onChange={handleChange}
                             className="sr-only"
                           />
-                          <h3 className="font-semibold text-gray-900 mb-1">{type.label}</h3>
-                          <p className="text-sm text-gray-600">{type.description}</p>
+                          <div className="flex items-center gap-4">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center
+                              ${formData.testType === type.id 
+                                ? 'border-primary-500' 
+                                : 'border-gray-300'}`}
+                            >
+                              {formData.testType === type.id && (
+                                <div className="w-3 h-3 rounded-full bg-primary-500"></div>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900">{type.label}</h3>
+                              <p className="text-sm text-gray-600">{type.description}</p>
+                            </div>
+                          </div>
                         </div>
                       </label>
                     ))}
@@ -284,89 +331,85 @@ const TestBooking = () => {
                   </div>
                 </div>
 
-                {/* Test Time */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-up" style={{ animationDelay: '0.6s' }}>
-                  <div>
-                    <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Ngày xét nghiệm <span className="text-red-500">*</span>
+                {/* Doctor Selection */}
+                <div className="animate-fade-up" style={{ animationDelay: '0.6s' }}>
+                  <div className="flex justify-between items-center mb-4">
+                    <label htmlFor="doctorId" className="block text-sm font-medium text-gray-700">
+                      Chọn bác sĩ <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="date"
-                      id="preferredDate"
-                      name="preferredDate"
-                      value={formData.preferredDate}
-                      onChange={handleChange}
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-300"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="preferredTime" className="block text-sm font-medium text-gray-700 mb-1">
-                      Thời gian <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="preferredTime"
-                      name="preferredTime"
-                      value={formData.preferredTime}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-300"
+                    <button
+                      onClick={() => window.location.href = '/doctors'}
+                      className="flex items-center text-primary-600 hover:text-primary-700 transition-colors duration-300"
                     >
-                      <option value="">Chọn thời gian</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
-                    </select>
+                      <FaUserMd className="mr-2" />
+                      Xem thông tin bác sĩ
+                    </button>
                   </div>
+                  <select
+                    id="doctorId"
+                    name="doctorId"
+                    value={formData.doctorId}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-300"
+                  >
+                    <option value="">Chọn bác sĩ</option>
+                    {doctors.map((doctor) => (
+                      <option key={doctor.id} value={doctor.id}>
+                        {doctor.name} - {doctor.specialization}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Doctor Selection */}
+                {/* Test Time */}
                 <div className="animate-fade-up" style={{ animationDelay: '0.65s' }}>
                   <label className="block text-sm font-medium text-gray-700 mb-4">
-                    Chọn bác sĩ <span className="text-red-500">*</span>
+                    Thời gian xét nghiệm <span className="text-red-500">*</span>
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {doctors.map((doctor) => (
-                      <label
-                        key={doctor.id}
-                        className="relative group cursor-pointer"
-                      >
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
-                        <div className={`relative p-4 rounded-lg transition-all duration-300
-                          ${formData.doctorId === doctor.id 
-                            ? 'border-2 border-primary-500 bg-primary-50/50' 
-                            : 'border border-gray-200 hover:border-primary-200'}`}
-                        >
-                          <input
-                            type="radio"
-                            name="doctorId"
-                            value={doctor.id}
-                            checked={formData.doctorId === doctor.id}
-                            onChange={handleChange}
-                            className="sr-only"
-                          />
-                          <div className="flex flex-col items-center">
-                            <img
-                              src={doctor.avatar}
-                              alt={doctor.name}
-                              className="w-16 h-16 rounded-full mb-3 object-cover"
-                            />
-                            <h3 className="font-semibold text-gray-900 text-center mb-1">
-                              {doctor.name}
-                            </h3>
-                            <p className="text-sm text-primary-600 mb-1">
-                              {doctor.specialization}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {doctor.experience}
-                            </p>
+                  {formData.doctorId ? (
+                    <div className="space-y-4">
+                      {availableTimeSlots.map((daySlot) => (
+                        <div key={daySlot.date} className="border border-gray-200 rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-3">
+                            {new Date(daySlot.date).toLocaleDateString('vi-VN', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                            {daySlot.slots.map((time) => {
+                              const dateTime = `${daySlot.date}T${time}`;
+                              const isSelected = formData.preferredDate === daySlot.date && formData.preferredTime === time;
+                              return (
+                                <button
+                                  key={dateTime}
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ 
+                                    ...prev, 
+                                    preferredDate: daySlot.date,
+                                    preferredTime: time 
+                                  }))}
+                                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                                    isSelected
+                                      ? 'bg-primary-600 text-white'
+                                      : 'bg-gray-50 text-gray-700 hover:bg-primary-50 hover:text-primary-600'
+                                  }`}
+                                >
+                                  {time}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
-                      </label>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic">
+                      Vui lòng chọn bác sĩ để xem thời gian xét nghiệm
+                    </div>
+                  )}
                 </div>
 
                 {/* Additional Information */}

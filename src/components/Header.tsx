@@ -82,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ links, isAuthenticated, user, onLogout 
                       <p className="text-xs text-gray-500">{user?.email}</p>
                     </div>
                     <Link
-                      to="/profile"
+                      to={user?.role === 'doctor' ? "/doctor-profile" : "/profile"}
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600
                         transition-colors duration-200"
                       onClick={() => setShowUserMenu(false)}
