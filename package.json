@@ -1,0 +1,12 @@
+{
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "codeceptjs": "^3.7.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "codeceptjs run --steps"
+  }
+}
