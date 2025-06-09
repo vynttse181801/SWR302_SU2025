@@ -1,40 +1,40 @@
 package com.datetimechecker.model;
 
 public class DateRequest {
-    private int day;
-    private int month;
-    private int year;
+    private Integer day;
+    private Integer month;
+    private Integer year;
 
     public DateRequest() {
     }
 
-    public DateRequest(int day, int month, int year) {
+    public DateRequest(Integer day, Integer month, Integer year) {
         this.day = day;
         this.month = month;
         this.year = year;
     }
 
-    public int getDay() {
+    public Integer getDay() {
         return day;
     }
 
-    public void setDay(int day) {
+    public void setDay(Integer day) {
         this.day = day;
     }
 
-    public int getMonth() {
+    public Integer getMonth() {
         return month;
     }
 
-    public void setMonth(int month) {
+    public void setMonth(Integer month) {
         this.month = month;
     }
 
-    public int getYear() {
+    public Integer getYear() {
         return year;
     }
 
-    public void setYear(int year) {
+    public void setYear(Integer year) {
         this.year = year;
     }
 } 

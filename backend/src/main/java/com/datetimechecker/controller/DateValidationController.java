@@ -17,10 +17,20 @@ public class DateValidationController {
 
     @PostMapping("/validate")
     public Map<String, Object> validateDate(@RequestBody DateRequest request) {
-        DateValidationService.ValidationResult result = dateValidationService.validateDate(request.getDay(), request.getMonth(), request.getYear());
         Map<String, Object> response = new HashMap<>();
-        response.put("valid", result.isValid());
-        response.put("message", result.getMessage());
+        try {
+            if (request.getDay() == null || request.getMonth() == null || request.getYear() == null) {
+                response.put("valid", false);
+                response.put("message", "Invalid date");
+                return response;
+            }
+            DateValidationService.ValidationResult result = dateValidationService.validateDate(request.getDay(), request.getMonth(), request.getYear());
+            response.put("valid", result.isValid());
+            response.put("message", result.getMessage());
+        } catch (Exception e) {
+            response.put("valid", false);
+            response.put("message", "Invalid date");
+        }
         return response;
     }
 

@@ -80,4 +80,43 @@ Scenario('Edge case - December 31', async ({ I }) => {
   });
   assert.strictEqual(response.data.valid, true);
   assert.strictEqual(response.data.message, 'Valid date');
+});
+
+Scenario('Test with null values', async ({ I }) => {
+  const response = await I.sendPostRequest('/api/date/validate', {
+    day: null,
+    month: null,
+    year: null
+  });
+  assert.strictEqual(response.data.valid, false);
+  assert.strictEqual(response.data.message, 'Invalid date');
+});
+
+Scenario('Test with non-numeric values', async ({ I }) => {
+  const response = await I.sendPostRequest('/api/date/validate', {
+    day: 'abc',
+    month: 'xyz',
+    year: '2024'
+  });
+  assert.strictEqual(response.data.valid, false);
+  assert.strictEqual(response.data.message, 'Invalid date');
+});
+
+Scenario('Test with out of range values', async ({ I }) => {
+  const response = await I.sendPostRequest('/api/date/validate', {
+    day: 999,
+    month: 999,
+    year: 9999
+  });
+  assert.strictEqual(response.data.valid, false);
+  assert.strictEqual(response.data.message, 'Invalid date');
+});
+
+Scenario('Test with missing fields', async ({ I }) => {
+  const response = await I.sendPostRequest('/api/date/validate', {
+    day: 15,
+    month: 6
+  });
+  assert.strictEqual(response.data.valid, false);
+  assert.strictEqual(response.data.message, 'Invalid date');
 }); 
