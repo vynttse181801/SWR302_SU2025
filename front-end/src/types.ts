@@ -11,7 +11,7 @@ export type User = {
   name?: string;
   email: string;
   username: string;
-  role: 'PATIENT' | 'DOCTOR' | 'STAFF' | 'ADMIN';
+  role: Role;
   phone?: string;
   dateOfBirth?: string;
   gender?: 'male' | 'female' | 'other';
@@ -25,6 +25,12 @@ export type User = {
   };
   lastCheckup?: string;
   nextAppointment?: string;
+};
+
+export type Role = {
+  id: number;
+  roleName: 'PATIENT' | 'DOCTOR' | 'STAFF' | 'ADMIN';
+  description: string;
 };
 
 export type HeaderProps = {

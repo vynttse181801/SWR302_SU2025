@@ -4,6 +4,7 @@ import { User } from '../types';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (userData: User, token: string) => void;
   logout: () => void;
   updateUser: (userData: User) => Promise<void>;
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Check for stored user data on initial load
   useEffect(() => {
@@ -29,7 +31,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Clear invalid data if parsing fails
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('token');
+      } finally {
+        setIsLoading(false);
       }
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
@@ -62,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     user,
     isAuthenticated,
+    isLoading,
     login,
     logout,
     updateUser,

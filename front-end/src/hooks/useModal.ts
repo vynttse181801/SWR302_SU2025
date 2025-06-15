@@ -4,7 +4,7 @@ interface ModalState {
   isOpen: boolean;
   title: string;
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'info';
   buttonText?: string;
   onButtonClick?: () => void;
 }
@@ -22,7 +22,7 @@ export const useModal = () => {
   const showModal = useCallback((
     title: string,
     message: string,
-    type: 'success' | 'error' = 'success',
+    type: 'success' | 'error' | 'info' = 'success',
     buttonText?: string,
     onButtonClick?: () => void
   ) => {

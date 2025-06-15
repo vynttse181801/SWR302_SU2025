@@ -15,34 +15,50 @@ import TestBooking from './pages/TestBooking';
 import ProfilePage from './pages/profile/PatientProfile';
 import DoctorProfile from './pages/profile/DoctorProfile';
 import DoctorsPage from './pages/Doctors';
+import AdminPage from './pages/AdminPage';
 import { navLinks } from './constants';
 import { User } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 // Protected Route component
-const ProtectedRoute: React.FC<{ 
+const ProtectedRoute: React.FC<{
   children: React.ReactNode;
-}> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  
+  requiredRole?: User['role'];
+}> = ({ children, requiredRole }) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
+  if (requiredRole && (!user || user.role !== requiredRole)) {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 };
 
 function AppContent() {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const isAdminPage = location.pathname === '/admin';
 
   return (
     <div className="min-h-screen bg-white text-black">
-      <Header 
-        links={navLinks} 
-        isAuthenticated={!!user}
-        user={user}
-        onLogout={logout}
-      />
-      <main>
+      {!isAdminPage && (
+        <Header 
+          links={navLinks} 
+          isAuthenticated={!!user}
+          user={user}
+          onLogout={logout}
+        />
+      )}
+      <main className={isAdminPage ? "w-full min-h-screen" : ""}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/services" element={<ServiceDetails />} />
@@ -98,12 +114,20 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <AdminPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/doctors" element={<DoctorsPage />} />
           <Route path="/quen-mat-khau" element={<div>Quên mật khẩu</div>} />
           <Route path="/test-results" element={<TestResults />} />
         </Routes>
       </main>
-      <Footer />
+      {!isAdminPage && <Footer />}
     </div>
   );
 }

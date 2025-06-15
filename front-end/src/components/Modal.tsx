@@ -6,7 +6,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   message?: string;
-  type?: 'success' | 'error';
+  type?: 'success' | 'error' | 'info';
   buttonText?: string;
   onButtonClick?: () => void;
   children?: React.ReactNode;
@@ -51,12 +51,16 @@ const Modal: React.FC<ModalProps> = ({
               {/* Icon */}
               {type && (
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4
-                  ${type === 'success' ? 'bg-green-100' : 'bg-red-100'}`}
+                  ${type === 'success' ? 'bg-green-100' : type === 'error' ? 'bg-red-100' : 'bg-blue-100'}`}
                 >
                   {type === 'success' ? (
                     <CheckCircle className="w-8 h-8 text-green-500" />
-                  ) : (
+                  ) : type === 'error' ? (
                     <XCircle className="w-8 h-8 text-red-500" />
+                  ) : (
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      {/* Placeholder for info icon */}
+                    </div>
                   )}
                 </div>
               )}
@@ -64,7 +68,7 @@ const Modal: React.FC<ModalProps> = ({
               {/* Title */}
               {title && (
                 <h3 className={`text-xl font-semibold mb-2
-                  ${type === 'success' ? 'text-green-600' : 'text-red-600'}`}
+                  ${type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-blue-600'}`}
                 >
                   {title}
                 </h3>
@@ -83,7 +87,9 @@ const Modal: React.FC<ModalProps> = ({
                 className={`px-6 py-2 rounded-lg font-medium transition-colors
                   ${type === 'success' 
                     ? 'bg-green-500 hover:bg-green-600 text-white' 
-                    : 'bg-red-500 hover:bg-red-600 text-white'}`}
+                    : type === 'error' 
+                      ? 'bg-red-500 hover:bg-red-600 text-white' 
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
               >
                 {buttonText}
               </button>

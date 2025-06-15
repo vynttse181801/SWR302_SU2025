@@ -46,10 +46,10 @@ public class UserServiceImpl implements UserService {
         user.setPhoneNumber(userDTO.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
-        // Always assign PATIENT role for registration
-        Role defaultRole = roleRepository.findByRoleName("PATIENT")
-                .orElseThrow(() -> new RuntimeException("Default role 'PATIENT' not found in database."));
-        user.setRole(defaultRole);
+        // Find the Role entity from the database using roleName from DTO
+        Role assignedRole = roleRepository.findByRoleName(userDTO.getRole().getRoleName())
+                .orElseThrow(() -> new RuntimeException("Role not found: " + userDTO.getRole().getRoleName()));
+        user.setRole(assignedRole);
 
         User savedUser = userRepository.save(user);
         return convertToDTO(savedUser);
@@ -76,8 +76,10 @@ public class UserServiceImpl implements UserService {
             existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         }
         // Update role only if provided and different
-        if (userDTO.getRole() != null && !existingUser.getRole().equals(userDTO.getRole())) {
-            existingUser.setRole(userDTO.getRole());
+        if (userDTO.getRole() != null && !existingUser.getRole().getRoleName().equals(userDTO.getRole().getRoleName())) {
+            Role newRole = roleRepository.findByRoleName(userDTO.getRole().getRoleName())
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + userDTO.getRole().getRoleName()));
+            existingUser.setRole(newRole);
         }
 
         User updatedUser = userRepository.save(existingUser);
