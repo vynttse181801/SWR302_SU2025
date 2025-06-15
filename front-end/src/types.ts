@@ -6,7 +6,9 @@ export type Link = {
 
 export type User = {
   id: string;
-  name: string;
+  fullName?: string;
+  phoneNumber?: string;
+  name?: string;
   email: string;
   username: string;
   role: 'PATIENT' | 'DOCTOR' | 'STAFF' | 'ADMIN';

@@ -109,10 +109,8 @@ export const testService = {
 
 // ARV Protocol services
 export const arvProtocolService = {
-    getProtocols: async () => {
-        const response = await axios.get(`${API_BASE_URL}/arv-protocols`);
-        return response.data;
-    },
+    getProtocols: () => 
+        api.get('/arv-protocols'),
     getProtocolById: (id: number) => 
         api.get(`/arv-protocols/${id}`),
 };
@@ -126,55 +124,37 @@ export const medicalService = {
 };
 
 export const testResultService = {
-    getTestResults: async () => {
-        const response = await axios.get(`${API_BASE_URL}/lab-results`);
-        return response.data;
-    },
+    getTestResults: () => 
+        api.get('/lab-results'),
 };
 
 export const testBookingService = {
-    getTestTypes: async () => {
-        const response = await axios.get(`${API_BASE_URL}/lab-test-types`);
-        return response.data;
-    },
-    getTimeSlots: async (date: Date) => {
-        const response = await axios.get(`${API_BASE_URL}/time-slots`, {
+    getTestTypes: () => 
+        api.get('/lab-test-types'),
+    getTimeSlots: (date: Date) => 
+        api.get('/time-slots', {
             params: { date: date.toISOString() }
-        });
-        return response.data;
-    },
-    createBooking: async (bookingData: any) => {
-        const response = await axios.post(`${API_BASE_URL}/test-bookings`, bookingData);
-        return response.data;
-    }
+        }),
+    createBooking: (bookingData: any) => 
+        api.post('/test-bookings', bookingData)
 };
 
 export const consultationService = {
-    getDoctors: async () => {
-        const response = await axios.get(`${API_BASE_URL}/doctors`);
-        return response.data;
-    },
-    getTimeSlots: async (date: Date) => {
-        const response = await axios.get(`${API_BASE_URL}/consultation-time-slots`, {
+    getDoctors: () => 
+        api.get('/doctors'),
+    getTimeSlots: (date: Date) => 
+        api.get('/consultation-time-slots', {
             params: { date: date.toISOString() }
-        });
-        return response.data;
-    },
-    createConsultation: async (consultationData: any) => {
-        const response = await axios.post(`${API_BASE_URL}/consultations`, consultationData);
-        return response.data;
-    }
+        }),
+    createConsultation: (consultationData: any) => 
+        api.post('/consultations', consultationData)
 };
 
 export const serviceService = {
-    getServices: async () => {
-        const response = await axios.get(`${API_BASE_URL}/medical-services`);
-        return response.data;
-    },
-    getServiceById: async (id: number) => {
-        const response = await axios.get(`${API_BASE_URL}/medical-services/${id}`);
-        return response.data;
-    }
+    getServices: () => 
+        api.get('/medical-services'),
+    getServiceById: (id: number) => 
+        api.get(`/medical-services/${id}`)
 };
 
 export default api; 

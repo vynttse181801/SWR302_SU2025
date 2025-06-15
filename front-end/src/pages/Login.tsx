@@ -47,6 +47,9 @@ const LoginPage: React.FC = () => {
 
       authLogin(loggedInUser, accessToken);
 
+      sessionStorage.setItem('token', accessToken);
+      sessionStorage.setItem('user', JSON.stringify(loggedInUser));
+
       if (role === 'ROLE_ADMIN') {
         navigate('/admin');
       } else if (role === 'ROLE_DOCTOR') {

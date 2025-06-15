@@ -30,6 +30,8 @@ import { User as UserType } from '../../types';
 import { useModal } from '../../hooks/useModal';
 import Modal from '../../components/Modal';
 import { authService } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 
 type TabType = 'profile' | 'test-history' | 'consultation-history' | 'arv-protocol';
 
@@ -99,12 +101,22 @@ const ProfilePage: React.FC = () => {
 
   const [consultationHistory, setConsultationHistory] = useState<ServiceItem[]>([]);
 
+  const { user: authUser } = useAuth();
+
   // Handle navigation state
   useEffect(() => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab as TabType);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (authUser?.id) {
+      api.get(`/users/${authUser.id}`)
+        .then((res: { data: UserType }) => setUser((prev) => ({ ...prev, ...res.data })))
+        .catch((err: any) => console.error('Lỗi lấy thông tin user:', err));
+    }
+  }, [authUser?.id]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -510,8 +522,8 @@ const ProfilePage: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="text"
-                      name="name"
-                      value={user.name}
+                      name="fullName"
+                      value={user.fullName}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg
                         focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
@@ -521,7 +533,7 @@ const ProfilePage: React.FC = () => {
                   ) : (
                     <div className="flex items-center gap-2 text-gray-700">
                       <User size={16} className="text-primary-500" />
-                      <span className="font-medium">{user.name}</span>
+                      <span className="font-medium">{user.fullName}</span>
                     </div>
                   )}
                 </div>
@@ -555,9 +567,9 @@ const ProfilePage: React.FC = () => {
                   </label>
                   {isEditing ? (
                     <input
-                      type="tel"
-                      name="phone"
-                      value={user.phone}
+                      type="text"
+                      name="phoneNumber"
+                      value={user.phoneNumber}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg
                         focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
@@ -567,7 +579,7 @@ const ProfilePage: React.FC = () => {
                   ) : (
                     <div className="flex items-center gap-2 text-gray-700">
                       <Phone size={16} className="text-primary-500" />
-                      <span className="font-medium">{user.phone}</span>
+                      <span className="font-medium">{user.phoneNumber}</span>
                     </div>
                   )}
                 </div>
