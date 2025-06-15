@@ -1,0 +1,30 @@
+# Server Configuration
+server.port=8080
+
+# JWT Configuration
+app.jwt-secret=your-256-bit-secret-key-here-make-it-long-and-secure
+app.jwt-expiration-milliseconds=86400000
+
+# Database Configuration
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=hiv_system;encrypt=true;trustServerCertificate=true;createDatabaseIfNotExist=true
+spring.datasource.username=your_sql_server_username
+spring.datasource.password=your_sql_server_password
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServerDialect
+
+# Logging Configuration
+logging.level.org.springframework.security=DEBUG
+logging.level.com.swr302.hivsystem=DEBUG 
+
+# Email Configuration
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your_email@gmail.com
+spring.mail.password=your_app_specific_password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true 
