@@ -261,7 +261,7 @@ const ConsultationPage: React.FC = () => {
                   />
                 </div>
                 <div className="mt-4 text-sm text-gray-600">
-                  <p>Ngày đã chọn: {format(selectedDate, 'EEEE, dd/MM/yyyy', { locale: vi })}</p>
+                  <p>Ngày đã chọn: {format(selectedDate, 'EEEE, dd/MM/yyyy')}</p>
                 </div>
               </div>
 
