@@ -1,9 +1,9 @@
 package com.swr302.hivsystem.hivbackend.repository;
 
-import com.swr302.hivsystem.hivbackend.model.LabTestType;
+import com.swr302.hivsystem.hivbackend.model.LabBooking;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface LabTestTypeRepository extends JpaRepository<LabTestType, Long> {
+public interface LabBookingRepository extends JpaRepository<LabBooking, Long> {
 } 

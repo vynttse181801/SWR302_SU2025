@@ -54,7 +54,16 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/users/register", "/api/users/login").permitAll() // Allow public access to register and login
+                .requestMatchers(
+                    "/api/users/register",
+                    "/api/users/login",
+                    "/api/medical-services/**",
+                    "/api/doctors/**",
+                    "/api/labtesttypes/**",
+                    "/api/time-slots/**",
+                    "/api/consultation-time-slots/**",
+                    "/api/lab-tests/**"
+                ).permitAll() // Allow public access to specific endpoints
                 .anyRequest().authenticated() // All other requests require authentication
             )
             .formLogin(form -> form.disable())

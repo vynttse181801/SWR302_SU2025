@@ -53,7 +53,7 @@ const RegisterPage = () => {
         fullName,
         phoneNumber,
         password,
-        // role: {"id": 2, "roleName": "PATIENT"} // Default role for registration
+        role: { roleName: "ROLE_PATIENT" } // Default role for registration
       });
       
       if (response.status === 201) {

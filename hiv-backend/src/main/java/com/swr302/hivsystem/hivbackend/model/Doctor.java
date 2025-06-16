@@ -51,6 +51,10 @@ public class Doctor {
     private String specialty;
     private Integer maxAppointmentsPerDay;
     private String notes;
+    private Integer experience;
+    private Double rating;
+    @Column(name = "avatar_url")
+    private String avatar;
 
     @PrePersist
     protected void onCreate() {
@@ -197,5 +201,29 @@ public class Doctor {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Integer getExperience() {
+        return experience;
+    }
+
+    public void setExperience(Integer experience) {
+        this.experience = experience;
+    }
+
+    public Double getRating() {
+        return rating;
+    }
+
+    public void setRating(Double rating) {
+        this.rating = rating;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 } 

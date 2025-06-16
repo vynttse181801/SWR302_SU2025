@@ -22,7 +22,7 @@ const services: Service[] = [
     image: images.doctorTeam,
     icon: <Calendar className="w-6 h-6" />,
     features: ["Linh hoạt thời gian", "Bác sĩ chuyên khoa", "Nhắc nhở tự động"],
-    link: "/test-booking",
+    link: "/test-bookings",
     gradient: "from-primary-400 to-secondary-400"
   },
   {
@@ -32,7 +32,7 @@ const services: Service[] = [
     image: images.laboratory,
     icon: <Microscope className="w-6 h-6" />,
     features: ["Kết quả nhanh chóng", "Bảo mật thông tin", "Tư vấn sau xét nghiệm"],
-    link: "/test-booking",
+    link: "/test-bookings",
     gradient: "from-secondary-400 to-accent-400"
   },
   {

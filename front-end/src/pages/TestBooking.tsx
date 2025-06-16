@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { testBookingService } from '../services/api';
+import { testService } from '../services/api';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Calendar } from 'react-calendar';
@@ -14,14 +14,7 @@ import Modal from '../components/Modal';
 import nguyenVanA from '../assets/images/nguyen-van-a.jpg';
 import tranThiB from '../assets/images/tran-thi-b.jpg';
 import leVanC from '../assets/images/le-van-c.jpg';
-
-interface TestType {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  duration: number;
-}
+import { LabTestType } from '../types';
 
 interface TimeSlot {
   id: number;
@@ -39,7 +32,7 @@ interface BookingForm {
 const TestBooking = () => {
   const navigate = useNavigate();
   const { modalState, showModal, hideModal } = useModal();
-  const [testTypes, setTestTypes] = useState<TestType[]>([]);
+  const [testTypes, setTestTypes] = useState<LabTestType[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [formData, setFormData] = useState<BookingForm>({
@@ -55,8 +48,8 @@ const TestBooking = () => {
   useEffect(() => {
     const fetchTestTypes = async () => {
       try {
-        const types = await testBookingService.getTestTypes();
-        setTestTypes(types);
+        const response = await testService.getTestTypes();
+        setTestTypes(response.data);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Không thể tải danh sách xét nghiệm');
       } finally {
@@ -66,21 +59,6 @@ const TestBooking = () => {
 
     fetchTestTypes();
   }, []);
-
-  useEffect(() => {
-    const fetchTimeSlots = async () => {
-      try {
-        const slots = await testBookingService.getTimeSlots(selectedDate);
-        setTimeSlots(slots);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Không thể tải khung giờ');
-      }
-    };
-
-    if (selectedDate) {
-      fetchTimeSlots();
-    }
-  }, [selectedDate]);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
@@ -93,7 +71,11 @@ const TestBooking = () => {
     setSuccess(null);
 
     try {
-      await testBookingService.createBooking(formData);
+      await testService.bookTest({
+        ...formData,
+        patientId: 1,
+        status: 'pending'
+      });
       setSuccess('Đặt lịch xét nghiệm thành công!');
       setFormData({
         testTypeId: 0,
@@ -101,20 +83,21 @@ const TestBooking = () => {
         timeSlotId: 0,
         notes: '',
       });
+      navigate('/test-bookings');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.');
     }
   };
 
-  const testTypesData = [
-    { id: 'regular', label: 'Xét nghiệm định kỳ', description: 'Kiểm tra sức khỏe định kỳ' },
-    { id: 'quick', label: 'Xét nghiệm nhanh', description: 'Kết quả trong 20-30 phút' },
-    { id: 'confidential', label: 'Xét nghiệm kín', description: 'Bảo mật thông tin tuyệt đối' }
-  ];
-
-  const timeSlotsData = [
-    '08:00', '09:00', '10:00', '11:00',
-    '14:00', '15:00', '16:00', '17:00'
+  const hardcodedTimeSlots: TimeSlot[] = [
+    { id: 1, time: '08:00', isAvailable: true },
+    { id: 2, time: '09:00', isAvailable: true },
+    { id: 3, time: '10:00', isAvailable: true },
+    { id: 4, time: '11:00', isAvailable: true },
+    { id: 5, time: '14:00', isAvailable: true },
+    { id: 6, time: '15:00', isAvailable: true },
+    { id: 7, time: '16:00', isAvailable: true },
+    { id: 8, time: '17:00', isAvailable: true },
   ];
 
   const doctors = [
@@ -190,7 +173,7 @@ const TestBooking = () => {
                     <h3 className="font-medium text-gray-900">{type.name}</h3>
                     <p className="text-sm text-gray-500 mt-1">{type.description}</p>
                     <p className="text-sm text-gray-900 mt-2">
-                      Thời gian: {type.duration} phút
+                      Thời gian: {type.durationMinutes} phút
                     </p>
                     <p className="text-sm font-medium text-primary-600 mt-1">
                       {type.price.toLocaleString('vi-VN')} VNĐ
@@ -215,7 +198,7 @@ const TestBooking = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn giờ</h2>
                 <div className="grid grid-cols-3 gap-4">
-                  {timeSlots.map((slot) => (
+                  {hardcodedTimeSlots.map((slot) => (
                     <button
                       key={slot.id}
                       disabled={!slot.isAvailable}
@@ -248,29 +231,22 @@ const TestBooking = () => {
               <button
                 onClick={handleSubmit}
                 disabled={!formData.testTypeId || !formData.timeSlotId}
-                className={`w-full py-3 px-4 rounded-lg text-white font-medium ${
-                  !formData.testTypeId || !formData.timeSlotId
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-primary-600 hover:bg-primary-700'
-                }`}
+                className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               >
-                Đặt lịch
+                Đặt lịch xét nghiệm
               </button>
             </div>
           </div>
+
+          <Modal
+            isOpen={modalState.isOpen}
+            onClose={hideModal}
+            title={modalState.title}
+            content={modalState.content}
+            image={modalState.image}
+          />
         </motion.div>
       </div>
-
-      {/* Add Modal component */}
-      <Modal
-        isOpen={modalState.isOpen}
-        onClose={hideModal}
-        title={modalState.title}
-        message={modalState.message}
-        type={modalState.type}
-        buttonText={modalState.buttonText}
-        onButtonClick={modalState.onButtonClick}
-      />
     </div>
   );
 };

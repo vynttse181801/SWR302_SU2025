@@ -9,7 +9,7 @@ export const navLinks = [
   },
   {
     title: 'Đặt lịch khám',
-    path: '/test-booking',
+    path: '/test-bookings',
   },
   {
     title: 'Tư vấn',

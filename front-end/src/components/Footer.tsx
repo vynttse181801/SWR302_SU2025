@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4 text-primary-200">Dịch vụ</h3>
             <ul className="space-y-2">
-              <li><Link to="/test-booking" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">Đặt lịch khám</Link></li>
+              <li><Link to="/test-bookings" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">Đặt lịch khám</Link></li>
               <li><Link to="/profile" state={{ activeTab: 'test-history' }} className="text-gray-300 hover:text-primary-400 transition-colors text-sm">Kết quả xét nghiệm</Link></li>
               <li><Link to="/profile" state={{ activeTab: 'arv-protocol' }} className="text-gray-300 hover:text-primary-400 transition-colors text-sm">Quản lý thuốc ARV</Link></li>
               <li><Link to="/consultation" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">Tư vấn trực tuyến</Link></li>

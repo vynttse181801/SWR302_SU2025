@@ -20,8 +20,8 @@ const ServicesPage: React.FC = () => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const data = await serviceService.getServices();
-        setServices(data);
+        const response = await serviceService.getServices();
+        setServices(response.data);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Không thể tải danh sách dịch vụ');
       } finally {
@@ -122,7 +122,7 @@ const ServicesPage: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => window.location.href = '/test-booking'}
+                    onClick={() => window.location.href = '/test-bookings'}
                     className="mt-6 w-full py-2 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                   >
                     Đặt lịch ngay

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { format } from 'date-fns';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -100,7 +101,7 @@ export const patientService = {
 // Test services
 export const testService = {
     getTestTypes: () => 
-        api.get('/lab-test-types'),
+        api.get('/labtesttypes'),
     bookTest: (testData: any) => 
         api.post('/lab-tests', testData),
     getTestResults: () => 
@@ -130,7 +131,7 @@ export const testResultService = {
 
 export const testBookingService = {
     getTestTypes: () => 
-        api.get('/lab-test-types'),
+        api.get('/labtesttypes'),
     getTimeSlots: (date: Date) => 
         api.get('/time-slots', {
             params: { date: date.toISOString() }
@@ -142,12 +143,12 @@ export const testBookingService = {
 export const consultationService = {
     getDoctors: () => 
         api.get('/doctors'),
-    getTimeSlots: (date: Date) => 
+    getTimeSlots: (doctorId: number, date: Date) => 
         api.get('/consultation-time-slots', {
-            params: { date: date.toISOString() }
+            params: { doctorId: doctorId, date: format(date, 'yyyy-MM-dd') }
         }),
     createConsultation: (consultationData: any) => 
-        api.post('/consultations', consultationData)
+        api.post('/online-consultations', consultationData) // Changed endpoint
 };
 
 export const serviceService = {

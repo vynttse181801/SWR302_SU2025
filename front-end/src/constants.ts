@@ -8,26 +8,17 @@ export const navLinks: Link[] = [
   },
   {
     id: 2,
-    text: 'Dịch vụ',
-    url: '/services'
-  },  {
-    id: 3,
-    text: 'Đặt lịch khám & xét nghiệm',
-    url: '/test-booking'
+    text: 'Đặt lịch xét nghiệm',
+    url: '/test-bookings'
   },
   {
-    id: 4,
+    id: 3,
     text: 'Đặt lịch tư vấn',
     url: '/consultation'
   },
   {
-    id: 5,
+    id: 4,
     text: 'Phác đồ ARV',
     url: '/arv-protocol'
-  },
-  {
-    id: 6,
-    text: 'Liên hệ',
-    url: '/contact'
   }
 ];

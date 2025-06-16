@@ -50,7 +50,7 @@ const Hero: React.FC = () => {
 
             <div className="flex flex-wrap gap-4 mb-12">
               <Link 
-                to="/test-booking" 
+                to="/test-bookings" 
                 className="inline-flex items-center px-8 py-3 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold
                   hover:from-primary-600 hover:to-secondary-600 transform hover:scale-105 transition-all duration-300
                   shadow-lg hover:shadow-primary-500/25"

@@ -38,11 +38,15 @@ const LoginPage: React.FC = () => {
       const { accessToken, username, email, fullName, role, id } = response;
 
       const loggedInUser: User = {
-        id: id.toString(),
-        name: fullName,
+        id: id,
+        fullName: fullName,
         email: email,
         username: username,
-        role: role as User['role'],
+        role: {
+          id: 0,
+          roleName: role,
+          description: '',
+        },
       };
 
       authLogin(loggedInUser, accessToken);

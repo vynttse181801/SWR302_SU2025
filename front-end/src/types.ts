@@ -5,7 +5,7 @@ export type Link = {
 };
 
 export type User = {
-  id: string;
+  id: number;
   fullName?: string;
   phoneNumber?: string;
   name?: string;
@@ -47,4 +47,14 @@ export type LoginPageProps = {
 export type IconProps = {
   size?: number;
   className?: string;
+};
+
+export type LabTestType = {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  durationMinutes: number;
+  createdAt: string;
+  updatedAt: string;
 };

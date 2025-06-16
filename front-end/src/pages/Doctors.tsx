@@ -3,21 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaSearch, FaFilter, FaCalendarAlt, FaClock, FaUserMd, FaGraduationCap, FaAward } from 'react-icons/fa';
 import { doctorService } from '../services/api';
 import { images } from '../constants/images';
+import { User } from '../types';
 
 interface Doctor {
   id: number;
-  fullName: string;
-  specialization: string;
-  experience: string;
-  avatar: string;
-  education: string[];
-  achievements: string[];
-  description: string;
-  availableDays: string[];
-  availableTimeSlots: {
-    date: string;
-    slots: string[];
-  }[];
+  user: User;
+  specialty: string;
+  maxAppointmentsPerDay: number;
+  notes: string;
 }
 
 const DoctorsPage: React.FC = () => {
@@ -46,12 +39,12 @@ const DoctorsPage: React.FC = () => {
     fetchDoctors();
   }, []);
 
-  const specialties = Array.from(new Set(doctors.map(doctor => doctor.specialization)));
+  const specialties = Array.from(new Set(doctors.map(doctor => doctor.specialty)));
 
   const filteredDoctors = doctors.filter(doctor => {
-    const matchesSearch = doctor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecialty = !selectedSpecialty || doctor.specialization === selectedSpecialty;
+    const matchesSearch = (doctor.user?.fullName || doctor.user?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSpecialty = !selectedSpecialty || doctor.specialty === selectedSpecialty;
     return matchesSearch && matchesSpecialty;
   });
 
@@ -147,8 +140,8 @@ const DoctorsPage: React.FC = () => {
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <img
-                  src={doctor.avatar || images.doctorTeam}
-                  alt={doctor.fullName}
+                  src={doctor.user.avatar || images.doctorTeam}
+                  alt={doctor.user.fullName || doctor.user.username}
                   className="w-full h-64 object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -156,16 +149,16 @@ const DoctorsPage: React.FC = () => {
                   }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <h3 className="text-2xl font-bold mb-2">{doctor.fullName}</h3>
-                  <p className="text-white/90">{doctor.specialization}</p>
+                  <h3 className="text-2xl font-bold mb-2">{doctor.user?.fullName || doctor.user?.username}</h3>
+                  <p className="text-white/90">{doctor.specialty}</p>
                 </div>
               </div>
               <div className="p-6">
                 <div className="flex items-center text-gray-600 mb-4">
                   <FaUserMd className="mr-2" />
-                  <span>{doctor.experience}</span>
+                  <span>Chưa có thông tin kinh nghiệm</span>
                 </div>
-                <p className="text-gray-600 mb-6 line-clamp-3">{doctor.description}</p>
+                <p className="text-gray-600 mb-6 line-clamp-3">{doctor.notes || 'Chưa có mô tả.'}</p>
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
@@ -173,9 +166,7 @@ const DoctorsPage: React.FC = () => {
                       Học vấn
                     </h4>
                     <ul className="list-disc list-inside text-gray-600 space-y-1">
-                      {doctor.education.map((edu, index) => (
-                        <li key={index} className="text-sm">{edu}</li>
-                      ))}
+                      <li className="text-sm">Chưa có thông tin học vấn</li>
                     </ul>
                   </div>
                   <div>
@@ -184,9 +175,7 @@ const DoctorsPage: React.FC = () => {
                       Thành tựu
                     </h4>
                     <ul className="list-disc list-inside text-gray-600 space-y-1">
-                      {doctor.achievements.map((achievement, index) => (
-                        <li key={index} className="text-sm">{achievement}</li>
-                      ))}
+                      <li className="text-sm">Chưa có thông tin thành tựu</li>
                     </ul>
                   </div>
                   <div>
@@ -195,17 +184,18 @@ const DoctorsPage: React.FC = () => {
                       Lịch làm việc
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {doctor.availableDays.map((day) => (
-                        <span
-                          key={day}
-                          className="px-3 py-1 bg-primary-50 text-primary-600 rounded-full text-sm"
-                        >
-                          {day}
-                        </span>
-                      ))}
+                      <span className="px-3 py-1 bg-gray-200 rounded-full text-sm text-gray-700">Chưa có lịch làm việc</span>
                     </div>
                   </div>
                 </div>
+              </div>
+              <div className="p-6 border-t border-gray-200 text-center">
+                <button
+                  onClick={() => setSelectedDoctor(doctor)}
+                  className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+                >
+                  Xem chi tiết & Đặt lịch
+                </button>
               </div>
             </motion.div>
           ))}
@@ -215,92 +205,85 @@ const DoctorsPage: React.FC = () => {
       {/* Doctor Detail Modal */}
       <AnimatePresence>
         {selectedDoctor && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             >
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedDoctor.fullName}</h2>
+              <button
+                onClick={() => setSelectedDoctor(null)}
+                className="absolute top-4 right-4 text-gray-600 hover:text-gray-900 z-10"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+              <div className="p-6 md:p-8">
+                <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 mb-6">
+                  <img
+                    src={selectedDoctor.user?.avatar || images.doctorTeam}
+                    alt={selectedDoctor.user?.fullName || selectedDoctor.user?.username}
+                    className="w-32 h-32 rounded-full object-cover border-4 border-primary-100 shadow-md"
+                  />
+                  <div className="text-center md:text-left">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-1">{selectedDoctor.user?.fullName || selectedDoctor.user?.username}</h2>
+                    <p className="text-primary-600 text-lg font-semibold mb-2">{selectedDoctor.specialty}</p>
+                    <div className="flex items-center text-gray-600 text-sm">
+                      <FaUserMd className="mr-2" />
+                      <span>Chưa có thông tin kinh nghiệm</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 mb-6">{selectedDoctor.notes || 'Chưa có mô tả.'}</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3 flex items-center">
+                      <FaGraduationCap className="mr-2 text-primary-600" />
+                      Học vấn & Bằng cấp
+                    </h3>
+                    <ul className="list-disc list-inside text-gray-700 space-y-2">
+                      <li>Chưa có thông tin học vấn</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3 flex items-center">
+                      <FaAward className="mr-2 text-primary-600" />
+                      Thành tựu & Giải thưởng
+                    </h3>
+                    <ul className="list-disc list-inside text-gray-700 space-y-2">
+                      <li>Chưa có thông tin thành tựu</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 flex items-center">
+                    <FaCalendarAlt className="mr-2 text-primary-600" />
+                    Lịch làm việc
+                  </h3>
+                  <div className="space-y-4">
+                    <p className="text-gray-600">Không có lịch làm việc.</p>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex justify-center">
                   <button
                     onClick={() => setSelectedDoctor(null)}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="px-8 py-3 bg-gray-300 text-gray-800 rounded-lg font-medium hover:bg-gray-400 transition-colors"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    Đóng
                   </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <img
-                      src={selectedDoctor.avatar || images.doctorTeam}
-                      alt={selectedDoctor.fullName}
-                      className="w-full h-64 object-cover rounded-lg"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = images.doctorTeam;
-                      }}
-                    />
-                    <div className="mt-4">
-                      <h3 className="font-semibold text-gray-900 mb-2">Thông tin chuyên môn</h3>
-                      <p className="text-gray-600">{selectedDoctor.description}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-2">Học vấn</h3>
-                        <ul className="list-disc list-inside text-gray-600 space-y-1">
-                          {selectedDoctor.education.map((edu, index) => (
-                            <li key={index}>{edu}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-2">Thành tựu</h3>
-                        <ul className="list-disc list-inside text-gray-600 space-y-1">
-                          {selectedDoctor.achievements.map((achievement, index) => (
-                            <li key={index}>{achievement}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-2">Lịch làm việc</h3>
-                        <div className="space-y-4">
-                          {selectedDoctor.availableTimeSlots.map((daySlot) => (
-                            <div key={daySlot.date} className="border border-gray-200 rounded-lg p-4">
-                              <h4 className="font-medium text-gray-900 mb-2">
-                                {new Date(daySlot.date).toLocaleDateString('vi-VN', {
-                                  weekday: 'long',
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
-                              </h4>
-                              <div className="grid grid-cols-3 gap-2">
-                                {daySlot.slots.map((time) => (
-                                  <span
-                                    key={time}
-                                    className="px-3 py-1 bg-primary-50 text-primary-600 rounded-full text-sm text-center"
-                                  >
-                                    {time}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 public class DoctorDTO {
     private Long id;
     private String doctorCode;
-    private String fullName;
+    private String name;
     private String specialization;
     private String qualification;
     private String licenseNumber;
@@ -17,6 +17,9 @@ public class DoctorDTO {
     private DoctorStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer experience;
+    private Double rating;
+    private String avatar;
 
     public Long getId() {
         return id;
@@ -34,12 +37,12 @@ public class DoctorDTO {
         this.doctorCode = doctorCode;
     }
 
-    public String getFullName() {
-        return fullName;
+    public String getName() {
+        return name;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getSpecialization() {
@@ -120,5 +123,29 @@ public class DoctorDTO {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Integer getExperience() {
+        return experience;
+    }
+
+    public void setExperience(Integer experience) {
+        this.experience = experience;
+    }
+
+    public Double getRating() {
+        return rating;
+    }
+
+    public void setRating(Double rating) {
+        this.rating = rating;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 } 

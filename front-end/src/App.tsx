@@ -17,14 +17,19 @@ import DoctorProfile from './pages/profile/DoctorProfile';
 import DoctorsPage from './pages/Doctors';
 import AdminPage from './pages/AdminPage';
 import { navLinks } from './constants';
-import { User } from './types';
+import { User, Role } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
+import DoctorManagementPage from './pages/DoctorPage';
+import DoctorSchedulePage from './pages/DoctorSchedulePage';
+import AppointmentBooking from './pages/AppointmentBooking';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
-  requiredRole?: User['role'];
+  requiredRole?: Role['roleName'] | Role['roleName'][];
 }> = ({ children, requiredRole }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
 
@@ -36,8 +41,13 @@ const ProtectedRoute: React.FC<{
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && (!user || user.role !== requiredRole)) {
-    return <Navigate to="/" replace />;
+  if (requiredRole) {
+    const userRoleName = user?.role?.roleName;
+    const rolesArray = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+
+    if (!userRoleName || !rolesArray.includes(userRoleName)) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -46,7 +56,7 @@ const ProtectedRoute: React.FC<{
 function AppContent() {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const isAdminPage = location.pathname === '/admin';
+  const isAdminPage = location.pathname === '/admin' || location.pathname === '/doctor-schedules-management';
 
   return (
     <div className="min-h-screen bg-white text-black">
@@ -107,7 +117,7 @@ function AppContent() {
             } 
           />
           <Route 
-            path="/test-booking" 
+            path="/test-bookings" 
             element={
               <ProtectedRoute>
                 <TestBooking />
@@ -122,12 +132,30 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/doctors-management"
+            element={
+              <ProtectedRoute requiredRole={['ADMIN', 'DOCTOR']}>
+                <DoctorManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor-schedules-management"
+            element={
+              <ProtectedRoute requiredRole={['ADMIN', 'DOCTOR']}>
+                <DoctorSchedulePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/doctors" element={<DoctorsPage />} />
           <Route path="/quen-mat-khau" element={<div>Quên mật khẩu</div>} />
           <Route path="/test-results" element={<TestResults />} />
+          <Route path="/book-appointment" element={<AppointmentBooking />} />
         </Routes>
       </main>
       {!isAdminPage && <Footer />}
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

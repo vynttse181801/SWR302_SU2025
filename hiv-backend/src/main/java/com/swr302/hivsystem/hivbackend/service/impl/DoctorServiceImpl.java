@@ -108,7 +108,7 @@ public class DoctorServiceImpl implements DoctorService {
 
     private void updateDoctorFromDTO(Doctor doctor, DoctorDTO dto) {
         doctor.setDoctorCode(dto.getDoctorCode());
-        doctor.setFullName(dto.getFullName());
+        doctor.setFullName(dto.getName());
         doctor.setSpecialization(dto.getSpecialization());
         doctor.setQualification(dto.getQualification());
         doctor.setLicenseNumber(dto.getLicenseNumber());
@@ -117,13 +117,16 @@ public class DoctorServiceImpl implements DoctorService {
         doctor.setAddress(dto.getAddress());
         doctor.setBio(dto.getBio());
         doctor.setStatus(dto.getStatus());
+        doctor.setExperience(dto.getExperience());
+        doctor.setRating(dto.getRating());
+        doctor.setAvatar(dto.getAvatar());
     }
 
     private DoctorDTO convertToDTO(Doctor doctor) {
         DoctorDTO dto = new DoctorDTO();
         dto.setId(doctor.getId());
         dto.setDoctorCode(doctor.getDoctorCode());
-        dto.setFullName(doctor.getFullName());
+        dto.setName(doctor.getFullName());
         dto.setSpecialization(doctor.getSpecialization());
         dto.setQualification(doctor.getQualification());
         dto.setLicenseNumber(doctor.getLicenseNumber());
@@ -134,6 +137,9 @@ public class DoctorServiceImpl implements DoctorService {
         dto.setStatus(doctor.getStatus());
         dto.setCreatedAt(doctor.getCreatedAt());
         dto.setUpdatedAt(doctor.getUpdatedAt());
+        dto.setExperience(doctor.getExperience());
+        dto.setRating(doctor.getRating());
+        dto.setAvatar(doctor.getAvatar());
         return dto;
     }
 } 

@@ -10,11 +10,17 @@ public class LabTestType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Lob
+    @Column(length = 500)
     private String description;
+
+    @Column(nullable = false)
+    private Double price;
+
+    @Column(name = "duration_minutes", nullable = false)
+    private Integer durationMinutes;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -46,6 +52,22 @@ public class LabTestType {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
+    public Integer getDurationMinutes() {
+        return durationMinutes;
+    }
+
+    public void setDurationMinutes(Integer durationMinutes) {
+        this.durationMinutes = durationMinutes;
     }
 
     public LocalDateTime getCreatedAt() {

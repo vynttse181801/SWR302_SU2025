@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { consultationService } from '../services/api';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Calendar } from 'react-calendar';
 import type { Value } from 'react-calendar/dist/cjs/shared/types';
@@ -20,13 +20,14 @@ interface Doctor {
   avatar: string;
   rating: number;
   experience: number;
-  description: string;
+  bio: string;
 }
 
 interface TimeSlot {
   id: number;
-  time: string;
-  isAvailable: boolean;
+  isBooked: boolean;
+  startTime?: string;
+  endTime?: string;
 }
 
 interface ConsultationForm {
@@ -57,8 +58,9 @@ const ConsultationPage: React.FC = () => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const data = await consultationService.getDoctors();
-        setDoctors(data);
+        const response = await consultationService.getDoctors();
+        console.log('Doctors API response:', response.data);
+        setDoctors(response.data);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Không thể tải danh sách bác sĩ');
       } finally {
@@ -72,8 +74,11 @@ const ConsultationPage: React.FC = () => {
   useEffect(() => {
     const fetchTimeSlots = async () => {
       try {
-        const slots = await consultationService.getTimeSlots(selectedDate);
-        setTimeSlots(slots);
+        if (formData.doctorId && selectedDate) {
+          const response = await consultationService.getTimeSlots(formData.doctorId, selectedDate);
+          console.log('Time Slots API response:', response.data);
+          setTimeSlots(response.data);
+        }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Không thể tải khung giờ');
       }
@@ -169,10 +174,10 @@ const ConsultationPage: React.FC = () => {
                             {doctor.experience} năm kinh nghiệm
                           </span>
                           <span className="text-sm text-yellow-500">
-                            ★ {doctor.rating.toFixed(1)}
+                            ★ {doctor.rating != null ? doctor.rating.toFixed(1) : 'N/A'}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-2">{doctor.description}</p>
+                        <p className="text-sm text-gray-600 mt-2">{doctor.bio}</p>
                       </div>
                     </div>
                   </div>
@@ -198,17 +203,17 @@ const ConsultationPage: React.FC = () => {
                   {timeSlots.map((slot) => (
                     <button
                       key={slot.id}
-                      disabled={!slot.isAvailable}
+                      disabled={slot.isBooked}
                       onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
                       className={`p-3 text-center rounded-lg transition-colors ${
-                        !slot.isAvailable
+                        slot.isBooked
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : formData.timeSlotId === slot.id
                           ? 'bg-primary-500 text-white'
                           : 'bg-gray-50 text-gray-900 hover:bg-gray-100'
                       }`}
                     >
-                      {slot.time}
+                      {slot.startTime && slot.endTime ? `${format(parseISO(slot.startTime), 'HH:mm')} - ${format(parseISO(slot.endTime), 'HH:mm')}` : 'Invalid Time'}
                     </button>
                   ))}
                 </div>
