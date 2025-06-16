@@ -6,12 +6,9 @@ import { parseISO } from 'date-fns/parseISO';
 import { vi } from 'date-fns/locale';
 import { Calendar } from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import { Mail, Phone, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { images } from '../constants/images';
 import { useModal } from '../hooks/useModal';
 import Modal from '../components/Modal';
-import { FaUserMd } from 'react-icons/fa';
 
 interface Doctor {
   id: number;
@@ -25,9 +22,8 @@ interface Doctor {
 
 interface TimeSlot {
   id: number;
-  isBooked: boolean;
-  startTime?: string;
-  endTime?: string;
+  time: string;
+  isAvailable: boolean;
 }
 
 interface ConsultationForm {
@@ -41,8 +37,45 @@ interface ConsultationForm {
 const ConsultationPage: React.FC = () => {
   const navigate = useNavigate();
   const { modalState, showModal, hideModal } = useModal();
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([
+    {
+      id: 1,
+      name: 'BS. Nguyễn Văn A',
+      specialization: 'Chuyên khoa HIV',
+      avatar: 'https://i.pravatar.cc/150?img=1',
+      rating: 4.8,
+      experience: 15,
+      bio: 'Bác sĩ chuyên khoa HIV với 15 năm kinh nghiệm'
+    },
+    {
+      id: 2,
+      name: 'BS. Trần Thị B',
+      specialization: 'Chuyên khoa HIV',
+      avatar: 'https://i.pravatar.cc/150?img=2',
+      rating: 4.9,
+      experience: 12,
+      bio: 'Bác sĩ chuyên khoa HIV với 12 năm kinh nghiệm'
+    },
+    {
+      id: 3,
+      name: 'BS. Lê Văn C',
+      specialization: 'Chuyên khoa HIV',
+      avatar: 'https://i.pravatar.cc/150?img=3',
+      rating: 4.7,
+      experience: 10,
+      bio: 'Bác sĩ chuyên khoa HIV với 10 năm kinh nghiệm'
+    }
+  ]);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
+    { id: 1, time: '08:00', isAvailable: true },
+    { id: 2, time: '09:00', isAvailable: true },
+    { id: 3, time: '10:00', isAvailable: false },
+    { id: 4, time: '11:00', isAvailable: true },
+    { id: 5, time: '14:00', isAvailable: true },
+    { id: 6, time: '15:00', isAvailable: false },
+    { id: 7, time: '16:00', isAvailable: true },
+    { id: 8, time: '17:00', isAvailable: true }
+  ]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [formData, setFormData] = useState<ConsultationForm>({
     doctorId: 0,
@@ -51,7 +84,7 @@ const ConsultationPage: React.FC = () => {
     symptoms: '',
     notes: '',
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -102,7 +135,8 @@ const ConsultationPage: React.FC = () => {
     setSuccess(null);
 
     try {
-      await consultationService.createConsultation(formData);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setSuccess('Đặt lịch tư vấn thành công!');
       setFormData({
         doctorId: 0,
@@ -111,6 +145,7 @@ const ConsultationPage: React.FC = () => {
         symptoms: '',
         notes: '',
       });
+      navigate('/consultations');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.');
     }
@@ -146,117 +181,149 @@ const ConsultationPage: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8">
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn bác sĩ</h2>
-              <div className="space-y-4">
-                {doctors.map((doctor) => (
-                  <div
-                    key={doctor.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      formData.doctorId === doctor.id
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-primary-300'
-                    }`}
-                    onClick={() => setFormData(prev => ({ ...prev, doctorId: doctor.id }))}
-                  >
-                    <div className="flex items-start gap-4">
-                      <img
-                        src={doctor.avatar}
-                        alt={doctor.name}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{doctor.name}</h3>
-                        <p className="text-sm text-gray-500">{doctor.specialization}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-sm text-gray-500">
-                            {doctor.experience} năm kinh nghiệm
-                          </span>
-                          <span className="text-sm text-yellow-500">
-                            ★ {doctor.rating != null ? doctor.rating.toFixed(1) : 'N/A'}
-                          </span>
+              <div className="relative">
+                <select
+                  value={formData.doctorId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, doctorId: parseInt(e.target.value) }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
+                >
+                  <option value="">Chọn bác sĩ</option>
+                  {doctors.map((doctor) => (
+                    <option key={doctor.id} value={doctor.id}>
+                      {doctor.name} - {doctor.specialization}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+
+              {formData.doctorId && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  {doctors.find(d => d.id === formData.doctorId) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src={doctors.find(d => d.id === formData.doctorId)?.avatar} 
+                          alt="Doctor" 
+                          className="w-20 h-20 rounded-full object-cover"
+                        />
+                        <div>
+                          <h4 className="font-medium text-gray-900">
+                            {doctors.find(d => d.id === formData.doctorId)?.name}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            {doctors.find(d => d.id === formData.doctorId)?.specialization}
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-600 mt-2">{doctor.bio}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-3 rounded-lg">
+                          <p className="text-sm font-medium text-gray-900">Kinh nghiệm</p>
+                          <p className="text-sm text-gray-600">
+                            {doctors.find(d => d.id === formData.doctorId)?.experience} năm
+                          </p>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg">
+                          <p className="text-sm font-medium text-gray-900">Đánh giá</p>
+                          <p className="text-sm text-gray-600">
+                            ★ {doctors.find(d => d.id === formData.doctorId)?.rating.toFixed(1)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn ngày</h2>
-                <Calendar
-                  onChange={handleDateChange}
-                  value={selectedDate}
-                  minDate={new Date()}
-                  locale="vi"
-                  className="w-full border-0"
-                />
-              </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn giờ</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  {timeSlots.map((slot) => (
-                    <button
-                      key={slot.id}
-                      disabled={slot.isBooked}
-                      onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
-                      className={`p-3 text-center rounded-lg transition-colors ${
-                        slot.isBooked
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : formData.timeSlotId === slot.id
-                          ? 'bg-primary-500 text-white'
-                          : 'bg-gray-50 text-gray-900 hover:bg-gray-100'
-                      }`}
-                    >
-                      {slot.startTime && slot.endTime ? `${format(parseISO(slot.startTime), 'HH:mm')} - ${format(parseISO(slot.endTime), 'HH:mm')}` : 'Invalid Time'}
-                    </button>
-                  ))}
+                <div className="border rounded-lg overflow-hidden">
+                  <Calendar
+                    onChange={handleDateChange}
+                    value={selectedDate}
+                    minDate={new Date()}
+                    locale="vi"
+                    className="w-full border-0"
+                    tileClassName={({ date }) => 
+                      format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+                        ? 'bg-primary-500 text-white rounded-lg'
+                        : ''
+                    }
+                  />
+                </div>
+                <div className="mt-4 text-sm text-gray-600">
+                  <p>Ngày đã chọn: {format(selectedDate, 'EEEE, dd/MM/yyyy', { locale: vi })}</p>
                 </div>
               </div>
 
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Triệu chứng</h2>
-                <textarea
-                  value={formData.symptoms}
-                  onChange={(e) => setFormData(prev => ({ ...prev, symptoms: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  rows={4}
-                  placeholder="Mô tả các triệu chứng bạn đang gặp phải"
-                />
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn thời gian</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {timeSlots.map((slot) => (
+                    <button
+                      key={slot.id}
+                      disabled={!slot.isAvailable}
+                      onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
+                      className={`p-3 text-center rounded-lg transition-all ${
+                        !slot.isAvailable
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : formData.timeSlotId === slot.id
+                          ? 'bg-primary-500 text-white ring-2 ring-primary-300'
+                          : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
+                      }`}
+                    >
+                      <span className="text-lg font-medium">{slot.time}</span>
+                      {!slot.isAvailable && (
+                        <span className="block text-xs mt-1">Đã đặt</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Ghi chú</h2>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  rows={4}
-                  placeholder="Nhập ghi chú (nếu có)"
-                />
-              </div>
-
-              <button
-                onClick={handleSubmit}
-                disabled={!formData.doctorId || !formData.timeSlotId}
-                className={`w-full py-3 px-4 rounded-lg text-white font-medium ${
-                  !formData.doctorId || !formData.timeSlotId
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-primary-600 hover:bg-primary-700'
-                }`}
-              >
-                Đặt lịch
-              </button>
             </div>
+
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Triệu chứng</h2>
+              <textarea
+                value={formData.symptoms}
+                onChange={(e) => setFormData(prev => ({ ...prev, symptoms: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                rows={4}
+                placeholder="Mô tả các triệu chứng bạn đang gặp phải"
+              />
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Ghi chú</h2>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                rows={4}
+                placeholder="Nhập ghi chú (nếu có)"
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={!formData.doctorId || !formData.timeSlotId || !formData.symptoms}
+              className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              Đặt lịch tư vấn
+            </button>
           </div>
         </motion.div>
       </div>
-      {/* Add Modal component */}
+
       <Modal
         isOpen={modalState.isOpen}
         onClose={hideModal}
