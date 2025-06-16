@@ -20,5 +20,11 @@ export const navLinks: Link[] = [
     id: 4,
     text: 'Phác đồ ARV',
     url: '/arv-protocol'
+  },
+  {
+    id: 5,
+    text: 'Quản trị',
+    url: '/admin',
+    roles: ['ROLE_ADMIN']
   }
 ];

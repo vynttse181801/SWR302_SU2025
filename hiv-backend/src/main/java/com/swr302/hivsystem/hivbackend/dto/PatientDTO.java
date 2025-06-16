@@ -2,6 +2,7 @@ package com.swr302.hivsystem.hivbackend.dto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class PatientDTO {
     private Long id;
@@ -13,8 +14,8 @@ public class PatientDTO {
     private String phoneNumber;
     private String email;
     private String bloodType;
-    private String medicalHistory;
-    private String allergies;
+    private MedicalHistoryDTO medicalHistory;
+    private List<String> allergies;
     private String emergencyContact;
     private String emergencyPhone;
     private LocalDateTime createdAt;
@@ -92,19 +93,19 @@ public class PatientDTO {
         this.bloodType = bloodType;
     }
 
-    public String getMedicalHistory() {
+    public MedicalHistoryDTO getMedicalHistory() {
         return medicalHistory;
     }
 
-    public void setMedicalHistory(String medicalHistory) {
+    public void setMedicalHistory(MedicalHistoryDTO medicalHistory) {
         this.medicalHistory = medicalHistory;
     }
 
-    public String getAllergies() {
+    public List<String> getAllergies() {
         return allergies;
     }
 
-    public void setAllergies(String allergies) {
+    public void setAllergies(List<String> allergies) {
         this.allergies = allergies;
     }
 
@@ -152,8 +153,8 @@ public class PatientDTO {
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", email='" + email + '\'' +
                 ", bloodType='" + bloodType + '\'' +
-                ", medicalHistory='" + medicalHistory + '\'' +
-                ", allergies='" + allergies + '\'' +
+                ", medicalHistory=" + medicalHistory +
+                ", allergies=" + allergies +
                 ", emergencyContact='" + emergencyContact + '\'' +
                 ", emergencyPhone='" + emergencyPhone + '\'' +
                 ", createdAt=" + createdAt +

@@ -73,9 +73,9 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    specialization: (user as Doctor)?.specialization || '',
-    experience: (user as Doctor)?.experience || '',
-    education: (user as Doctor)?.education || '',
+    specialization: ((user as unknown) as Doctor)?.specialization || '',
+    experience: ((user as unknown) as Doctor)?.experience || '',
+    education: ((user as unknown) as Doctor)?.education || '',
   });
 
   const formatDate = (dateString: string) => {
@@ -99,7 +99,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
         id: '1',
         patientId: '1',
         patientName: 'Nguyễn Văn A',
-        doctorId: user?.id || '',
+        doctorId: user?.id?.toString() || '',
         date: '2024-03-20',
         time: '09:00',
         status: 'pending',
@@ -110,7 +110,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
         id: '2',
         patientId: '2',
         patientName: 'Trần Thị B',
-        doctorId: user?.id || '',
+        doctorId: user?.id?.toString() || '',
         date: '2024-03-20',
         time: '10:30',
         status: 'confirmed',
@@ -121,7 +121,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
         id: '3',
         patientId: '6',
         patientName: 'Hoàng Văn F',
-        doctorId: user?.id || '',
+        doctorId: user?.id?.toString() || '',
         date: '2024-03-20',
         time: '11:00',
         status: 'completed',
@@ -184,15 +184,14 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     try {
       if (!user) return;
       
-      const updatedUser: Doctor = {
+      const updatedUser = {
         ...user,
+        id: Number(user.id),
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        specialization: formData.specialization,
-        experience: formData.experience,
-        education: formData.education,
-        role: 'doctor'
+        role: 'doctor' as const,
+        username: user.username
       };
 
       await updateUser(updatedUser);

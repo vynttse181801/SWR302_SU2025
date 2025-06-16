@@ -5,7 +5,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { images } from '../constants/images';
 import { authService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { User } from '../types';
+import { User } from '../types/index';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,30 +37,34 @@ const LoginPage: React.FC = () => {
       const response = await authService.login(formData);
       const { accessToken, username, email, fullName, role, id } = response;
 
+      // Ensure role has ROLE_ prefix
+      const normalizedRole = role.startsWith('ROLE_') ? role : `ROLE_${role.toUpperCase()}`;
+
       const loggedInUser: User = {
         id: id,
-        fullName: fullName,
+        name: fullName || '',
+        fullName: fullName || '',
         email: email,
+        phoneNumber: '',
         username: username,
         role: {
-          id: 0,
-          roleName: role,
-          description: '',
-        },
+          id: 0, // Assuming ID is not critical here or can be fetched/assigned a default
+          roleName: normalizedRole,
+          description: '' // Assuming description is not critical here or can be fetched/assigned a default
+        }
       };
 
+      // Use the auth context to handle login
       authLogin(loggedInUser, accessToken);
 
-      sessionStorage.setItem('token', accessToken);
-      sessionStorage.setItem('user', JSON.stringify(loggedInUser));
-
-      if (role === 'ADMIN') {
+      // Navigate based on normalized role
+      if (normalizedRole === 'ROLE_ADMIN') {
         navigate('/admin');
-      } else if (role === 'DOCTOR') {
+      } else if (normalizedRole === 'ROLE_DOCTOR') {
         navigate('/doctor');
-      } else if (role === 'ROLE_PATIENT') {
-        navigate('/patient');
-      } else if (role === 'ROLE_STAFF') {
+      } else if (normalizedRole === 'ROLE_PATIENT') {
+        navigate('/');
+      } else if (normalizedRole === 'ROLE_STAFF') {
         navigate('/staff');
       } else {
         navigate('/');

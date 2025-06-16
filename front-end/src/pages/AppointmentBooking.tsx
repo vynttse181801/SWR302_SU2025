@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { doctorService, appointmentService } from '../services/api';
-import { Doctor } from '../types';
+import { Doctor, User } from '../types';
 import api from '../services/api';
 
 interface TimeSlot {
@@ -86,11 +86,12 @@ const AppointmentBooking: React.FC = () => {
     setTimeSlots([]);
   };
 
-  const handleDateChange = (date: Date) => {
-    setSelectedDate(date);
-    setFormData(prev => ({ ...prev, date }));
-    // Reset time slots when date changes
-    setTimeSlots([]);
+  const handleDateChange = (value: any) => {
+    if (value instanceof Date) {
+      setSelectedDate(value);
+      setFormData(prev => ({ ...prev, date: value }));
+      setTimeSlots([]);
+    }
   };
 
   const handleTimeSlotSelect = (timeSlotId: number) => {
@@ -143,7 +144,7 @@ const AppointmentBooking: React.FC = () => {
             <option value="">Select a doctor</option>
             {doctors.map(doctor => (
               <option key={doctor.id} value={doctor.id}>
-                {doctor.user.fullName || doctor.user.username} - {doctor.specialty}
+                {doctor.user.name || doctor.user.username} - {doctor.specialty}
               </option>
             ))}
           </select>

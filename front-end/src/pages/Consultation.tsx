@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { consultationService } from '../services/api';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
+import { parseISO } from 'date-fns/parseISO';
 import { vi } from 'date-fns/locale';
 import { Calendar } from 'react-calendar';
-import type { Value } from 'react-calendar/dist/cjs/shared/types';
 import 'react-calendar/dist/Calendar.css';
 import { Mail, Phone, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -89,7 +89,7 @@ const ConsultationPage: React.FC = () => {
     }
   }, [selectedDate]);
 
-  const handleDateChange = (value: Value) => {
+  const handleDateChange = (value: any) => {
     if (value instanceof Date) {
       setSelectedDate(value);
       setFormData(prev => ({ ...prev, date: value }));

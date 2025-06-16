@@ -17,7 +17,7 @@ import DoctorProfile from './pages/profile/DoctorProfile';
 import DoctorsPage from './pages/Doctors';
 import AdminPage from './pages/AdminPage';
 import { navLinks } from './constants';
-import { User, Role } from './types';
+import { User } from './types/index';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import DoctorManagementPage from './pages/DoctorPage';
@@ -29,7 +29,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Protected Route component
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
-  requiredRole?: Role['roleName'] | Role['roleName'][];
+  requiredRole?: User['role']['roleName'] | User['role']['roleName'][];
 }> = ({ children, requiredRole }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
 
@@ -42,10 +42,10 @@ const ProtectedRoute: React.FC<{
   }
 
   if (requiredRole) {
-    const userRoleName = user?.role?.roleName;
+    const userRole = user?.role?.roleName;
     const rolesArray = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
 
-    if (!userRoleName || !rolesArray.includes(userRoleName)) {
+    if (!userRole || !rolesArray.includes(userRole)) {
       return <Navigate to="/" replace />;
     }
   }
@@ -56,19 +56,16 @@ const ProtectedRoute: React.FC<{
 function AppContent() {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const isAdminPage = location.pathname === '/admin' || location.pathname === '/doctor-schedules-management';
 
   return (
     <div className="min-h-screen bg-white text-black">
-      {!isAdminPage && (
-        <Header 
-          links={navLinks} 
-          isAuthenticated={!!user}
-          user={user}
-          onLogout={logout}
-        />
-      )}
-      <main className={isAdminPage ? "w-full min-h-screen" : ""}>
+      <Header 
+        links={navLinks} 
+        isAuthenticated={!!user}
+        user={user}
+        onLogout={logout}
+      />
+      <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/services" element={<ServiceDetails />} />
@@ -78,6 +75,14 @@ function AppContent() {
           <Route path="/login" element={<LoginPage />} />
           <Route 
             path="/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/patient" 
             element={
               <ProtectedRoute>
                 <ProfilePage />
@@ -127,7 +132,7 @@ function AppContent() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute requiredRole="ADMIN">
+              <ProtectedRoute requiredRole="ROLE_ADMIN">
                 <AdminPage />
               </ProtectedRoute>
             }
@@ -135,7 +140,7 @@ function AppContent() {
           <Route
             path="/doctors-management"
             element={
-              <ProtectedRoute requiredRole={['ADMIN', 'DOCTOR']}>
+              <ProtectedRoute requiredRole={['admin', 'doctor']}>
                 <DoctorManagementPage />
               </ProtectedRoute>
             }
@@ -143,7 +148,7 @@ function AppContent() {
           <Route
             path="/doctor-schedules-management"
             element={
-              <ProtectedRoute requiredRole={['ADMIN', 'DOCTOR']}>
+              <ProtectedRoute requiredRole={['admin', 'doctor']}>
                 <DoctorSchedulePage />
               </ProtectedRoute>
             }
@@ -154,7 +159,7 @@ function AppContent() {
           <Route path="/book-appointment" element={<AppointmentBooking />} />
         </Routes>
       </main>
-      {!isAdminPage && <Footer />}
+      <Footer />
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );

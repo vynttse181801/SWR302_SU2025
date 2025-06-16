@@ -19,10 +19,10 @@ public class Patient {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "date_of_birth", nullable = false)
+    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
-    @Column(nullable = false)
+    @Column
     private String gender;
 
     private String address;
@@ -37,10 +37,11 @@ public class Patient {
     private String bloodType;
 
     @Lob
-    @Column(name = "medical_history")
+    @Column(name = "medical_history", nullable = true)
     private String medicalHistory;
 
     @Lob
+    @Column(nullable = true)
     private String allergies;
 
     @Column(name = "emergency_contact")
@@ -55,10 +56,12 @@ public class Patient {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
+    @Column
     private String medicalRecordNumber;
+    @Column
     private String notes;
 
     @PrePersist

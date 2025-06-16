@@ -53,11 +53,15 @@ const AdminPage: React.FC = () => {
 
   const handleSaveUser = async (userData: Omit<User, 'id' | 'role'> & { roleName: string; password?: string }) => {
     try {
+      const normalizedRole = userData.roleName.startsWith('ROLE_') 
+        ? userData.roleName 
+        : `ROLE_${userData.roleName.toUpperCase()}`;
+
       const payload: any = {
         fullName: userData.fullName,
         email: userData.email,
         username: userData.username,
-        role: { roleName: userData.roleName },
+        role: { roleName: normalizedRole },
       };
 
       if (userData.password) {
@@ -156,7 +160,7 @@ const AdminPage: React.FC = () => {
                     Sửa
                   </button>
                   <button
-                    onClick={() => handleDeleteUser(user.id)}
+                    onClick={() => handleDeleteUser(user.id.toString())}
                     className="text-red-600 hover:text-red-900"
                   >
                     Xóa

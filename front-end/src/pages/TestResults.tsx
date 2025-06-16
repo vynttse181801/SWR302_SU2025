@@ -23,7 +23,7 @@ const TestResultsPage: React.FC = () => {
     const fetchTestResults = async () => {
       try {
         const results = await testResultService.getTestResults();
-        setTestResults(results);
+        setTestResults(results.data);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Không thể tải kết quả xét nghiệm');
       } finally {
@@ -94,7 +94,7 @@ const TestResultsPage: React.FC = () => {
                       <div>
                         <p className="text-sm text-gray-500">Ngày xét nghiệm</p>
                         <p className="text-gray-900">
-                          {format(new Date(result.testDate), 'dd/MM/yyyy', { locale: vi })}
+                          {format(new Date(result.testDate), 'dd/MM/yyyy')}
                         </p>
                       </div>
 

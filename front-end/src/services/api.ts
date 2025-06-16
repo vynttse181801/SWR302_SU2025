@@ -91,9 +91,9 @@ export const appointmentService = {
 // Patient services
 export const patientService = {
     getProfile: () => 
-        api.get('/patients/profile'),
+        api.get('/patients/me'),
     updateProfile: (data: any) => 
-        api.put('/patients/profile', data),
+        api.put('/patients/me', data),
     getMedicalHistory: () => 
         api.get('/patients/medical-history'),
 };

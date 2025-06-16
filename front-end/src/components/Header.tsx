@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, User, LogOut, Settings, UserCircle } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Link as LinkType, HeaderProps, User as UserType } from '../types';
+import { Link as LinkType, HeaderProps } from '../types';
+import { User as UserType } from '../types/index';
 
 const Header: React.FC<HeaderProps> = ({ links, isAuthenticated, user, onLogout }) => {
   const location = useLocation();
@@ -25,6 +26,13 @@ const Header: React.FC<HeaderProps> = ({ links, isAuthenticated, user, onLogout 
     setShowUserMenu(false);
   };
 
+  const getUserRole = (user: UserType | null) => {
+    if (!user) return null;
+    if (typeof user.role === 'string') return user.role;
+    const roleName = user.role.roleName;
+    return roleName.startsWith('ROLE_') ? roleName : `ROLE_${roleName.toUpperCase()}`;
+  };
+
   return (
     <header className={`sticky top-0 z-50 transition-all duration-300 ${
       scrolled 
@@ -44,10 +52,19 @@ const Header: React.FC<HeaderProps> = ({ links, isAuthenticated, user, onLogout 
           </Link>
           
           <nav className="hidden md:flex justify-center flex-1 space-x-1">
-            {links.map((link) => (
+            {links
+              .filter(link => {
+                if (link.roles) {
+                  const userRole = getUserRole(user);
+                  return isAuthenticated && userRole && link.roles.includes(userRole);
+                }
+                return true; // Always show links without specified roles
+              })
+              .map((link) => (
               <Link 
                 key={link.id} 
                 to={link.url} 
+                onClick={() => console.log(`Navigating to: ${link.url}`)}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 text-center
                   ${location.pathname === link.url 
                     ? 'text-white bg-gradient-to-r from-primary-500 to-secondary-500 shadow-md hover:shadow-primary-500/25' 
@@ -82,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ links, isAuthenticated, user, onLogout 
                       <p className="text-xs text-gray-500">{user?.email}</p>
                     </div>
                     <Link
-                      to={user?.role === 'DOCTOR' ? "/doctor-profile" : "/profile"}
+                      to={getUserRole(user) === 'doctor' ? "/doctor-profile" : "/profile"}
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600
                         transition-colors duration-200"
                       onClick={() => setShowUserMenu(false)}

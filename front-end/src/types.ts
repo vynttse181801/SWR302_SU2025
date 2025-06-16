@@ -1,36 +1,10 @@
+import { User } from './types/index';
+
 export type Link = {
-  id: string;
+  id: number;
   text: string;
   url: string;
-};
-
-export type User = {
-  id: number;
-  fullName?: string;
-  phoneNumber?: string;
-  name?: string;
-  email: string;
-  username: string;
-  role: Role;
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: 'male' | 'female' | 'other';
-  address?: string;
-  avatar?: string;
-  medicalHistory?: {
-    bloodType?: string;
-    allergies?: string[];
-    chronicDiseases?: string[];
-    medications?: string[];
-  };
-  lastCheckup?: string;
-  nextAppointment?: string;
-};
-
-export type Role = {
-  id: number;
-  roleName: 'PATIENT' | 'DOCTOR' | 'STAFF' | 'ADMIN';
-  description: string;
+  roles?: string[];
 };
 
 export type HeaderProps = {
@@ -57,4 +31,10 @@ export type LabTestType = {
   durationMinutes: number;
   createdAt: string;
   updatedAt: string;
+};
+
+export type Doctor = {
+  id: number;
+  user: User;
+  specialty: string;
 };

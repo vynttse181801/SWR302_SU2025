@@ -2,10 +2,13 @@ package com.swr302.hivsystem.hivbackend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
 @Table(name = "users") // Renamed to "users" to avoid conflicts with reserved keywords
-public class User {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -51,16 +54,18 @@ public class User {
         this.id = id;
     }
 
+    @Override
     public String getUsername() {
-        return username;
+        return this.username;
     }
 
     public void setUsername(String username) {
         this.username = username;
     }
 
+    @Override
     public String getPassword() {
-        return password;
+        return this.password;
     }
 
     public void setPassword(String password) {
@@ -128,15 +133,10 @@ public class User {
         return "User{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
                 ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
-                ", role=" + role +
-                ", isAnonymous=" + isAnonymous +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
+                "}";
     }
 
     @Override
@@ -167,5 +167,30 @@ public class User {
         result = 31 * result + role.hashCode();
         result = 31 * result + (isAnonymous ? 1 : 0);
         return result;
+    }
+
+    @Override
+    public java.util.Collection<? extends GrantedAuthority> getAuthorities() {
+        return java.util.Collections.singletonList(new SimpleGrantedAuthority(role.getRoleName()));
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 } 

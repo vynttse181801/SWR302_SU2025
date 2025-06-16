@@ -98,13 +98,13 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(userService.updateUser(id, userDTO));
     }
 
     @PutMapping("/{id}/change-password")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest changePasswordRequest) {
         try {
             userService.changePassword(id, changePasswordRequest);
