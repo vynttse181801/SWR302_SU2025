@@ -20,7 +20,7 @@ export interface User {
   phoneNumber?: string;
   role: Role;
   dateOfBirth?: string;
-  gender?: 'male' | 'female' | 'other';
+  gender?: 'male' | 'female' | 'other' | '';
   address?: string;
   medicalHistory?: MedicalHistory;
   lastCheckup?: string;

@@ -96,17 +96,15 @@ public class PatientController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Patient> updatePatient(@PathVariable Long id, @RequestBody Patient patientDetails) {
-        Optional<Patient> patient = patientRepository.findById(id);
-        if (patient.isPresent()) {
-            Patient existingPatient = patient.get();
-            existingPatient.setMedicalRecordNumber(patientDetails.getMedicalRecordNumber());
-            existingPatient.setBloodType(patientDetails.getBloodType());
-            existingPatient.setAllergies(patientDetails.getAllergies());
-            existingPatient.setNotes(patientDetails.getNotes());
-            return ResponseEntity.ok(patientRepository.save(existingPatient));
-        } else {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<PatientDTO> updatePatient(@PathVariable Long id, @RequestBody PatientDTO patientDTO) {
+        try {
+            logger.info("Updating patient with ID: {} with data: {}", id, patientDTO);
+            PatientDTO updatedPatientDTO = patientService.updatePatient(id, patientDTO);
+            logger.info("Successfully updated patient with ID: {}", id);
+            return ResponseEntity.ok(updatedPatientDTO);
+        } catch (Exception e) {
+            logger.error("Error updating patient with ID: " + id, e);
+            return ResponseEntity.status(500).body(null);
         }
     }
 

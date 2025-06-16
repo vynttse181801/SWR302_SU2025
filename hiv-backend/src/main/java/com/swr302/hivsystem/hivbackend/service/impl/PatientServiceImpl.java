@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 import com.swr302.hivsystem.hivbackend.dto.MedicalHistoryDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +25,8 @@ import java.util.Collections;
 @Service
 @Transactional
 public class PatientServiceImpl implements PatientService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PatientServiceImpl.class);
 
     @Autowired
     private PatientRepository patientRepository;
@@ -113,36 +117,55 @@ public class PatientServiceImpl implements PatientService {
     }
 
     private void updatePatientFromDTO(Patient patient, PatientDTO dto) {
-        patient.setPatientCode(dto.getPatientCode());
-        patient.setFullName(dto.getFullName());
+        logger.info("Entering updatePatientFromDTO. DTO received: {}", dto);
+        patient.setPatientCode(dto.getPatientCode() != null ? dto.getPatientCode() : patient.getPatientCode());
+        patient.setFullName(dto.getFullName() != null ? dto.getFullName() : "");
         patient.setDateOfBirth(dto.getDateOfBirth());
-        patient.setGender(dto.getGender());
-        patient.setAddress(dto.getAddress());
-        patient.setPhoneNumber(dto.getPhoneNumber());
-        patient.setEmail(dto.getEmail());
-        patient.setBloodType(dto.getBloodType());
+        patient.setGender(dto.getGender() != null ? dto.getGender() : "");
+        patient.setAddress(dto.getAddress() != null ? dto.getAddress() : "");
+        patient.setPhoneNumber(dto.getPhoneNumber() != null ? dto.getPhoneNumber() : "");
+        patient.setEmail(dto.getEmail() != null ? dto.getEmail() : "");
+        patient.setBloodType(dto.getBloodType() != null ? dto.getBloodType() : "");
+
+        // Update related User entity fields
+        if (patient.getUser() != null) {
+            patient.getUser().setFullName(dto.getFullName() != null ? dto.getFullName() : "");
+            patient.getUser().setEmail(dto.getEmail() != null ? dto.getEmail() : "");
+            patient.getUser().setPhoneNumber(dto.getPhoneNumber() != null ? dto.getPhoneNumber() : "");
+            userRepository.save(patient.getUser()); // Save the updated user
+            logger.info("Updated associated User entity for patient ID: {}", patient.getId());
+        }
 
         try {
             if (dto.getMedicalHistory() != null) {
-                patient.setMedicalHistory(objectMapper.writeValueAsString(dto.getMedicalHistory()));
+                String medicalHistoryJson = objectMapper.writeValueAsString(dto.getMedicalHistory());
+                patient.setMedicalHistory(medicalHistoryJson);
+                logger.info("Converted medicalHistory to JSON: {}", medicalHistoryJson);
             } else {
                 patient.setMedicalHistory(null);
+                logger.info("MedicalHistory in DTO is null.");
             }
         } catch (JsonProcessingException e) {
+            logger.error("Error converting MedicalHistoryDTO to JSON string", e);
             throw new RuntimeException("Error converting MedicalHistoryDTO to JSON string", e);
         }
 
         if (dto.getAllergies() != null && !dto.getAllergies().isEmpty()) {
-            patient.setAllergies(String.join(",", dto.getAllergies()));
+            String allergiesString = String.join(",", dto.getAllergies());
+            patient.setAllergies(allergiesString);
+            logger.info("Converted allergies to string: {}", allergiesString);
         } else {
             patient.setAllergies(null);
+            logger.info("Allergies in DTO is null or empty.");
         }
 
-        patient.setEmergencyContact(dto.getEmergencyContact());
-        patient.setEmergencyPhone(dto.getEmergencyPhone());
+        patient.setEmergencyContact(dto.getEmergencyContact() != null ? dto.getEmergencyContact() : "");
+        patient.setEmergencyPhone(dto.getEmergencyPhone() != null ? dto.getEmergencyPhone() : "");
+        logger.info("Patient entity updated from DTO: {}", patient);
     }
 
     private PatientDTO convertToDTO(Patient patient) {
+        logger.info("Entering convertToDTO. Patient entity received: {}", patient);
         PatientDTO dto = new PatientDTO();
         dto.setId(patient.getId());
         dto.setPatientCode(patient.getPatientCode());
@@ -156,24 +179,32 @@ public class PatientServiceImpl implements PatientService {
 
         try {
             if (patient.getMedicalHistory() != null && !patient.getMedicalHistory().isEmpty()) {
-                dto.setMedicalHistory(objectMapper.readValue(patient.getMedicalHistory(), MedicalHistoryDTO.class));
+                MedicalHistoryDTO medicalHistoryDTO = objectMapper.readValue(patient.getMedicalHistory(), MedicalHistoryDTO.class);
+                dto.setMedicalHistory(medicalHistoryDTO);
+                logger.info("Converted medicalHistory from JSON: {}", medicalHistoryDTO);
             } else {
                 dto.setMedicalHistory(new MedicalHistoryDTO());
+                logger.info("MedicalHistory in Patient entity is null or empty. Setting new MedicalHistoryDTO.");
             }
         } catch (JsonProcessingException e) {
+            logger.error("Error converting JSON string to MedicalHistoryDTO", e);
             throw new RuntimeException("Error converting JSON string to MedicalHistoryDTO", e);
         }
 
         if (patient.getAllergies() != null && !patient.getAllergies().isEmpty()) {
-            dto.setAllergies(Arrays.asList(patient.getAllergies().split(",")));
+            List<String> allergiesList = Arrays.asList(patient.getAllergies().split(","));
+            dto.setAllergies(allergiesList);
+            logger.info("Converted allergies from string: {}", allergiesList);
         } else {
             dto.setAllergies(Collections.emptyList());
+            logger.info("Allergies in Patient entity is null or empty. Setting empty list.");
         }
 
         dto.setEmergencyContact(patient.getEmergencyContact());
         dto.setEmergencyPhone(patient.getEmergencyPhone());
         dto.setCreatedAt(patient.getCreatedAt());
         dto.setUpdatedAt(patient.getUpdatedAt());
+        logger.info("PatientDTO converted from entity: {}", dto);
         return dto;
     }
 } 

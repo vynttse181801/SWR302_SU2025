@@ -92,8 +92,10 @@ export const appointmentService = {
 export const patientService = {
     getProfile: () => 
         api.get('/patients/me'),
-    updateProfile: (data: any) => 
-        api.put('/patients/me', data),
+    updateProfile: async (data: any) => {
+        const response = await api.put(`/patients/${data.id}`, data);
+        return response;
+    },
     getMedicalHistory: () => 
         api.get('/patients/medical-history'),
 };

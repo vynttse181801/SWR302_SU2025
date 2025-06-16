@@ -109,7 +109,7 @@ const ProfilePage: React.FC = () => {
 
   const [consultationHistory, setConsultationHistory] = useState<ServiceItem[]>([]);
 
-  const { user: authUser } = useAuth();
+  const { user: authUser, updateUser } = useAuth();
 
   // Handle navigation state
   useEffect(() => {
@@ -132,13 +132,13 @@ const ProfilePage: React.FC = () => {
             username: res.data.username || '',
             role: res.data.role || prev.role, // Preserve existing role if not provided
             dateOfBirth: res.data.dateOfBirth || '',
-            gender: res.data.gender || undefined,
+            gender: res.data.gender || '',
             address: res.data.address || '',
-            medicalHistory: res.data.medicalHistory || {
-              bloodType: '',
-              allergies: [],
-              chronicDiseases: [],
-              medications: []
+            medicalHistory: {
+              bloodType: res.data.medicalHistory?.bloodType || '',
+              allergies: res.data.medicalHistory?.allergies || [],
+              chronicDiseases: res.data.medicalHistory?.chronicDiseases || [],
+              medications: res.data.medicalHistory?.medications || []
             },
             medicalRecordNumber: res.data.medicalRecordNumber || '',
             notes: res.data.notes || '',
@@ -157,14 +157,53 @@ const ProfilePage: React.FC = () => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    // TODO: Implement API call to save user data
-    setIsEditing(false);
-    showModal(
-      'Thành công',
-      'Thông tin cá nhân đã được cập nhật.',
-      'success'
-    );
+  const handleSave = async () => {
+    try {
+      const medicalHistory = user.medicalHistory || {
+        bloodType: '',
+        allergies: [],
+        chronicDiseases: [],
+        medications: []
+      };
+
+      const updateData = {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
+        address: user.address,
+        medicalHistory: medicalHistory,
+        allergies: medicalHistory.allergies,
+        chronicDiseases: medicalHistory.chronicDiseases,
+        medications: medicalHistory.medications,
+        bloodType: medicalHistory.bloodType
+      };
+
+      const response = await patientService.updateProfile(updateData);
+      
+      // Update local state
+      setUser(prev => ({
+        ...prev,
+        ...response.data
+      }));
+
+      // Update auth context
+      if (authUser) {
+        updateUser({
+          ...authUser,
+          fullName: user.fullName,
+          email: user.email,
+          phoneNumber: user.phoneNumber
+        });
+      }
+      
+      setIsEditing(false);
+      toast.success('Cập nhật thông tin thành công!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+    }
   };
 
   const handleCancel = () => {
