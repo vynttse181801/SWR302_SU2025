@@ -10,16 +10,17 @@ public class Medication {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(columnDefinition = "NVARCHAR(255)", nullable =  false)
     private String name;
 
     @Lob
+    @Column(columnDefinition = "NVARCHAR(max)")
     private String description;
 
-    @Column(length = 100)
+    @Column(columnDefinition = "NVARCHAR(100)")
     private String dosage;
 
-    @Column(length = 100)
+    @Column(columnDefinition = "NVARCHAR(100)")
     private String frequency;
 
     @Column(name = "created_at", nullable = false, updatable = false)

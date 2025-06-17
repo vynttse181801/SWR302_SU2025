@@ -13,13 +13,13 @@ public class Doctor {
     @Column(name = "doctor_code", unique = true, nullable = false)
     private String doctorCode;
 
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String fullName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String specialization;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String qualification;
 
     @Column(name = "license_number", unique = true, nullable = false)
@@ -31,9 +31,11 @@ public class Doctor {
     @Column(unique = true)
     private String email;
 
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String address;
 
     @Lob
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String bio;
 
     @Enumerated(EnumType.STRING)

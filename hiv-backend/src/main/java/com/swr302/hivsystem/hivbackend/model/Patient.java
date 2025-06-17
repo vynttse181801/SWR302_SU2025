@@ -16,15 +16,16 @@ public class Patient {
     @Column(name = "patient_code", unique = true, nullable = false)
     private String patientCode;
 
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String fullName;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
-    @Column
+    @Column(name = "gender", nullable = false)
     private String gender;
 
+    @Column(columnDefinition = "NVARCHAR(500)")
     private String address;
 
     @Column(name = "phone_number")

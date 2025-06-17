@@ -22,16 +22,17 @@ public class LabResult {
     @Column(name = "test_date", nullable = false)
     private LocalDate testDate;
 
-    @Column(name = "result_value", length = 255)
+    @Column(name = "result_value", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String resultValue;
 
-    @Column(length = 50)
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String unit;
 
-    @Column(name = "normal_range", length = 100)
+    @Column(name = "normal_range", columnDefinition = "NVARCHAR(100)")
     private String normalRange;
 
     @Lob
+    @Column(columnDefinition = "NVARCHAR(4000)")
     private String notes;
 
     @ManyToOne

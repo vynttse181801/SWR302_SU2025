@@ -14,6 +14,7 @@ public class ArvProtocol {
     private String name;
 
     @Lob
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "is_for_pregnant")

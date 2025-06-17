@@ -30,6 +30,7 @@ public class PatientTreatmentPlan {
     private LocalDate endDate;
 
     @Lob
+    @Column(nullable = false, columnDefinition = "NVARCHAR(max)")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)

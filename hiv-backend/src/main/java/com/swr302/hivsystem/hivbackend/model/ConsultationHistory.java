@@ -15,15 +15,15 @@ public class ConsultationHistory {
     private Appointment appointment;
 
     @Lob
-    @Column(name = "doctor_notes")
+    @Column(name = "doctor_notes", columnDefinition = "NVARCHAR(MAX)")
     private String doctorNotes;
 
     @Lob
-    @Column(name = "patient_feedback")
+    @Column(name = "patient_feedback", columnDefinition = "NVARCHAR(MAX)")
     private String patientFeedback;
 
     @Lob
-    @Column(name = "consultation_content")
+    @Column(name = "consultation_content", columnDefinition = "NVARCHAR(MAX)")
     private String consultationContent;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -15,7 +15,8 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [generalError, setGeneralError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   const navigate = useNavigate();
 
@@ -31,16 +32,17 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setGeneralError(null);
+    setFieldErrors({});
 
     if (password !== confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp.');
+      setGeneralError('Mật khẩu xác nhận không khớp.');
       toast.error('Mật khẩu xác nhận không khớp.');
       return;
     }
 
     if (!agreeToTerms) {
-      setError('Bạn phải đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.');
+      setGeneralError('Bạn phải đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.');
       toast.error('Bạn phải đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.');
       return;
     }
@@ -60,13 +62,21 @@ const RegisterPage = () => {
         toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
         navigate('/login');
       } else {
-        setError(response.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+        setGeneralError(response.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
         toast.error(response.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
       }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Đã xảy ra lỗi trong quá trình đăng ký.';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      if (err.response && err.response.status === 400 && err.response.data) {
+        // Handle validation errors from backend
+        setFieldErrors(err.response.data);
+        toast.error('Vui lòng kiểm tra các trường bị lỗi.');
+      } else if (err.response && err.response.data?.message) {
+        setGeneralError(err.response.data.message);
+        toast.error(err.response.data.message);
+      } else {
+        setGeneralError('Đã xảy ra lỗi trong quá trình đăng ký.');
+        toast.error('Đã xảy ra lỗi trong quá trình đăng ký.');
+      }
     } finally {
       setLoading(false);
     }
@@ -123,9 +133,9 @@ const RegisterPage = () => {
 
               <div className="relative bg-black/30 backdrop-blur-xl rounded-xl shadow-2xl p-8 border border-white/20">
                 <form className="space-y-6" onSubmit={handleSubmit}>
-                  {error && (
+                  {generalError && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                      <span className="block sm:inline">{error}</span>
+                      <span className="block sm:inline">{generalError}</span>
                     </div>
                   )}
                   <div className="space-y-4">
@@ -157,6 +167,7 @@ const RegisterPage = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         required 
                       />
+                      {fieldErrors.email && <p className="text-red-400 text-xs mt-1">{fieldErrors.email}</p>}
                     </div>
 
                     <div>
@@ -172,6 +183,7 @@ const RegisterPage = () => {
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         required 
                       />
+                      {fieldErrors.phoneNumber && <p className="text-red-400 text-xs mt-1">{fieldErrors.phoneNumber}</p>}
                     </div>
 
                     <div>
@@ -196,6 +208,7 @@ const RegisterPage = () => {
                           {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                       </div>
+                      {fieldErrors.password && <p className="text-red-400 text-xs mt-1">{fieldErrors.password}</p>}
                     </div>
 
                     <div>
@@ -220,6 +233,7 @@ const RegisterPage = () => {
                           {showPasswordConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                       </div>
+                      {fieldErrors.confirmPassword && <p className="text-red-400 text-xs mt-1">{fieldErrors.confirmPassword}</p>}
                     </div>
 
                     <div className="flex items-center gap-2 group">
@@ -249,27 +263,24 @@ const RegisterPage = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-secondary-500 to-accent-500 text-white rounded-lg font-semibold
-                    hover:from-secondary-600 hover:to-accent-600 focus:ring-2 focus:ring-white/50 focus:outline-none 
-                    transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
-                    shadow-lg hover:shadow-secondary-500/25
+                    className="w-full py-3 px-4 rounded-lg text-white font-semibold shadow-lg
+                    bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600
+                    focus:outline-none focus:ring-4 focus:ring-primary-300 transition-all duration-300
                     disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Đang tạo...' : 'Tạo tài khoản'}
+                    {loading ? 'Đang đăng ký...' : 'Đăng ký'}
                   </button>
                 </form>
 
-                <div className="mt-6 text-center">
-                  <p className="text-white/80">
-                    Đã có tài khoản?{' '}
-                    <Link 
-                      to="/login" 
-                      className="font-medium text-secondary-200 hover:text-white transition-colors"
-                    >
-                      Đăng nhập
-                    </Link>
-                  </p>
-                </div>
+                <p className="mt-6 text-center text-secondary-200">
+                  Đã có tài khoản?{' '}
+                  <Link
+                    to="/login"
+                    className="font-medium text-secondary-200 hover:text-white transition-colors"
+                  >
+                    Đăng nhập
+                  </Link>
+                </p>
               </div>
             </div>
           </div>

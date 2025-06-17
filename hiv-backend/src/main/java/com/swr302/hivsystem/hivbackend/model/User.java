@@ -1,6 +1,8 @@
 package com.swr302.hivsystem.hivbackend.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,7 +19,10 @@ public class User implements UserDetails {
     private String username;
 
     @Column(nullable = false)
-    private String password; // Storing hashed password
+    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$",
+             message = "Mật khẩu phải có ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt")
+    private String password;
 
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
@@ -26,14 +31,15 @@ public class User implements UserDetails {
     private String email;
 
     @Column(name = "phone_number", length = 20)
+    @Pattern(regexp = "^\\d{10,11}$", message = "Số điện thoại phải là 10 hoặc 11 chữ số")
     private String phoneNumber;
 
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @Column(name = "is_anonymous")
-    private boolean isAnonymous = false;
+    @Column(name = "is_anonymous", nullable = true)
+    private Boolean isAnonymous = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -104,11 +110,11 @@ public class User implements UserDetails {
         this.role = role;
     }
 
-    public boolean isAnonymous() {
+    public Boolean isAnonymous() {
         return isAnonymous;
     }
 
-    public void setAnonymous(boolean anonymous) {
+    public void setAnonymous(Boolean anonymous) {
         isAnonymous = anonymous;
     }
 
@@ -146,14 +152,15 @@ public class User implements UserDetails {
 
         User user = (User) o;
 
-        if (isAnonymous != user.isAnonymous) return false;
         if (!id.equals(user.id)) return false;
         if (!username.equals(user.username)) return false;
         if (!password.equals(user.password)) return false;
         if (!fullName.equals(user.fullName)) return false;
         if (!email.equals(user.email)) return false;
         if (!phoneNumber.equals(user.phoneNumber)) return false;
-        return role.equals(user.role);
+        if (!role.equals(user.role)) return false;
+        if (!isAnonymous.equals(user.isAnonymous)) return false;
+        return createdAt.equals(user.createdAt) && updatedAt.equals(user.updatedAt);
     }
 
     @Override
@@ -165,7 +172,9 @@ public class User implements UserDetails {
         result = 31 * result + email.hashCode();
         result = 31 * result + phoneNumber.hashCode();
         result = 31 * result + role.hashCode();
-        result = 31 * result + (isAnonymous ? 1 : 0);
+        result = 31 * result + isAnonymous.hashCode();
+        result = 31 * result + createdAt.hashCode();
+        result = 31 * result + updatedAt.hashCode();
         return result;
     }
 

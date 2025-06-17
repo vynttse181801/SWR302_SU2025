@@ -10,6 +10,9 @@ import com.swr302.hivsystem.hivbackend.model.User;
 import com.swr302.hivsystem.hivbackend.repository.UserRepository;
 import com.swr302.hivsystem.hivbackend.security.JwtTokenProvider;
 import com.swr302.hivsystem.hivbackend.service.UserService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +23,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -46,10 +54,20 @@ public class UserController {
     private JwtTokenProvider tokenProvider;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getAllErrors().forEach(error -> {
+                String fieldName = ((FieldError) error).getField();
+                String errorMessage = error.getDefaultMessage();
+                errors.put(fieldName, errorMessage);
+            });
+            return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+        }
+
         try {
             // Use userService to handle registration, which includes uniqueness checks
-            userService.createUser(convertToDTO(user));
+            userService.createUser(userDTO);
             return new ResponseEntity<>(HttpStatus.CREATED);
         } catch (UsernameAlreadyExistsException | EmailAlreadyExistsException ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);

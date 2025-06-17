@@ -1,17 +1,23 @@
 package com.swr302.hivsystem.hivbackend.dto;
 
 import com.swr302.hivsystem.hivbackend.model.Role;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 public class UserDTO {
     private Long id;
     private String username;
+    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$",
+             message = "Mật khẩu phải có ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt")
     private String password;
     private String email;
     private String fullName;
+    @Pattern(regexp = "^\\d{10,11}$", message = "Số điện thoại phải là 10 hoặc 11 chữ số")
     private String phoneNumber;
     private Role role;
-    private boolean isAnonymous;
+    private Boolean isAnonymous;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -71,11 +77,11 @@ public class UserDTO {
         this.role = role;
     }
 
-    public boolean isAnonymous() {
+    public Boolean getIsAnonymous() {
         return isAnonymous;
     }
 
-    public void setAnonymous(boolean anonymous) {
+    public void setIsAnonymous(Boolean anonymous) {
         isAnonymous = anonymous;
     }
 
@@ -117,13 +123,13 @@ public class UserDTO {
 
         UserDTO userDTO = (UserDTO) o;
 
-        if (isAnonymous != userDTO.isAnonymous) return false;
+        if (isAnonymous != null ? !isAnonymous.equals(userDTO.isAnonymous) : userDTO.isAnonymous != null) return false;
         if (id != null ? !id.equals(userDTO.id) : userDTO.id != null) return false;
         if (username != null ? !username.equals(userDTO.username) : userDTO.username != null) return false;
         if (email != null ? !email.equals(userDTO.email) : userDTO.email != null) return false;
         if (fullName != null ? !fullName.equals(userDTO.fullName) : userDTO.fullName != null) return false;
         if (phoneNumber != null ? !phoneNumber.equals(userDTO.phoneNumber) : userDTO.phoneNumber != null) return false;
-        if (role != userDTO.role) return false;
+        if (role != null ? !role.equals(userDTO.role) : userDTO.role != null) return false;
         if (createdAt != null ? !createdAt.equals(userDTO.createdAt) : userDTO.createdAt != null) return false;
         return updatedAt != null ? updatedAt.equals(userDTO.updatedAt) : userDTO.updatedAt == null;
     }
@@ -136,7 +142,7 @@ public class UserDTO {
         result = 31 * result + (fullName != null ? fullName.hashCode() : 0);
         result = 31 * result + (phoneNumber != null ? phoneNumber.hashCode() : 0);
         result = 31 * result + (role != null ? role.hashCode() : 0);
-        result = 31 * result + (isAnonymous ? 1 : 0);
+        result = 31 * result + (isAnonymous != null ? isAnonymous.hashCode() : 0);
         result = 31 * result + (createdAt != null ? createdAt.hashCode() : 0);
         result = 31 * result + (updatedAt != null ? updatedAt.hashCode() : 0);
         return result;

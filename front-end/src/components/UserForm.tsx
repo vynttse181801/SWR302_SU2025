@@ -3,7 +3,7 @@ import { User } from '../types';
 
 interface UserFormProps {
   user?: User; // Optional, for editing existing user
-  onSave: (userData: Omit<User, 'id' | 'role'> & { roleName: string; password?: string }) => void;
+  onSave: (userData: Omit<User, 'id' | 'role'> & { roleName: string; password?: string, phoneNumber?: string }) => void;
   onCancel: () => void;
 }
 
@@ -12,9 +12,11 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
     fullName: '',
     email: '',
     username: '',
+    phoneNumber: '', // Add phone number field
     roleName: 'PATIENT', // Default role
     password: '', // Add password field
   });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (user) {
@@ -22,20 +24,44 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
         fullName: user.fullName || '',
         email: user.email,
         username: user.username,
+        phoneNumber: user.phoneNumber || '', // Pre-fill phone number if exists
         roleName: user.role.roleName || 'PATIENT',
         password: '', // Password should not be pre-filled when editing for security reasons
       });
     }
   }, [user]);
 
+  const validate = () => {
+    let newErrors: { [key: string]: string } = {};
+    // Password validation: at least 8 characters, one uppercase, one lowercase, one number, one special character
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!user && !formData.password) { // Required only for new users
+        newErrors.password = 'Mật khẩu là bắt buộc.';
+    } else if (formData.password && !passwordRegex.test(formData.password)) {
+      newErrors.password = 'Mật khẩu phải dài ít nhất 8 ký tự, bao gồm ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt.';
+    }
+
+    // Phone number validation: only digits, 10-11 digits
+    const phoneRegex = /^\d{10,11}$/;
+    if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber)) {
+        newErrors.phoneNumber = 'Số điện thoại phải là 10 hoặc 11 chữ số.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: '' })); // Clear error when typing
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    if (validate()) {
+      onSave(formData);
+    }
   };
 
   return (
@@ -77,6 +103,18 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
         />
       </div>
       <div className="mb-4">
+        <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-bold mb-2">Số điện thoại:</label>
+        <input
+          type="text"
+          id="phoneNumber"
+          name="phoneNumber"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
+        {errors.phoneNumber && <p className="text-red-500 text-xs italic">{errors.phoneNumber}</p>}
+      </div>
+      <div className="mb-4">
         <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Mật khẩu:</label>
         <input
           type="password"
@@ -87,6 +125,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           required={!user} // Required only for new users
         />
+        {errors.password && <p className="text-red-500 text-xs italic">{errors.password}</p>}
       </div>
       <div className="mb-4">
         <label htmlFor="roleName" className="block text-gray-700 text-sm font-bold mb-2">Vai trò:</label>
