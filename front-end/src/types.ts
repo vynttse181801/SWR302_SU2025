@@ -38,3 +38,5 @@ export type Doctor = {
   user: User;
   specialty: string;
 };
+
+export { User } from './types/index';

@@ -30,7 +30,7 @@ import {
 import { User as UserType } from '../../types/index';
 import { useModal } from '../../hooks/useModal';
 import Modal from '../../components/Modal';
-import { authService, patientService } from '../../services/api';
+import { authService, patientService, testService, consultationService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
@@ -48,18 +48,20 @@ interface ServiceItem {
   id: string;
   title: string;
   date: string;
+  time: string;
   status: string;
   doctor: string;
   details: string;
   rating?: Rating;
   doctorNote?: string;
   resultNote?: string;
+  testType?: string;
 }
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { modalState, showModal, hideModal } = useModal();
+  // const { modalState, showModal, hideModal } = useModal();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -111,6 +113,22 @@ const ProfilePage: React.FC = () => {
 
   const { user: authUser, updateUser } = useAuth();
 
+  const [patientId, setPatientId] = useState<number | null>(null);
+
+  // Thêm state cho modal cập nhật
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editBooking, setEditBooking] = useState<ServiceItem | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [editTimeSlots, setEditTimeSlots] = useState<{id: number, time: string}[]>([]);
+  const [editTestTypes, setEditTestTypes] = useState<any[]>([]);
+
+  // State cho modal sửa/hủy tư vấn
+  const [showEditConsultationModal, setShowEditConsultationModal] = useState(false);
+  const [editConsultation, setEditConsultation] = useState<ServiceItem | null>(null);
+  const [editConsultationForm, setEditConsultationForm] = useState<{notes: string}>({notes: ''});
+  const [showCancelConsultationModal, setShowCancelConsultationModal] = useState(false);
+  const [selectedConsultationToCancel, setSelectedConsultationToCancel] = useState<ServiceItem | null>(null);
+
   // Handle navigation state
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -120,38 +138,44 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (authUser?.id) {
-      patientService.getProfile()
-        .then((res: { data: UserType }) => {
-          setUser((prev: UserType) => ({
-            ...prev,
-            id: res.data.id,
-            name: res.data.name || '',
-            fullName: res.data.fullName || '',
-            email: res.data.email || '',
-            phoneNumber: res.data.phoneNumber || '',
-            username: res.data.username || '',
-            role: res.data.role || prev.role, // Preserve existing role if not provided
-            dateOfBirth: res.data.dateOfBirth || '',
-            gender: res.data.gender || '',
-            address: res.data.address || '',
-            medicalHistory: {
-              bloodType: res.data.medicalHistory?.bloodType || '',
-              allergies: res.data.medicalHistory?.allergies || [],
-              chronicDiseases: res.data.medicalHistory?.chronicDiseases || [],
-              medications: res.data.medicalHistory?.medications || []
-            },
-            medicalRecordNumber: res.data.medicalRecordNumber || '',
-            notes: res.data.notes || '',
-            lastCheckup: res.data.lastCheckup || '',
-            nextAppointment: res.data.nextAppointment || '',
-          }));
-        })
-        .catch((err: any) => {
-          console.error('Lỗi lấy thông tin user:', err);
-          showModal('Lỗi', 'Không thể lấy thông tin hồ sơ. Vui lòng thử lại.', 'error');
-        });
+      api.get('/patients/me').then(res => {
+        setPatientId(res.data.id);
+        setUser((prev: UserType) => ({ ...prev, ...res.data }));
+      });
     }
-  }, [authUser?.id, showModal]);
+  }, [authUser?.id]);
+
+  useEffect(() => {
+    if (activeTab === 'test-history' && patientId) {
+      api.get(`/lab-tests/patient/${patientId}`).then(res => {
+        const sorted = res.data
+          .map((item: any) => ({
+            id: item.id,
+            title: item.testTypeName || 'Xét nghiệm',
+            date: item.date,
+            time: convertTimeSlotIdToTime(item.timeSlot),
+            status: item.status,
+            doctor: item.doctorName || '',
+            details: item.notes || '',
+          }))
+          .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTestHistory(sorted);
+      }).catch(() => setTestHistory([]));
+    }
+    if (activeTab === 'consultation-history' && patientId) {
+      api.get(`/online-consultations/patient/${patientId}`).then(res => {
+        setConsultationHistory(res.data.map((item: any) => ({
+          id: item.id,
+          title: item.consultationType || 'Tư vấn',
+          date: item.startTime ? new Date(item.startTime).toLocaleDateString('vi-VN') : '',
+          time: item.startTime ? new Date(item.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
+          status: item.status || 'pending',
+          doctor: item.doctorName || '',
+          details: item.notes || '',
+        })));
+      }).catch(() => setConsultationHistory([]));
+    }
+  }, [activeTab, patientId]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -414,70 +438,29 @@ const ProfilePage: React.FC = () => {
   );
 
   const renderServiceItem = (item: ServiceItem) => (
-    <div key={item.id} className="bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-100 last:mb-0">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-          <p className="text-sm text-gray-600">Ngày: {item.date}</p>
+    <div className="flex justify-center">
+      <div className="bg-white rounded-2xl shadow-lg p-10 mb-8 flex flex-col items-start max-w-2xl w-full min-h-[180px]">
+        <div className="flex items-center w-full mb-2">
+          <span className="font-bold text-lg text-gray-900">{item.title}</span>
+          <span className={`ml-3 px-3 py-1 rounded-full text-xs font-semibold
+            ${item.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+              item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+              'bg-green-100 text-green-700'}`}>
+            {item.status === 'cancelled' ? 'Đã hủy' : item.status === 'pending' ? 'Chờ xác nhận' : 'Hoàn thành'}
+          </span>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-          item.status === 'completed' ? 'bg-green-100 text-green-800' :
-          item.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
-          {item.status === 'completed' ? 'Hoàn thành' :
-           item.status === 'pending' ? 'Chờ xác nhận' :
-           'Đã hủy'}
-        </span>
+        <div className="text-gray-700 mb-1">Ngày: <b>{item.date}</b> | Giờ: <b>{item.time}</b></div>
+        {item.testType && <div className="text-gray-700 mb-1">Loại xét nghiệm: <b>{item.testType}</b></div>}
+        <div className="text-gray-700 mb-2">Ghi chú: {item.details || <span className="italic text-gray-400">Không có</span>}</div>
+        {(item.status === 'pending' || item.status === 'confirmed') && (
+          <div className="flex gap-3 mt-2 self-end">
+            <button onClick={() => handleEditBooking(item)}
+              className="px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition">Cập nhật</button>
+            <button onClick={() => handleCancelTest(item)}
+              className="px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition">Hủy</button>
+          </div>
+        )}
       </div>
-      <p className="text-sm text-gray-700 mb-2">Bác sĩ: {item.doctor}</p>
-      <p className="text-sm text-gray-700 mb-3">{item.details}</p>
-
-      {item.rating ? (
-        <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
-          Đánh giá của bạn: {renderRatingStars(item.rating.rating)}
-          <span className="text-gray-500 ml-2">"{item.rating.comment}"</span>
-          <button
-            onClick={() => handleOpenRatingModal(item)}
-            className="ml-auto text-primary-600 hover:text-primary-700 text-sm font-medium"
-          >
-            <Pencil size={16} /> Chỉnh sửa
-          </button>
-        </div>
-      ) : (
-        item.status === 'completed' && (
-          <button
-            onClick={() => handleOpenRatingModal(item)}
-            className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
-          >
-            <Star size={16} /> Đánh giá dịch vụ
-          </button>
-        )
-      )}
-
-      {item.doctorNote && (
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mt-3 rounded-md">
-          <p className="text-sm font-medium text-blue-800 flex items-center gap-2"><ClipboardList size={16} /> Ghi chú của Bác sĩ:</p>
-          <p className="text-sm text-blue-700 mt-1">{item.doctorNote}</p>
-        </div>
-      )}
-
-      {item.resultNote && (
-        <div className="bg-purple-50 border-l-4 border-purple-400 p-3 mt-3 rounded-md">
-          <p className="text-sm font-medium text-purple-800 flex items-center gap-2"><FileText size={16} /> Kết quả xét nghiệm:</p>
-          <p className="text-sm text-purple-700 mt-1">{item.resultNote}</p>
-        </div>
-      )}
-      {item.status === 'pending' && (
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={() => handleCancelTest(item)}
-            className="text-red-600 hover:text-red-700 text-sm font-medium"
-          >
-            Hủy lịch
-          </button>
-        </div>
-      )}
     </div>
   );
 
@@ -489,16 +472,155 @@ const ProfilePage: React.FC = () => {
   const [selectedTestToCancel, setSelectedTestToCancel] = useState<ServiceItem | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const confirmCancelTest = () => {
+  const confirmCancelTest = async () => {
     if (selectedTestToCancel) {
-      setTestHistory(prev => prev.map(test =>
-        test.id === selectedTestToCancel.id ? { ...test, status: 'cancelled' } : test
-      ));
+      try {
+        // Lấy thông tin booking hiện tại qua testService
+        const res = await testService.getLabBookingById(selectedTestToCancel.id);
+        const booking = res.data;
+        
+        // Gửi PUT để cập nhật status
+        await testService.updateLabBooking(selectedTestToCancel.id, {
+          ...booking,
+          status: 'cancelled'
+        });
+        setTestHistory(prev => prev.map(test =>
+          test.id === selectedTestToCancel.id ? { ...test, status: 'cancelled' } : test
+        ));
+        toast.success('Lịch xét nghiệm đã được hủy.');
+      } catch (err: any) {
+        toast.error('Hủy lịch thất bại. Vui lòng thử lại!');
+      }
       setShowCancelModal(false);
-      toast.success('Lịch xét nghiệm đã được hủy.');
       setSelectedTestToCancel(null);
     }
   };
+
+  // Hàm mở modal cập nhật
+  const handleEditBooking = async (booking: ServiceItem) => {
+    setEditBooking(booking);
+    setShowEditModal(true);
+    // Lấy danh sách loại xét nghiệm
+    const resTypes = await testService.getTestTypes();
+    setEditTestTypes(resTypes.data);
+    // Lấy khung giờ cho ngày hiện tại
+    const resSlots = await testService.getLabTestTimeSlots(new Date(booking.date));
+    setEditTimeSlots(resSlots.data.map((time: string, idx: number) => ({ id: idx + 1, time })));
+    // Tìm id loại xét nghiệm hiện tại
+    const currentType = resTypes.data.find((t: any) => t.name === booking.title);
+    setEditForm({
+      testTypeId: currentType ? currentType.id : '',
+      date: booking.date,
+      timeSlotId: editTimeSlots.find(slot => slot.time === booking.time)?.id || '',
+      notes: booking.details || ''
+    });
+  };
+
+  // Hàm lưu cập nhật
+  const handleSaveEditBooking = async () => {
+    if (!editBooking) return;
+    try {
+      // Lấy thông tin booking hiện tại
+      const res = await testService.getLabBookingById(editBooking.id);
+      const booking = res.data;
+      // Gửi PUT để cập nhật
+      await testService.updateLabBooking(editBooking.id, {
+        ...booking,
+        testTypeId: editForm.testTypeId,
+        date: editForm.date,
+        timeSlotId: editForm.timeSlotId,
+        notes: editForm.notes,
+        status: 'pending'
+      });
+      setTestHistory(prev => prev.map(test =>
+        test.id === editBooking.id
+          ? { ...test, title: editTestTypes.find(t => t.id === editForm.testTypeId)?.name || test.title, date: editForm.date, time: editTimeSlots.find(slot => slot.id === editForm.timeSlotId)?.time || test.time, details: editForm.notes, status: 'pending' }
+          : test
+      ));
+      toast.success('Cập nhật lịch xét nghiệm thành công!');
+      setShowEditModal(false);
+      setEditBooking(null);
+    } catch (err: any) {
+      toast.error('Cập nhật thất bại. Vui lòng thử lại!');
+    }
+  };
+
+  // Khi chọn lại ngày trong modal cập nhật, load lại khung giờ
+  useEffect(() => {
+    if (showEditModal && editForm.date) {
+      (async () => {
+        const resSlots = await testService.getLabTestTimeSlots(new Date(editForm.date));
+        setEditTimeSlots(resSlots.data.map((time: string, idx: number) => ({ id: idx + 1, time })));
+        // Nếu khung giờ cũ vẫn còn, giữ lại, nếu không thì reset
+        if (!resSlots.data.find((time: string) => time === editTimeSlots.find(slot => slot.id === editForm.timeSlotId)?.time)) {
+          setEditForm((prev: any) => ({ ...prev, timeSlotId: '' }));
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editForm.date, showEditModal]);
+
+  const handleEditConsultation = (consult: ServiceItem) => {
+    setEditConsultation(consult);
+    setEditConsultationForm({ notes: consult.details || '' });
+    setShowEditConsultationModal(true);
+  };
+
+  const handleSaveEditConsultation = async () => {
+    if (!editConsultation) return;
+    try {
+      await consultationService.updateOnlineConsultation(editConsultation.id, { notes: editConsultationForm.notes });
+      setConsultationHistory(prev => prev.map(c => c.id === editConsultation.id ? { ...c, details: editConsultationForm.notes } : c));
+      setShowEditConsultationModal(false);
+      toast.success('Cập nhật ghi chú thành công!');
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Cập nhật thất bại');
+    }
+  };
+
+  const handleCancelConsultation = (consult: ServiceItem) => {
+    setSelectedConsultationToCancel(consult);
+    setShowCancelConsultationModal(true);
+  };
+
+  const confirmCancelConsultation = async () => {
+    if (!selectedConsultationToCancel) return;
+    try {
+      await consultationService.deleteOnlineConsultation(selectedConsultationToCancel.id);
+      setConsultationHistory(prev => prev.filter(c => c.id !== selectedConsultationToCancel.id));
+      setShowCancelConsultationModal(false);
+      toast.success('Đã hủy lịch tư vấn!');
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Hủy lịch thất bại');
+    }
+  };
+
+  const renderConsultationItem = (item: ServiceItem) => (
+    <div className="flex justify-center">
+      <div className="bg-white rounded-2xl shadow-lg p-10 mb-8 flex flex-col items-start max-w-2xl w-full min-h-[180px]">
+        <div className="flex items-center w-full mb-2">
+          <span className="font-bold text-lg text-gray-900">{item.title}</span>
+          <span className={`ml-3 px-3 py-1 rounded-full text-xs font-semibold
+            ${item.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+              item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+              'bg-green-100 text-green-700'}`}>
+            {item.status === 'cancelled' ? 'Đã hủy' : item.status === 'pending' ? 'Chờ xác nhận' : 'Hoàn thành'}
+          </span>
+        </div>
+        <div className="text-gray-700 mb-1">Ngày: <b>{item.date}</b> | Giờ: <b>{item.time}</b></div>
+        {item.doctor && <div className="text-gray-700 mb-1">Bác sĩ: <b>{item.doctor}</b></div>}
+        <div className="text-gray-700 mb-2">Ghi chú: {item.details || <span className="italic text-gray-400">Không có</span>}</div>
+        {(item.status === 'pending' || item.status === 'confirmed') && (
+          <div className="flex gap-3 mt-2 self-end">
+            <button onClick={() => handleEditConsultation(item)}
+              className="px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition">Cập nhật</button>
+            <button onClick={() => handleCancelConsultation(item)}
+              className="px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition">Hủy</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -784,7 +906,7 @@ const ProfilePage: React.FC = () => {
               <p className="text-gray-600">Chưa có lịch sử tư vấn nào.</p>
             ) : (
               <div>
-                {consultationHistory.map(renderServiceItem)}
+                {consultationHistory.map(renderConsultationItem)}
               </div>
             )}
           </>
@@ -825,6 +947,21 @@ const ProfilePage: React.FC = () => {
     { id: 'arv-protocol', label: 'Phác đồ ARV', icon: PillIcon, color: 'green' },
   ];
 
+  // Hàm chuyển đổi timeSlotId sang giờ
+  const convertTimeSlotIdToTime = (timeSlot: any) => {
+    // Nếu là string giờ thì trả về luôn
+    if (typeof timeSlot === 'string' && timeSlot.match(/^\d{2}:\d{2}$/)) return timeSlot;
+    // Nếu là số hoặc string số
+    const slotId = Number(timeSlot);
+    const slotMap = [
+      '07:00', '08:00', '09:00', '10:00', '11:00',
+      '13:00', '14:00', '15:00', '16:00'
+    ];
+    // slotId bắt đầu từ 1
+    if (slotId >= 1 && slotId <= slotMap.length) return slotMap[slotId - 1];
+    return '';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 via-white to-primary-50 py-12">
       <div className="container mx-auto px-4">
@@ -844,17 +981,10 @@ const ProfilePage: React.FC = () => {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as TabType)}
-                      className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg
-                          transition-all duration-300 ${activeTab === tab.id
-                              ? `bg-${tab.color}-50 text-${tab.color}-600 font-medium`
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
+                      className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${activeTab === tab.id ? `bg-${tab.color}-50 text-${tab.color}-600 font-medium` : 'text-gray-600 hover:bg-gray-50'}`}
                     >
-                      <tab.icon size={20} />
+                      <tab.icon size={20} className={`text-${tab.color}-500`} />
                       <span>{tab.label}</span>
-                      {activeTab === tab.id && (
-                        <ChevronRight size={16} className="ml-auto" />
-                      )}
                     </button>
                   ))}
                 </nav>
@@ -862,157 +992,101 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Main content */}
-            <div className="w-full">
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="p-6">
-                  {/* Edit form */}
-                  {activeTab === 'profile' && (
-                    <div className="flex justify-end mb-6">
-                      <div className="flex justify-end space-x-2 mb-4">
-                        {isEditing ? (
-                          <>
-                            <button
-                              onClick={handleSave}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            >
-                              <Save className="mr-2 h-5 w-5" /> Lưu
-                            </button>
-                            <button
-                              onClick={handleCancel}
-                              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                              <X className="mr-2 h-5 w-5" /> Hủy
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={handleEdit}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                            >
-                              <Edit2 className="mr-2 h-5 w-5" /> Chỉnh sửa hồ sơ
-                            </button>
-                            <button
-                              onClick={() => setShowChangePasswordModal(true)}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                            >
-                              <KeyRound className="mr-2 h-5 w-5" /> Đổi mật khẩu
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {renderTabContent()}
-                </div>
-                {isEditing && activeTab === 'profile' && (
-                  <div className="flex justify-center gap-4 py-6 px-6 bg-gray-50 border-t border-gray-100">
-                    <button
-                      onClick={handleCancel}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 text-gray-600 hover:text-gray-700
-                        bg-white hover:bg-gray-50 rounded-lg transition-all duration-300
-                        font-medium shadow-sm hover:shadow-md border border-gray-200"
-                    >
-                      <X size={18} />
-                      Hủy
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-500 text-white rounded-lg
-                        hover:bg-primary-600 transition-all duration-300 font-medium shadow-sm
-                        hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Save size={18} />
-                      Lưu thay đổi
-                    </button>
-                  </div>
-                )}
-              </div>
+            <div className="flex-1">
+              {renderTabContent()}
             </div>
           </div>
         </div>
       </div>
-      {renderRatingModal()}
-      <Modal
-        isOpen={modalState.isOpen}
-        onClose={hideModal}
-        title={modalState.title}
-        message={modalState.message}
-        type={modalState.type}
-        buttonText={modalState.buttonText}
-        onButtonClick={modalState.onButtonClick}
-      />
-      <Modal
-        isOpen={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        title="Xác nhận hủy lịch"
-        message={`Bạn có chắc chắn muốn hủy lịch xét nghiệm "${selectedTestToCancel?.title}" không?`}
-        type="error"
-        buttonText="Xác nhận"
-        onButtonClick={confirmCancelTest}
-      />
-      {showChangePasswordModal && (
-        <Modal title="Đổi mật khẩu" isOpen={showChangePasswordModal} onClose={() => setShowChangePasswordModal(false)}>
-          <div className="space-y-6 p-6 max-w-md ml-auto">
-            {passwordError && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                <span className="block sm:inline">{passwordError}</span>
-              </div>
-            )}
+      {showEditModal && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Cập nhật lịch xét nghiệm"
+        >
+          <div className="space-y-4">
             <div>
-              <div className="">
-                <label htmlFor="current-password" className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại</label>
-                <input
-                  type="password"
-                  id="current-password"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                />
-              </div>
+              <label className="block text-sm font-medium mb-1">Loại xét nghiệm</label>
+              <select value={editForm.testTypeId} onChange={e => setEditForm((prev: any) => ({ ...prev, testTypeId: Number(e.target.value) }))} className="w-full border rounded p-2">
+                <option value="">Chọn loại xét nghiệm</option>
+                {editTestTypes.map((type: any) => (
+                  <option key={type.id} value={type.id}>{type.name}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <div className="">
-                <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
-                <input
-                  type="password"
-                  id="new-password"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
-              </div>
+              <label className="block text-sm font-medium mb-1">Ngày</label>
+              <input type="date" value={editForm.date} onChange={e => setEditForm((prev: any) => ({ ...prev, date: e.target.value }))} className="w-full border rounded p-2" />
             </div>
             <div>
-              <div className="">
-                <label htmlFor="confirm-new-password" className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
-                <input
-                  type="password"
-                  id="confirm-new-password"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  required
-                />
-              </div>
+              <label className="block text-sm font-medium mb-1">Khung giờ</label>
+              <select value={editForm.timeSlotId} onChange={e => setEditForm((prev: any) => ({ ...prev, timeSlotId: Number(e.target.value) }))} className="w-full border rounded p-2">
+                <option value="">Chọn khung giờ</option>
+                {editTimeSlots.map(slot => (
+                  <option key={slot.id} value={slot.id}>{slot.time}</option>
+                ))}
+              </select>
             </div>
-            <div className="mt-4 flex justify-end space-x-2">
+            <div>
+              <label className="block text-sm font-medium mb-1">Ghi chú</label>
+              <textarea value={editForm.notes} onChange={e => setEditForm((prev: any) => ({ ...prev, notes: e.target.value }))} className="w-full border rounded p-2" rows={3} />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={handleSaveEditBooking} className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">Lưu</button>
+              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Hủy</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {showCancelModal && (
+        <Modal
+          isOpen={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          title="Xác nhận hủy lịch xét nghiệm"
+        >
+          <div className="space-y-4">
+            <p>Bạn có chắc chắn muốn hủy lịch xét nghiệm này không?</p>
+            <div className="flex gap-2 justify-end">
               <button
-                type="button"
-                onClick={() => setShowChangePasswordModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={confirmCancelTest}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
               >
-                Hủy
+                Hủy lịch
               </button>
               <button
-                type="button"
-                onClick={handleChangePassword}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                onClick={() => setShowCancelModal(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
               >
-                Đổi mật khẩu
+                Đóng
               </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {showEditConsultationModal && (
+        <Modal isOpen={showEditConsultationModal} onClose={() => setShowEditConsultationModal(false)} title="Cập nhật ghi chú tư vấn">
+          <div className="p-4">
+            <textarea
+              className="w-full border rounded p-2 mb-4"
+              rows={4}
+              value={editConsultationForm.notes}
+              onChange={e => setEditConsultationForm({ notes: e.target.value })}
+              placeholder="Nhập ghi chú mới..."
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowEditConsultationModal(false)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Hủy</button>
+              <button onClick={handleSaveEditConsultation} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Lưu</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {showCancelConsultationModal && (
+        <Modal isOpen={showCancelConsultationModal} onClose={() => setShowCancelConsultationModal(false)} title="Xác nhận hủy lịch tư vấn">
+          <div className="p-4">
+            <p>Bạn có chắc chắn muốn hủy lịch tư vấn này không?</p>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setShowCancelConsultationModal(false)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Không</button>
+              <button onClick={confirmCancelConsultation} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Hủy lịch</button>
             </div>
           </div>
         </Modal>

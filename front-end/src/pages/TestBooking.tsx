@@ -27,7 +27,6 @@ interface BookingForm {
   date: Date;
   timeSlotId: number;
   notes: string;
-  doctorId: string;
 }
 
 const TestBooking = () => {
@@ -41,7 +40,6 @@ const TestBooking = () => {
     date: new Date(),
     timeSlotId: 0,
     notes: '',
-    doctorId: '',
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +59,25 @@ const TestBooking = () => {
 
     fetchTestTypes();
   }, []);
+
+  useEffect(() => {
+    const fetchTimeSlots = async () => {
+      try {
+        const response = await testService.getLabTestTimeSlots(selectedDate);
+        // API trả về mảng string, map thành TimeSlot với id là index+1
+        setTimeSlots(
+          response.data.map((time: string, idx: number) => ({
+            id: idx + 1,
+            time,
+            isAvailable: true
+          }))
+        );
+      } catch (err: any) {
+        setTimeSlots([]);
+      }
+    };
+    fetchTimeSlots();
+  }, [selectedDate]);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
@@ -84,50 +101,12 @@ const TestBooking = () => {
         date: new Date(),
         timeSlotId: 0,
         notes: '',
-        doctorId: '',
       });
       navigate('/test-bookings');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.');
     }
   };
-
-  const hardcodedTimeSlots: TimeSlot[] = [
-    { id: 1, time: '08:00', isAvailable: true },
-    { id: 2, time: '09:00', isAvailable: true },
-    { id: 3, time: '10:00', isAvailable: true },
-    { id: 4, time: '11:00', isAvailable: true },
-    { id: 5, time: '14:00', isAvailable: true },
-    { id: 6, time: '15:00', isAvailable: true },
-    { id: 7, time: '16:00', isAvailable: true },
-    { id: 8, time: '17:00', isAvailable: true },
-  ];
-
-  const doctors = [
-    {
-      id: '1',
-      name: 'BS. Nguyễn Văn A',
-      specialization: 'Chuyên khoa HIV',
-      experience: '15 năm kinh nghiệm',
-      avatar: nguyenVanA
-    },
-    {
-      id: '2',
-      name: 'BS. Trần Thị B',
-      specialization: 'Chuyên khoa HIV',
-      experience: '12 năm kinh nghiệm',
-      avatar: tranThiB
-    },
-    {
-      id: '3',
-      name: 'BS. Lê Văn C',
-      specialization: 'Chuyên khoa HIV',
-      experience: '10 năm kinh nghiệm',
-      avatar: leVanC
-    }
-  ];
-
-  console.log('Doctor avatars:', doctors.map(d => ({ name: d.name, avatar: d.avatar })));
 
   if (loading) {
     return (
@@ -186,67 +165,6 @@ const TestBooking = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn bác sĩ</h2>
-              <div className="relative">
-                <select
-                  value={formData.doctorId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, doctorId: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
-                >
-                  <option value="">Chọn bác sĩ</option>
-                  {doctors.map((doctor) => (
-                    <option key={doctor.id} value={doctor.id}>
-                      {doctor.name} - {doctor.specialization}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-
-              {formData.doctorId && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  {doctors.find(d => d.id === formData.doctorId) && (
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <img 
-                          src={doctors.find(d => d.id === formData.doctorId)?.avatar} 
-                          alt="Doctor" 
-                          className="w-20 h-20 rounded-full object-cover"
-                        />
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {doctors.find(d => d.id === formData.doctorId)?.name}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {doctors.find(d => d.id === formData.doctorId)?.specialization}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-3 rounded-lg">
-                          <p className="text-sm font-medium text-gray-900">Kinh nghiệm</p>
-                          <p className="text-sm text-gray-600">
-                            {doctors.find(d => d.id === formData.doctorId)?.experience}
-                          </p>
-                        </div>
-                        <div className="bg-white p-3 rounded-lg">
-                          <p className="text-sm font-medium text-gray-900">Chuyên môn</p>
-                          <p className="text-sm text-gray-600">
-                            {doctors.find(d => d.id === formData.doctorId)?.specialization}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn ngày</h2>
@@ -272,25 +190,23 @@ const TestBooking = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn thời gian</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  {hardcodedTimeSlots.map((slot) => (
-                    <button
-                      key={slot.id}
-                      disabled={!slot.isAvailable}
-                      onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
-                      className={`p-3 text-center rounded-lg transition-all ${
-                        !slot.isAvailable
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : formData.timeSlotId === slot.id
-                          ? 'bg-primary-500 text-white ring-2 ring-primary-300'
-                          : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
-                      }`}
-                    >
-                      <span className="text-lg font-medium">{slot.time}</span>
-                      {!slot.isAvailable && (
-                        <span className="block text-xs mt-1">Đã đặt</span>
-                      )}
-                    </button>
-                  ))}
+                  {timeSlots.length === 0 ? (
+                    <p className="text-gray-500 col-span-2">Không có khung giờ khả dụng cho ngày này.</p>
+                  ) : (
+                    timeSlots.map((slot) => (
+                      <button
+                        key={slot.id}
+                        onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
+                        className={`p-3 text-center rounded-lg transition-all ${
+                          formData.timeSlotId === slot.id
+                            ? 'bg-primary-500 text-white ring-2 ring-primary-300'
+                            : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
+                        }`}
+                      >
+                        <span className="text-lg font-medium">{slot.time}</span>
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -308,7 +224,7 @@ const TestBooking = () => {
 
             <button
               onClick={handleSubmit}
-              disabled={!formData.testTypeId || !formData.timeSlotId || !formData.doctorId}
+              disabled={!formData.testTypeId || !formData.timeSlotId}
               className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
             >
               Đặt lịch xét nghiệm

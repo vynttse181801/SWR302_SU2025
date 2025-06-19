@@ -23,6 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/online-consultations")
@@ -105,6 +108,10 @@ public class OnlineConsultationController {
             
             Appointment savedAppointment = appointmentRepository.save(newAppointment);
 
+            // Đánh dấu slot đã được đặt
+            timeSlot.setBooked(true);
+            consultationTimeSlotRepository.save(timeSlot);
+
             // Fetch ConsultationType (assuming a fixed ID for now, e.g., ID 1)
             Optional<ConsultationType> consultationTypeOptional = consultationTypeRepository.findById(requestDTO.getConsultationTypeId() != null ? requestDTO.getConsultationTypeId() : 1L);
             if (consultationTypeOptional.isEmpty()) {
@@ -151,5 +158,28 @@ public class OnlineConsultationController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/patient/{patientId}")
+    public List<Map<String, Object>> getConsultationsByPatient(@PathVariable Long patientId) {
+        return onlineConsultationRepository.findAll()
+            .stream()
+            .filter(consultation -> consultation.getAppointment().getPatient().getId().equals(patientId))
+            .map(consultation -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", consultation.getId());
+                map.put("appointmentId", consultation.getAppointment().getId());
+                map.put("consultationType", consultation.getConsultationType().getName());
+                map.put("meetingLink", consultation.getMeetingLink());
+                map.put("startTime", consultation.getStartTime());
+                map.put("endTime", consultation.getEndTime());
+                map.put("notes", consultation.getNotes());
+                map.put("createdAt", consultation.getCreatedAt());
+                map.put("updatedAt", consultation.getUpdatedAt());
+                map.put("status", consultation.getAppointment().getStatus());
+                map.put("doctorName", consultation.getAppointment().getDoctor() != null ? consultation.getAppointment().getDoctor().getFullName() : "");
+                return map;
+            })
+            .collect(Collectors.toList());
     }
 }

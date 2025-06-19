@@ -108,6 +108,14 @@ export const testService = {
         api.post('/lab-tests', testData),
     getTestResults: () => 
         api.get('/lab-results'),
+    getLabTestTimeSlots: (date: Date) =>
+        api.get('/lab-tests/time-slots', {
+            params: { date: date.toISOString().split('T')[0] }
+        }),
+    getLabBookingById: (id: number|string) =>
+        api.get(`/lab-tests/${id}`),
+    updateLabBooking: (id: number|string, data: any) =>
+        api.put(`/lab-tests/${id}`, data),
 };
 
 // ARV Protocol services
@@ -150,7 +158,11 @@ export const consultationService = {
             params: { doctorId: doctorId, date: format(date, 'yyyy-MM-dd') }
         }),
     createConsultation: (consultationData: any) => 
-        api.post('/online-consultations', consultationData) // Changed endpoint
+        api.post('/online-consultations', consultationData), // Changed endpoint
+    updateOnlineConsultation: (id: number|string, data: any) =>
+        api.put(`/online-consultations/${id}`, data),
+    deleteOnlineConsultation: (id: number|string) =>
+        api.delete(`/online-consultations/${id}`),
 };
 
 export const serviceService = {

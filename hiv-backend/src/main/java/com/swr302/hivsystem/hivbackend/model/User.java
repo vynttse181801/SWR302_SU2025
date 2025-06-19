@@ -15,13 +15,14 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 20)
+    @Column(unique = true, nullable = false, length = 50)
     private String username;
 
     @Column(nullable = false)
-    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
-    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$",
-             message = "Mật khẩu phải có ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt")
+    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
+    // @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
+    // @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$",
+    //          message = "Mật khẩu phải có ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt")
     private String password;
 
     @Column(name = "full_name", nullable = false, length = 100)

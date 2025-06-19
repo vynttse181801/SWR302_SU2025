@@ -66,16 +66,7 @@ const ConsultationPage: React.FC = () => {
       bio: 'Bác sĩ chuyên khoa HIV với 10 năm kinh nghiệm'
     }
   ]);
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
-    { id: 1, time: '08:00', isAvailable: true },
-    { id: 2, time: '09:00', isAvailable: true },
-    { id: 3, time: '10:00', isAvailable: false },
-    { id: 4, time: '11:00', isAvailable: true },
-    { id: 5, time: '14:00', isAvailable: true },
-    { id: 6, time: '15:00', isAvailable: false },
-    { id: 7, time: '16:00', isAvailable: true },
-    { id: 8, time: '17:00', isAvailable: true }
-  ]);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [formData, setFormData] = useState<ConsultationForm>({
     doctorId: 0,
@@ -110,7 +101,13 @@ const ConsultationPage: React.FC = () => {
         if (formData.doctorId && selectedDate) {
           const response = await consultationService.getTimeSlots(formData.doctorId, selectedDate);
           console.log('Time Slots API response:', response.data);
-          setTimeSlots(response.data);
+          setTimeSlots(
+            response.data.map((slot: any) => ({
+              ...slot,
+              time: slot.time || (slot.startTime ? slot.startTime.slice(11, 16) : ''),
+              isAvailable: !slot.isBooked
+            }))
+          );
         }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Không thể tải khung giờ');
@@ -135,8 +132,13 @@ const ConsultationPage: React.FC = () => {
     setSuccess(null);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await consultationService.createConsultation({
+        doctorId: formData.doctorId,
+        date: formData.date,
+        timeSlotId: formData.timeSlotId,
+        symptoms: formData.symptoms,
+        notes: formData.notes
+      });
       setSuccess('Đặt lịch tư vấn thành công!');
       setFormData({
         doctorId: 0,
@@ -145,7 +147,7 @@ const ConsultationPage: React.FC = () => {
         symptoms: '',
         notes: '',
       });
-      navigate('/consultations');
+      navigate('/consultation');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.');
     }
