@@ -17,6 +17,8 @@ import DoctorProfile from './pages/profile/DoctorProfile';
 import DoctorsPage from './pages/Doctors';
 import AdminPage from './pages/AdminPage';
 import AdminLayout from './components/AdminLayout';
+import StaffPage from './pages/StaffPage';
+import StaffLayout from './components/StaffLayout';
 import { navLinks } from './constants';
 import { User } from './types/index';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -78,6 +80,39 @@ const AdminOnlyRoute: React.FC<{
     return <Navigate to="/doctor-profile" replace />;
   } else if (user?.role?.roleName === 'ROLE_PATIENT') {
     return <Navigate to="/profile" replace />;
+  } else if (user?.role?.roleName === 'ROLE_STAFF') {
+    return <Navigate to="/staff" replace />;
+  } else {
+    return <Navigate to="/" replace />;
+  }
+};
+
+// Staff-only route component
+const StaffOnlyRoute: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If user is STAFF, allow access to staff pages
+  if (user?.role?.roleName === 'ROLE_STAFF') {
+    return <StaffLayout>{children}</StaffLayout>;
+  }
+
+  // If user is not STAFF, redirect to appropriate page based on role
+  if (user?.role?.roleName === 'ROLE_ADMIN') {
+    return <Navigate to="/admin" replace />;
+  } else if (user?.role?.roleName === 'ROLE_DOCTOR') {
+    return <Navigate to="/doctor-profile" replace />;
+  } else if (user?.role?.roleName === 'ROLE_PATIENT') {
+    return <Navigate to="/profile" replace />;
   } else {
     return <Navigate to="/" replace />;
   }
@@ -98,6 +133,11 @@ const PublicRoute: React.FC<{
     return <Navigate to="/admin" replace />;
   }
 
+  // If user is STAFF and trying to access public pages, redirect to staff
+  if (isAuthenticated && user?.role?.roleName === 'ROLE_STAFF') {
+    return <Navigate to="/staff" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -105,13 +145,14 @@ function AppContent() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  // Check if current route is admin route
+  // Check if current route is admin or staff route
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isStaffRoute = location.pathname.startsWith('/staff');
 
   return (
     <div className="min-h-screen bg-white text-black">
-      {/* Only show Header and Footer for non-admin routes */}
-      {!isAdminRoute && (
+      {/* Only show Header and Footer for non-admin and non-staff routes */}
+      {!isAdminRoute && !isStaffRoute && (
         <>
           <Header 
             links={navLinks} 
@@ -121,7 +162,7 @@ function AppContent() {
           />
           <main>
             <Routes>
-              {/* Public routes that redirect ADMIN users */}
+              {/* Public routes that redirect ADMIN and STAFF users */}
               <Route path="/" element={
                 <PublicRoute>
                   <HomePage />
@@ -163,7 +204,7 @@ function AppContent() {
                 </PublicRoute>
               } />
 
-              {/* Protected routes for non-ADMIN users */}
+              {/* Protected routes for non-ADMIN and non-STAFF users */}
               <Route 
                 path="/profile" 
                 element={
@@ -249,7 +290,10 @@ function AppContent() {
 
               {/* Catch all route - redirect based on user role */}
               <Route path="*" element={
-                <Navigate to={user?.role?.roleName === 'ROLE_ADMIN' ? '/admin' : '/'} replace />
+                <Navigate to={
+                  user?.role?.roleName === 'ROLE_ADMIN' ? '/admin' : 
+                  user?.role?.roleName === 'ROLE_STAFF' ? '/staff' : '/'
+                } replace />
               } />
             </Routes>
           </main>
@@ -269,6 +313,21 @@ function AppContent() {
             }
           />
           <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Routes>
+      )}
+
+      {/* Staff routes */}
+      {isStaffRoute && (
+        <Routes>
+          <Route
+            path="/staff"
+            element={
+              <StaffOnlyRoute>
+                <StaffPage />
+              </StaffOnlyRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/staff" replace />} />
         </Routes>
       )}
 

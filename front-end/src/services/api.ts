@@ -169,7 +169,78 @@ export const serviceService = {
     getServices: () => 
         api.get('/medical-services'),
     getServiceById: (id: number) => 
-        api.get(`/medical-services/${id}`)
+        api.get('/medical-services/${id}')
+};
+
+// Staff services
+export const staffService = {
+    // Appointment management
+    getAllAppointments: () => 
+        api.get('/appointments'),
+    getAppointmentById: (id: number) => 
+        api.get(`/appointments/${id}`),
+    updateAppointment: (id: number, data: any) => 
+        api.put(`/appointments/${id}`, data),
+    deleteAppointment: (id: number) => 
+        api.delete(`/appointments/${id}`),
+    confirmAppointment: (id: number) => 
+        api.put(`/appointments/${id}/confirm`),
+    cancelAppointment: (id: number) => 
+        api.put(`/appointments/${id}/cancel`),
+
+    // Patient management
+    getAllPatients: () => 
+        api.get('/patients'),
+    getPatientById: (id: number) => 
+        api.get(`/patients/${id}`),
+    updatePatient: (id: number, data: any) => 
+        api.put(`/patients/${id}`, data),
+    getPatientMedicalHistory: (patientId: number) => 
+        api.get(`/patients/${patientId}/medical-history`),
+
+    // Reminder management
+    getAllReminders: () => 
+        api.get('/treatment-reminders'),
+    getReminderById: (id: number) => 
+        api.get(`/treatment-reminders/${id}`),
+    createReminder: (data: any) => 
+        api.post('/treatment-reminders', data),
+    updateReminder: (id: number, data: any) => 
+        api.put(`/treatment-reminders/${id}`, data),
+    deleteReminder: (id: number) => 
+        api.delete(`/treatment-reminders/${id}`),
+    sendReminder: (id: number) => 
+        api.put(`/treatment-reminders/${id}/send`),
+    completeReminder: (id: number) => 
+        api.put(`/treatment-reminders/${id}/complete`),
+
+    // Lab test management
+    getAllLabBookings: () => 
+        api.get('/lab-tests'),
+    getLabBookingById: (id: number) => 
+        api.get(`/lab-tests/${id}`),
+    updateLabBooking: (id: number, data: any) => 
+        api.put(`/lab-tests/${id}`, data),
+    confirmLabBooking: (id: number) => 
+        api.put(`/lab-tests/${id}/confirm`),
+    cancelLabBooking: (id: number) => 
+        api.put(`/lab-tests/${id}/cancel`),
+
+    // Statistics
+    getAppointmentStats: () => 
+        api.get('/appointments/stats'),
+    getPatientStats: () => 
+        api.get('/patients/stats'),
+    getReminderStats: () => 
+        api.get('/treatment-reminders/stats'),
+
+    // Online consultation management
+    getAllOnlineConsultations: () => 
+        api.get('/online-consultations'),
+    confirmOnlineConsultation: (id: number) => 
+        api.put(`/online-consultations/${id}/confirm`),
+    cancelOnlineConsultation: (id: number) => 
+        api.put(`/online-consultations/${id}/cancel`),
 };
 
 export default api; 

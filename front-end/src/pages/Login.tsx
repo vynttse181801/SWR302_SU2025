@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
       } else if (normalizedRole === 'ROLE_PATIENT') {
         navigate('/profile');
       } else if (normalizedRole === 'ROLE_STAFF') {
-        navigate('/');
+        navigate('/staff');
       } else {
         navigate('/');
       }
