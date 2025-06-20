@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
+import { UserPlus, UserCheck, X } from 'lucide-react';
 
 interface UserFormProps {
   user?: User; // Optional, for editing existing user
@@ -65,99 +66,168 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4">
-      <div className="mb-4">
-        <label htmlFor="fullName" className="block text-gray-700 text-sm font-bold mb-2">Họ và Tên:</label>
-        <input
-          type="text"
-          id="fullName"
-          name="fullName"
-          value={formData.fullName}
-          onChange={handleChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          required
-        />
+    <div className="relative">
+      <div className="absolute -inset-1 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-2xl blur opacity-25"></div>
+      <div className="relative bg-white rounded-xl p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full blur opacity-25"></div>
+              <div className="relative p-2 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 text-white">
+                {user ? <UserCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                {user ? 'Chỉnh sửa Người dùng' : 'Thêm Người dùng Mới'}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {user ? 'Cập nhật thông tin người dùng' : 'Tạo tài khoản mới trong hệ thống'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-300"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                Họ và Tên <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                required
+                placeholder="Nhập họ và tên đầy đủ"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                required
+                placeholder="example@email.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Tên đăng nhập <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                required
+                placeholder="Tên đăng nhập"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                Số điện thoại
+              </label>
+              <input
+                type="text"
+                id="phoneNumber"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                placeholder="0123456789"
+              />
+              {errors.phoneNumber && (
+                <p className="mt-1 text-sm text-red-500">{errors.phoneNumber}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Mật khẩu {!user && <span className="text-red-500">*</span>}
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                required={!user}
+                placeholder={user ? "Để trống nếu không thay đổi" : "Nhập mật khẩu"}
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="roleName" className="block text-sm font-medium text-gray-700 mb-2">
+                Vai trò <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="roleName"
+                name="roleName"
+                value={formData.roleName}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 appearance-none bg-white"
+              >
+                <option value="PATIENT">Bệnh nhân</option>
+                <option value="DOCTOR">Bác sĩ</option>
+                <option value="STAFF">Nhân viên</option>
+                <option value="ADMIN">Quản trị viên</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              className="btn-gradient-primary flex items-center space-x-2"
+            >
+              {user ? (
+                <>
+                  <UserCheck className="w-4 h-4" />
+                  <span>Lưu thay đổi</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4" />
+                  <span>Thêm Người dùng</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
-      <div className="mb-4">
-        <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email:</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          required
-        />
-      </div>
-      <div className="mb-4">
-        <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">Username:</label>
-        <input
-          type="text"
-          id="username"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          required
-        />
-      </div>
-      <div className="mb-4">
-        <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-bold mb-2">Số điện thoại:</label>
-        <input
-          type="text"
-          id="phoneNumber"
-          name="phoneNumber"
-          value={formData.phoneNumber}
-          onChange={handleChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-        {errors.phoneNumber && <p className="text-red-500 text-xs italic">{errors.phoneNumber}</p>}
-      </div>
-      <div className="mb-4">
-        <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Mật khẩu:</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          required={!user} // Required only for new users
-        />
-        {errors.password && <p className="text-red-500 text-xs italic">{errors.password}</p>}
-      </div>
-      <div className="mb-4">
-        <label htmlFor="roleName" className="block text-gray-700 text-sm font-bold mb-2">Vai trò:</label>
-        <select
-          id="roleName"
-          name="roleName"
-          value={formData.roleName}
-          onChange={handleChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        >
-          <option value="PATIENT">PATIENT</option>
-          <option value="DOCTOR">DOCTOR</option>
-          <option value="STAFF">STAFF</option>
-          <option value="ADMIN">ADMIN</option>
-        </select>
-      </div>
-      <div className="flex items-center justify-between">
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        >
-          {user ? 'Lưu thay đổi' : 'Thêm Người dùng'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        >
-          Hủy
-        </button>
-      </div>
-    </form>
+    </div>
   );
 };
 

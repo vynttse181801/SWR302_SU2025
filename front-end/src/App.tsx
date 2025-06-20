@@ -16,6 +16,7 @@ import ProfilePage from './pages/profile/PatientProfile';
 import DoctorProfile from './pages/profile/DoctorProfile';
 import DoctorsPage from './pages/Doctors';
 import AdminPage from './pages/AdminPage';
+import AdminLayout from './components/AdminLayout';
 import { navLinks } from './constants';
 import { User } from './types/index';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -53,113 +54,224 @@ const ProtectedRoute: React.FC<{
   return <>{children}</>;
 };
 
+// Admin-only route component
+const AdminOnlyRoute: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If user is ADMIN, allow access to admin pages
+  if (user?.role?.roleName === 'ROLE_ADMIN') {
+    return <AdminLayout>{children}</AdminLayout>;
+  }
+
+  // If user is not ADMIN, redirect to appropriate page based on role
+  if (user?.role?.roleName === 'ROLE_DOCTOR') {
+    return <Navigate to="/doctor-profile" replace />;
+  } else if (user?.role?.roleName === 'ROLE_PATIENT') {
+    return <Navigate to="/profile" replace />;
+  } else {
+    return <Navigate to="/" replace />;
+  }
+};
+
+// Public route component that redirects ADMIN users
+const PublicRoute: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  // If user is ADMIN and trying to access public pages, redirect to admin
+  if (isAuthenticated && user?.role?.roleName === 'ROLE_ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 function AppContent() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
+  // Check if current route is admin route
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
     <div className="min-h-screen bg-white text-black">
-      <Header 
-        links={navLinks} 
-        isAuthenticated={!!user}
-        user={user}
-        onLogout={logout}
-      />
-      <main>
+      {/* Only show Header and Footer for non-admin routes */}
+      {!isAdminRoute && (
+        <>
+          <Header 
+            links={navLinks} 
+            isAuthenticated={!!user}
+            user={user}
+            onLogout={logout}
+          />
+          <main>
+            <Routes>
+              {/* Public routes that redirect ADMIN users */}
+              <Route path="/" element={
+                <PublicRoute>
+                  <HomePage />
+                </PublicRoute>
+              } />
+              <Route path="/services" element={
+                <PublicRoute>
+                  <ServiceDetails />
+                </PublicRoute>
+              } />
+              <Route path="/about" element={
+                <PublicRoute>
+                  <AboutPage />
+                </PublicRoute>
+              } />
+              <Route path="/contact" element={
+                <PublicRoute>
+                  <ContactPage />
+                </PublicRoute>
+              } />
+              <Route path="/register" element={
+                <PublicRoute>
+                  <RegisterPage />
+                </PublicRoute>
+              } />
+              <Route path="/login" element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              } />
+              <Route path="/doctors" element={
+                <PublicRoute>
+                  <DoctorsPage />
+                </PublicRoute>
+              } />
+              <Route path="/quen-mat-khau" element={
+                <PublicRoute>
+                  <div>Quên mật khẩu</div>
+                </PublicRoute>
+              } />
+
+              {/* Protected routes for non-ADMIN users */}
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/patient" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/doctor-profile" 
+                element={
+                  <ProtectedRoute>
+                    <DoctorProfile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/consultation" 
+                element={
+                  <ProtectedRoute>
+                    <ConsultationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/results" 
+                element={
+                  <ProtectedRoute>
+                    <TestResults />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/arv-protocol" 
+                element={
+                  <ProtectedRoute>
+                    <ARVProtocol />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/test-bookings" 
+                element={
+                  <ProtectedRoute>
+                    <TestBooking />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route
+                path="/doctors-management"
+                element={
+                  <ProtectedRoute requiredRole={['ROLE_ADMIN', 'ROLE_DOCTOR']}>
+                    <DoctorManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctor-schedules-management"
+                element={
+                  <ProtectedRoute requiredRole={['ROLE_ADMIN', 'ROLE_DOCTOR']}>
+                    <DoctorSchedulePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/test-results" element={
+                <ProtectedRoute>
+                  <TestResults />
+                </ProtectedRoute>
+              } />
+              <Route path="/book-appointment" element={
+                <ProtectedRoute>
+                  <AppointmentBooking />
+                </ProtectedRoute>
+              } />
+
+              {/* Catch all route - redirect based on user role */}
+              <Route path="*" element={
+                <Navigate to={user?.role?.roleName === 'ROLE_ADMIN' ? '/admin' : '/'} replace />
+              } />
+            </Routes>
+          </main>
+          <Footer />
+        </>
+      )}
+
+      {/* Admin routes */}
+      {isAdminRoute && (
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/services" element={<ServiceDetails />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/patient" 
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/doctor-profile" 
-            element={
-              <ProtectedRoute>
-                <DoctorProfile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/consultation" 
-            element={
-              <ProtectedRoute>
-                <ConsultationPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/results" 
-            element={
-              <ProtectedRoute>
-                <TestResults />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/arv-protocol" 
-            element={
-              <ProtectedRoute>
-                <ARVProtocol />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/test-bookings" 
-            element={
-              <ProtectedRoute>
-                <TestBooking />
-              </ProtectedRoute>
-            } 
-          />
           <Route
             path="/admin"
             element={
-              <ProtectedRoute requiredRole="ROLE_ADMIN">
+              <AdminOnlyRoute>
                 <AdminPage />
-              </ProtectedRoute>
+              </AdminOnlyRoute>
             }
           />
-          <Route
-            path="/doctors-management"
-            element={
-              <ProtectedRoute requiredRole={['admin', 'doctor']}>
-                <DoctorManagementPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/doctor-schedules-management"
-            element={
-              <ProtectedRoute requiredRole={['admin', 'doctor']}>
-                <DoctorSchedulePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/doctors" element={<DoctorsPage />} />
-          <Route path="/quen-mat-khau" element={<div>Quên mật khẩu</div>} />
-          <Route path="/test-results" element={<TestResults />} />
-          <Route path="/book-appointment" element={<AppointmentBooking />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
-      </main>
-      <Footer />
+      )}
+
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );

@@ -16,8 +16,12 @@ public class Payment {
     private Patient patient;
 
     @OneToOne
-    @JoinColumn(name = "appointment_id", nullable = false)
+    @JoinColumn(name = "appointment_id")
     private Appointment appointment;
+
+    @OneToOne
+    @JoinColumn(name = "lab_booking_id")
+    private LabBooking labBooking;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
@@ -64,6 +68,14 @@ public class Payment {
 
     public void setAppointment(Appointment appointment) {
         this.appointment = appointment;
+    }
+
+    public LabBooking getLabBooking() {
+        return labBooking;
+    }
+
+    public void setLabBooking(LabBooking labBooking) {
+        this.labBooking = labBooking;
     }
 
     public BigDecimal getAmount() {

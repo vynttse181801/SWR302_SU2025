@@ -15,6 +15,7 @@ import nguyenVanA from '../assets/images/nguyen-van-a.jpg';
 import tranThiB from '../assets/images/tran-thi-b.jpg';
 import leVanC from '../assets/images/le-van-c.jpg';
 import { LabTestType } from '../types';
+import PaymentForm from '../components/PaymentForm';
 
 interface TimeSlot {
   id: number;
@@ -44,6 +45,9 @@ const TestBooking = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [bookingId, setBookingId] = useState<number | null>(null);
+  const [selectedTestType, setSelectedTestType] = useState<LabTestType | null>(null);
 
   useEffect(() => {
     const fetchTestTypes = async () => {
@@ -79,9 +83,11 @@ const TestBooking = () => {
     fetchTimeSlots();
   }, [selectedDate]);
 
-  const handleDateChange = (date: Date) => {
-    setSelectedDate(date);
-    setFormData(prev => ({ ...prev, date }));
+  const handleDateChange = (value: Date | Date[] | null) => {
+    if (value && value instanceof Date) {
+      setSelectedDate(value);
+      setFormData(prev => ({ ...prev, date: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,22 +96,31 @@ const TestBooking = () => {
     setSuccess(null);
 
     try {
-      await testService.bookTest({
+      const bookingRes = await testService.bookTest({
         ...formData,
         patientId: 1,
         status: 'pending'
       });
-      setSuccess('Đặt lịch xét nghiệm thành công!');
-      setFormData({
-        testTypeId: 0,
-        date: new Date(),
-        timeSlotId: 0,
-        notes: '',
-      });
-      navigate('/test-bookings');
+      setBookingId(bookingRes.data.id);
+      setSelectedTestType(testTypes.find(t => t.id === formData.testTypeId) || null);
+      setShowPayment(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.');
     }
+  };
+
+  const handlePaymentSuccess = (paymentData: any) => {
+    setShowPayment(false);
+    setSuccess('Thanh toán thành công!');
+    setFormData({
+      testTypeId: 0,
+      date: new Date(),
+      timeSlotId: 0,
+      notes: '',
+    });
+    setBookingId(null);
+    setSelectedTestType(null);
+    // Có thể chuyển hướng hoặc cập nhật UI tại đây
   };
 
   if (loading) {
@@ -138,105 +153,117 @@ const TestBooking = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-8">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn loại xét nghiệm</h2>
-              <div className="space-y-4">
-                {testTypes.map((type) => (
-                  <div
-                    key={type.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      formData.testTypeId === type.id
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-primary-300'
-                    }`}
-                    onClick={() => setFormData(prev => ({ ...prev, testTypeId: type.id }))}
-                  >
-                    <h3 className="font-medium text-gray-900">{type.name}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{type.description}</p>
-                    <p className="text-sm text-gray-900 mt-2">
-                      Thời gian: {type.durationMinutes} phút
-                    </p>
-                    <p className="text-sm font-medium text-primary-600 mt-1">
-                      {type.price.toLocaleString('vi-VN')} VNĐ
-                    </p>
+          {showPayment && bookingId && selectedTestType ? (
+            <PaymentForm
+              amount={selectedTestType.price}
+              bookingType="test"
+              bookingId={bookingId}
+              onPaymentSuccess={handlePaymentSuccess}
+              onPaymentCancel={() => setShowPayment(false)}
+            />
+          ) : (
+            <div className="grid grid-cols-1 gap-8">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn loại xét nghiệm</h2>
+                <div className="space-y-4">
+                  {testTypes.map((type) => (
+                    <div
+                      key={type.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        formData.testTypeId === type.id
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200 hover:border-primary-300'
+                      }`}
+                      onClick={() => setFormData(prev => ({ ...prev, testTypeId: type.id }))}
+                    >
+                      <h3 className="font-medium text-gray-900">{type.name}</h3>
+                      <p className="text-sm text-gray-500 mt-1">{type.description}</p>
+                      <p className="text-sm text-gray-900 mt-2">
+                        Thời gian: {type.durationMinutes} phút
+                      </p>
+                      <p className="text-sm font-medium text-primary-600 mt-1">
+                        {type.price.toLocaleString('vi-VN')} VNĐ
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn ngày</h2>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Calendar
+                      onChange={handleDateChange}
+                      value={selectedDate}
+                      minDate={new Date()}
+                      locale="vi"
+                      className="w-full border-0"
+                      tileClassName={({ date }) => 
+                        format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+                          ? 'bg-primary-500 text-white rounded-lg'
+                          : ''
+                      }
+                    />
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="mt-4 text-sm text-gray-600">
+                    <p>Ngày đã chọn: {format(selectedDate, 'EEEE, dd/MM/yyyy', { locale: vi })}</p>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn thời gian</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {timeSlots.length === 0 ? (
+                      <p className="text-gray-500 col-span-2">Không có khung giờ khả dụng cho ngày này.</p>
+                    ) : (
+                      timeSlots.map((slot) => (
+                        <button
+                          key={slot.id}
+                          onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
+                          className={`p-3 text-center rounded-lg transition-all ${
+                            formData.timeSlotId === slot.id
+                              ? 'bg-primary-500 text-white ring-2 ring-primary-300'
+                              : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
+                          }`}
+                        >
+                          <span className="text-lg font-medium">{slot.time}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn ngày</h2>
-                <div className="border rounded-lg overflow-hidden">
-                  <Calendar
-                    onChange={handleDateChange}
-                    value={selectedDate}
-                    minDate={new Date()}
-                    locale="vi"
-                    className="w-full border-0"
-                    tileClassName={({ date }) => 
-                      format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
-                        ? 'bg-primary-500 text-white rounded-lg'
-                        : ''
-                    }
-                  />
-                </div>
-                <div className="mt-4 text-sm text-gray-600">
-                  <p>Ngày đã chọn: {format(selectedDate, 'EEEE, dd/MM/yyyy', { locale: vi })}</p>
-                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Ghi chú</h2>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={4}
+                  placeholder="Nhập ghi chú (nếu có)"
+                />
               </div>
 
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn thời gian</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {timeSlots.length === 0 ? (
-                    <p className="text-gray-500 col-span-2">Không có khung giờ khả dụng cho ngày này.</p>
-                  ) : (
-                    timeSlots.map((slot) => (
-                      <button
-                        key={slot.id}
-                        onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
-                        className={`p-3 text-center rounded-lg transition-all ${
-                          formData.timeSlotId === slot.id
-                            ? 'bg-primary-500 text-white ring-2 ring-primary-300'
-                            : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
-                        }`}
-                      >
-                        <span className="text-lg font-medium">{slot.time}</span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={!formData.testTypeId || !formData.timeSlotId}
+                className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              >
+                Đặt lịch xét nghiệm
+              </button>
             </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Ghi chú</h2>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                rows={4}
-                placeholder="Nhập ghi chú (nếu có)"
-              />
-            </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={!formData.testTypeId || !formData.timeSlotId}
-              className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-            >
-              Đặt lịch xét nghiệm
-            </button>
-          </div>
+          )}
 
           <Modal
             isOpen={modalState.isOpen}
             onClose={hideModal}
             title={modalState.title}
-            content={modalState.content}
-            image={modalState.image}
+            message={modalState.message}
+            type={modalState.type}
+            buttonText={modalState.buttonText}
+            onButtonClick={modalState.onButtonClick}
           />
         </motion.div>
       </div>
