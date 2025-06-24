@@ -30,6 +30,7 @@ public class DoctorSchedule {
     private String location;
 
     @Lob
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -24,7 +24,7 @@ public class LabBooking {
     @Column(name = "time_slot_id", nullable = true)
     private Long timeSlotId;
 
-    @Column(length = 500)
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String notes;
 
     @Column(nullable = false, length = 50)

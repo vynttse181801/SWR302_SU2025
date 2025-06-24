@@ -30,17 +30,25 @@ interface BookingForm {
   notes: string;
 }
 
+interface ConsultationType {
+  id: number;
+  name: string;
+  description?: string;
+}
+
 const TestBooking = () => {
   const navigate = useNavigate();
   const { modalState, showModal, hideModal } = useModal();
   const [testTypes, setTestTypes] = useState<LabTestType[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [formData, setFormData] = useState<BookingForm>({
+  const [consultationTypes, setConsultationTypes] = useState<ConsultationType[]>([]);
+  const [formData, setFormData] = useState<BookingForm & { consultationTypeId: number }>({
     testTypeId: 0,
     date: new Date(),
     timeSlotId: 0,
     notes: '',
+    consultationTypeId: 1
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +91,22 @@ const TestBooking = () => {
     fetchTimeSlots();
   }, [selectedDate]);
 
+  useEffect(() => {
+    const fetchConsultationTypes = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/consultation-types');
+        const data = await res.json();
+        setConsultationTypes(data);
+        if (data.length > 0) {
+          setFormData(prev => ({ ...prev, consultationTypeId: data[0].id }));
+        }
+      } catch (err) {
+        // Có thể xử lý lỗi nếu cần
+      }
+    };
+    fetchConsultationTypes();
+  }, []);
+
   const handleDateChange = (value: Date | Date[] | null) => {
     if (value && value instanceof Date) {
       setSelectedDate(value);
@@ -99,7 +123,8 @@ const TestBooking = () => {
       const bookingRes = await testService.bookTest({
         ...formData,
         patientId: 1,
-        status: 'pending'
+        status: 'pending',
+        consultationTypeId: formData.consultationTypeId
       });
       setBookingId(bookingRes.data.id);
       setSelectedTestType(testTypes.find(t => t.id === formData.testTypeId) || null);
@@ -117,6 +142,7 @@ const TestBooking = () => {
       date: new Date(),
       timeSlotId: 0,
       notes: '',
+      consultationTypeId: 1
     });
     setBookingId(null);
     setSelectedTestType(null);
@@ -189,50 +215,61 @@ const TestBooking = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn ngày</h2>
-                  <div className="border rounded-lg overflow-hidden">
-                    <Calendar
-                      onChange={handleDateChange}
-                      value={selectedDate}
-                      minDate={new Date()}
-                      locale="vi"
-                      className="w-full border-0"
-                      tileClassName={({ date }) => 
-                        format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
-                          ? 'bg-primary-500 text-white rounded-lg'
-                          : ''
-                      }
-                    />
-                  </div>
-                  <div className="mt-4 text-sm text-gray-600">
-                    <p>Ngày đã chọn: {format(selectedDate, 'EEEE, dd/MM/yyyy', { locale: vi })}</p>
-                  </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn ngày</h2>
+                <div className="border rounded-lg overflow-hidden">
+                  <Calendar
+                    onChange={value => handleDateChange(value as Date)}
+                    value={selectedDate}
+                    minDate={new Date()}
+                    locale="vi"
+                    className="w-full border-0"
+                    tileClassName={({ date }) =>
+                      format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+                        ? 'bg-primary-500 text-white rounded-lg'
+                        : ''
+                    }
+                  />
                 </div>
+                <div className="mt-4 text-sm text-gray-600">
+                  <p>Ngày đã chọn: {format(selectedDate, 'EEEE, dd/MM/yyyy')}</p>
+                </div>
+              </div>
 
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn thời gian</h2>
-                  <div className="grid grid-cols-2 gap-3">
-                    {timeSlots.length === 0 ? (
-                      <p className="text-gray-500 col-span-2">Không có khung giờ khả dụng cho ngày này.</p>
-                    ) : (
-                      timeSlots.map((slot) => (
-                        <button
-                          key={slot.id}
-                          onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
-                          className={`p-3 text-center rounded-lg transition-all ${
-                            formData.timeSlotId === slot.id
-                              ? 'bg-primary-500 text-white ring-2 ring-primary-300'
-                              : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
-                          }`}
-                        >
-                          <span className="text-lg font-medium">{slot.time}</span>
-                        </button>
-                      ))
-                    )}
-                  </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn thời gian</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {timeSlots.length === 0 ? (
+                    <p className="text-gray-500 col-span-2">Không có khung giờ khả dụng cho ngày này.</p>
+                  ) : (
+                    timeSlots.map((slot) => (
+                      <button
+                        key={slot.id}
+                        onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
+                        className={`p-3 text-center rounded-lg transition-all ${
+                          formData.timeSlotId === slot.id
+                            ? 'bg-primary-500 text-white ring-2 ring-primary-300'
+                            : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
+                        }`}
+                      >
+                        <span className="text-lg font-medium">{slot.time}</span>
+                      </button>
+                    ))
+                  )}
                 </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn loại tư vấn</h2>
+                <select
+                  value={formData.consultationTypeId}
+                  onChange={e => setFormData(prev => ({ ...prev, consultationTypeId: Number(e.target.value) }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white mb-4"
+                >
+                  {consultationTypes.map(type => (
+                    <option key={type.id} value={type.id}>{type.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="bg-white rounded-lg shadow-md p-6">

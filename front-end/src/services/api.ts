@@ -100,6 +100,20 @@ export const patientService = {
         api.get('/patients/medical-history'),
 };
 
+// Payment services
+export const paymentService = {
+    getAllPayments: () => 
+        api.get('/payments'),
+    getPaymentById: (id: number) => 
+        api.get(`/payments/${id}`),
+    createPayment: (paymentData: any) => 
+        api.post('/payments', paymentData),
+    updatePayment: (id: number, data: any) => 
+        api.put(`/payments/${id}`, data),
+    deletePayment: (id: number) => 
+        api.delete(`/payments/${id}`),
+};
+
 // Test services
 export const testService = {
     getTestTypes: () => 
@@ -116,6 +130,8 @@ export const testService = {
         api.get(`/lab-tests/${id}`),
     updateLabBooking: (id: number|string, data: any) =>
         api.put(`/lab-tests/${id}`, data),
+    getLabBookingsByPatient: (patientId: number) =>
+        api.get(`/lab-tests/patient/${patientId}`),
 };
 
 // ARV Protocol services
@@ -158,11 +174,13 @@ export const consultationService = {
             params: { doctorId: doctorId, date: format(date, 'yyyy-MM-dd') }
         }),
     createConsultation: (consultationData: any) => 
-        api.post('/online-consultations', consultationData), // Changed endpoint
+        api.post('/online-consultations', consultationData),
     updateOnlineConsultation: (id: number|string, data: any) =>
         api.put(`/online-consultations/${id}`, data),
     deleteOnlineConsultation: (id: number|string) =>
         api.delete(`/online-consultations/${id}`),
+    getConsultationsByPatient: (patientId: number) =>
+        api.get(`/online-consultations/patient/${patientId}`),
 };
 
 export const serviceService = {

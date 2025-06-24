@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CreditCard, Wallet, Building, CheckCircle, Lock, Shield } from 'lucide-react';
+import { paymentService } from '../services/api';
 
 interface PaymentFormProps {
   amount: number;
@@ -105,18 +106,29 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     setLoading(true);
     
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Tạo payment data để gửi đến API
+      const paymentData = {
+        amount: amount,
+        method: paymentMethod,
+        paymentDate: new Date().toISOString(),
+        notes: `Thanh toán cho ${bookingType === 'appointment' ? 'lịch tư vấn' : 'lịch xét nghiệm'} #${bookingId}`,
+        patient: { id: 1 }, // Cần lấy từ context hoặc props
+        appointment: bookingType === 'appointment' ? { id: bookingId } : null,
+        labBooking: bookingType === 'test' ? { id: bookingId } : null,
+        status: 'PENDING'
+      };
+      
+      const response = await paymentService.createPayment(paymentData);
       
       const paymentResult = {
-        id: Date.now(),
-        amount,
-        method: paymentMethod,
-        status: 'success',
+        id: response.data.id,
+        amount: response.data.amount,
+        method: response.data.method,
+        status: response.data.status,
         bookingType,
         bookingId,
-        paymentDate: new Date().toISOString(),
-        ...paymentData
+        paymentDate: response.data.paymentDate,
+        notes: response.data.notes
       };
       
       onPaymentSuccess(paymentResult);

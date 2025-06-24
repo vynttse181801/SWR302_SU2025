@@ -9,6 +9,7 @@ import 'react-calendar/dist/Calendar.css';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '../hooks/useModal';
 import Modal from '../components/Modal';
+import PaymentForm from '../components/PaymentForm';
 
 interface Doctor {
   id: number;
@@ -24,6 +25,12 @@ interface TimeSlot {
   id: number;
   time: string;
   isAvailable: boolean;
+}
+
+interface ConsultationType {
+  id: number;
+  name: string;
+  description?: string;
 }
 
 interface ConsultationForm {
@@ -68,16 +75,21 @@ const ConsultationPage: React.FC = () => {
   ]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [formData, setFormData] = useState<ConsultationForm>({
+  const [consultationTypes, setConsultationTypes] = useState<ConsultationType[]>([]);
+  const [formData, setFormData] = useState<ConsultationForm & { consultationTypeId: number }>({
     doctorId: 0,
     date: new Date(),
     timeSlotId: 0,
     symptoms: '',
     notes: '',
+    consultationTypeId: 1
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [consultationId, setConsultationId] = useState<number | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -119,6 +131,22 @@ const ConsultationPage: React.FC = () => {
     }
   }, [selectedDate]);
 
+  useEffect(() => {
+    const fetchConsultationTypes = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/consultation-types');
+        const data = await res.json();
+        setConsultationTypes(data);
+        if (data.length > 0) {
+          setFormData(prev => ({ ...prev, consultationTypeId: data[0].id }));
+        }
+      } catch (err) {
+        // Có thể xử lý lỗi nếu cần
+      }
+    };
+    fetchConsultationTypes();
+  }, []);
+
   const handleDateChange = (value: any) => {
     if (value instanceof Date) {
       setSelectedDate(value);
@@ -132,25 +160,36 @@ const ConsultationPage: React.FC = () => {
     setSuccess(null);
 
     try {
-      await consultationService.createConsultation({
+      const consultationRes = await consultationService.createConsultation({
         doctorId: formData.doctorId,
         date: formData.date,
         timeSlotId: formData.timeSlotId,
         symptoms: formData.symptoms,
-        notes: formData.notes
+        notes: formData.notes,
+        consultationTypeId: formData.consultationTypeId
       });
-      setSuccess('Đặt lịch tư vấn thành công!');
-      setFormData({
-        doctorId: 0,
-        date: new Date(),
-        timeSlotId: 0,
-        symptoms: '',
-        notes: '',
-      });
-      navigate('/consultation');
+      setConsultationId(consultationRes.data.id);
+      setSelectedDoctor(doctors.find(d => d.id === formData.doctorId) || null);
+      setShowPayment(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.');
     }
+  };
+
+  const handlePaymentSuccess = (paymentData: any) => {
+    setShowPayment(false);
+    setSuccess('Thanh toán thành công!');
+    setFormData({
+      doctorId: 0,
+      date: new Date(),
+      timeSlotId: 0,
+      symptoms: '',
+      notes: '',
+      consultationTypeId: consultationTypes.length > 0 ? consultationTypes[0].id : 1
+    });
+    setConsultationId(null);
+    setSelectedDoctor(null);
+    // Có thể chuyển hướng hoặc cập nhật UI tại đây
   };
 
   if (loading) {
@@ -294,6 +333,19 @@ const ConsultationPage: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn loại tư vấn</h2>
+              <select
+                value={formData.consultationTypeId}
+                onChange={e => setFormData(prev => ({ ...prev, consultationTypeId: Number(e.target.value) }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white mb-4"
+              >
+                {consultationTypes.map(type => (
+                  <option key={type.id} value={type.id}>{type.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Triệu chứng</h2>
               <textarea
                 value={formData.symptoms}
@@ -335,6 +387,19 @@ const ConsultationPage: React.FC = () => {
         buttonText={modalState.buttonText}
         onButtonClick={modalState.onButtonClick}
       />
+
+      {showPayment && consultationId && selectedDoctor ? (
+        <PaymentForm
+          amount={500000} // Giá tư vấn cố định hoặc lấy từ API
+          bookingType="appointment"
+          bookingId={consultationId}
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentCancel={() => setShowPayment(false)}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-8">
+        </div>
+      )}
     </div>
   );
 };

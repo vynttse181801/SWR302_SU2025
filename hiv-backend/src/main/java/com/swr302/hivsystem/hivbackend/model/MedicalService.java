@@ -15,6 +15,7 @@ public class MedicalService {
     private String name;
 
     @Lob
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String description;
 
     @Column(name = "default_duration")

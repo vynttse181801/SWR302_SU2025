@@ -16,11 +16,11 @@ public class Payment {
     private Patient patient;
 
     @OneToOne
-    @JoinColumn(name = "appointment_id")
+    @JoinColumn(name = "appointment_id", nullable = true)
     private Appointment appointment;
 
     @OneToOne
-    @JoinColumn(name = "lab_booking_id")
+    @JoinColumn(name = "lab_booking_id", nullable = true)
     private LabBooking labBooking;
 
     @Column(nullable = false, precision = 10, scale = 2)

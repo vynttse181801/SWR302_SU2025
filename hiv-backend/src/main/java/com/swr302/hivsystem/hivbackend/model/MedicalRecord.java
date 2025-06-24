@@ -17,7 +17,7 @@ public class MedicalRecord {
     @Column(nullable = false)
     private LocalDateTime dateCreated = LocalDateTime.now();
 
-    @Column(length = 100)
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String arvRegimen;
 
     private Integer cd4Count;

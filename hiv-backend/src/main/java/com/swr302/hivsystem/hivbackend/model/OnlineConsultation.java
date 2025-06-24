@@ -28,6 +28,7 @@ public class OnlineConsultation {
     private LocalDateTime endTime;
 
     @Lob
+    @Column(columnDefinition = "NVARCHAR(max)")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)
