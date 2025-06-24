@@ -56,3 +56,7 @@ INSERT INTO lab_test_types (name, description, price, duration_minutes, created_
 INSERT INTO lab_bookings (patient_id, test_type_id, date, time_slot_id, notes, status, created_at, updated_at) VALUES
 ((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM lab_test_types WHERE name = 'HIV Antibody Test'), GETDATE(), NULL, 'Chuẩn bị trước 30 phút', 'Scheduled', GETDATE(), GETDATE()),
 ((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM lab_test_types WHERE name = 'CD4 Count'), DATEADD(day, 1, GETDATE()), NULL, 'Không ăn sáng', 'Scheduled', GETDATE(), GETDATE());
+
+-- Insert consultation type
+INSERT INTO consultation_types (name, description)
+VALUES ('Tư vấn HIV cơ bản', 'Tư vấn các vấn đề cơ bản về HIV');

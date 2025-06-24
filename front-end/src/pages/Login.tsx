@@ -60,12 +60,12 @@ const LoginPage: React.FC = () => {
       // Navigate based on normalized role
       if (normalizedRole === 'ROLE_ADMIN') {
         navigate('/admin');
-      } else if (normalizedRole === 'ROLE_DOCTOR') {
-        navigate('/doctor-profile');
-      } else if (normalizedRole === 'ROLE_PATIENT') {
-        navigate('/profile');
-      } else if (normalizedRole === 'ROLE_STAFF') {
-        navigate('/staff');
+      } else if (
+        normalizedRole === 'ROLE_PATIENT' ||
+        normalizedRole === 'ROLE_DOCTOR' ||
+        normalizedRole === 'ROLE_STAFF'
+      ) {
+        navigate('/');
       } else {
         navigate('/');
       }
