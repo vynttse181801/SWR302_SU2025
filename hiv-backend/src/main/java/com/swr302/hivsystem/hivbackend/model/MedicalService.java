@@ -14,7 +14,6 @@ public class MedicalService {
     @Column(nullable = false, length = 255)
     private String name;
 
-    @Lob
     @Column(columnDefinition = "NVARCHAR(255)")
     private String description;
 

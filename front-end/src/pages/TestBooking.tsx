@@ -56,6 +56,7 @@ const TestBooking = () => {
   const [showPayment, setShowPayment] = useState(false);
   const [bookingId, setBookingId] = useState<number | null>(null);
   const [selectedTestType, setSelectedTestType] = useState<LabTestType | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     const fetchTestTypes = async () => {
@@ -137,6 +138,7 @@ const TestBooking = () => {
   const handlePaymentSuccess = (paymentData: any) => {
     setShowPayment(false);
     setSuccess('Thanh toán thành công!');
+    setShowSuccess(true);
     setFormData({
       testTypeId: 0,
       date: new Date(),
@@ -146,7 +148,6 @@ const TestBooking = () => {
     });
     setBookingId(null);
     setSelectedTestType(null);
-    // Có thể chuyển hướng hoặc cập nhật UI tại đây
   };
 
   if (loading) {
@@ -215,6 +216,7 @@ const TestBooking = () => {
                 </div>
               </div>
 
+            <div className ="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn ngày</h2>
                 <div className="border rounded-lg overflow-hidden">
@@ -258,19 +260,8 @@ const TestBooking = () => {
                   )}
                 </div>
               </div>
+            </div>
 
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn loại tư vấn</h2>
-                <select
-                  value={formData.consultationTypeId}
-                  onChange={e => setFormData(prev => ({ ...prev, consultationTypeId: Number(e.target.value) }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white mb-4"
-                >
-                  {consultationTypes.map(type => (
-                    <option key={type.id} value={type.id}>{type.name}</option>
-                  ))}
-                </select>
-              </div>
 
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Ghi chú</h2>
@@ -290,6 +281,27 @@ const TestBooking = () => {
               >
                 Đặt lịch xét nghiệm
               </button>
+            </div>
+          )}
+
+          {showSuccess && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+              <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
+                <h2 className="text-xl font-bold mb-4 text-green-600">Đặt lịch thành công!</h2>
+                <p className="mb-6">Bạn đã đặt lịch xét nghiệm thành công.</p>
+                <button
+                  className="bg-primary-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-700 transition"
+                  onClick={() => window.location.href = '/'}
+                >
+                  Về trang chủ
+                </button>
+                <button
+                  className="ml-4 text-gray-500 hover:underline"
+                  onClick={() => setShowSuccess(false)}
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           )}
 
