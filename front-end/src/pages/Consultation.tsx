@@ -134,8 +134,8 @@ const ConsultationPage: React.FC = () => {
   useEffect(() => {
     const fetchConsultationTypes = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/consultation-types');
-        const data = await res.json();
+        const res = await consultationService.getConsultationTypes();
+        const data = res.data;
         setConsultationTypes(data);
         if (data.length > 0) {
           setFormData(prev => ({ ...prev, consultationTypeId: data[0].id }));

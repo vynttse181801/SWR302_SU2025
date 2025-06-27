@@ -85,7 +85,7 @@ const ProfilePage: React.FC = () => {
     name: '',
     fullName: '',
     email: '',
-    phoneNumber: undefined,
+    phoneNumber: '',
     username: '',
     role: {
       id: 0,
@@ -93,7 +93,7 @@ const ProfilePage: React.FC = () => {
       description: 'Patient role'
     },
     dateOfBirth: '',
-    gender: undefined,
+    gender: '',
     address: '',
     medicalHistory: {
       bloodType: '',
@@ -118,7 +118,17 @@ const ProfilePage: React.FC = () => {
   // Thêm state cho modal cập nhật
   const [showEditModal, setShowEditModal] = useState(false);
   const [editBooking, setEditBooking] = useState<ServiceItem | null>(null);
-  const [editForm, setEditForm] = useState<any>({});
+  const [editForm, setEditForm] = useState<{
+    testTypeId: number | string;
+    date: string;
+    timeSlotId: number | string;
+    notes: string;
+  }>({
+    testTypeId: '',
+    date: '',
+    timeSlotId: '',
+    notes: ''
+  });
   const [editTimeSlots, setEditTimeSlots] = useState<{id: number, time: string}[]>([]);
   const [editTestTypes, setEditTestTypes] = useState<any[]>([]);
 
@@ -238,7 +248,7 @@ const ProfilePage: React.FC = () => {
       name: '',
       fullName: '',
       email: '',
-      phoneNumber: undefined,
+      phoneNumber: '',
       username: '',
       role: {
         id: 0,
@@ -246,7 +256,7 @@ const ProfilePage: React.FC = () => {
         description: 'Patient role'
       },
       dateOfBirth: '',
-      gender: undefined,
+      gender: '',
       address: '',
       medicalHistory: {
         bloodType: '',
@@ -893,7 +903,11 @@ const ProfilePage: React.FC = () => {
               <p className="text-gray-600">Chưa có lịch sử xét nghiệm nào.</p>
             ) : (
               <div>
-                {testHistory.map(renderServiceItem)}
+                {testHistory.map((item) => (
+                  <div key={item.id}>
+                    {renderServiceItem(item)}
+                  </div>
+                ))}
               </div>
             )}
           </>
@@ -906,7 +920,11 @@ const ProfilePage: React.FC = () => {
               <p className="text-gray-600">Chưa có lịch sử tư vấn nào.</p>
             ) : (
               <div>
-                {consultationHistory.map(renderConsultationItem)}
+                {consultationHistory.map((item) => (
+                  <div key={item.id}>
+                    {renderConsultationItem(item)}
+                  </div>
+                ))}
               </div>
             )}
           </>
