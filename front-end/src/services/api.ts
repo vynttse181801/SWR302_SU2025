@@ -132,6 +132,24 @@ export const testService = {
         api.put(`/lab-tests/${id}`, data),
     getLabBookingsByPatient: (patientId: number) =>
         api.get(`/lab-tests/patient/${patientId}`),
+    updateLabBookingStatus: (id: number|string, status: string) =>
+        api.patch(`/lab-tests/${id}/status`, { status }),
+};
+
+// Lab Result services
+export const labResultService = {
+    getAllLabResults: () => 
+        api.get('/lab-results'),
+    getLabResultById: (id: number) => 
+        api.get(`/lab-results/${id}`),
+    getLabResultsByPatient: (patientId: number) => 
+        api.get(`/lab-results/patient/${patientId}`),
+    createLabResult: (data: any) => 
+        api.post('/lab-results', data),
+    updateLabResult: (id: number, data: any) => 
+        api.put(`/lab-results/${id}`, data),
+    deleteLabResult: (id: number) => 
+        api.delete(`/lab-results/${id}`),
 };
 
 // ARV Protocol services
@@ -181,6 +199,8 @@ export const consultationService = {
         api.delete(`/online-consultations/${id}`),
     getConsultationsByPatient: (patientId: number) =>
         api.get(`/online-consultations/patient/${patientId}`),
+    updateOnlineConsultationStatus: (id: number|string, status: string) =>
+        api.patch(`/online-consultations/${id}/status`, { status }),
 };
 
 export const serviceService = {

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { User } from '../types';
-import api from '../services/api';
-import { useModal } from '../hooks/useModal';
-import Modal from '../components/Modal';
-import UserForm from '../components/UserForm';
+import { User } from '../../types';
+import api from '../../services/api';
+import { useModal } from '../../hooks/useModal';
+import Modal from '../../components/Modal';
+import UserForm from '../../components/UserForm';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Shield, Users, Activity, Settings, LogOut, Plus, Search, Filter, SortAsc, SortDesc, UserCheck, UserX, UserPlus } from 'lucide-react';
 
 const AdminPage: React.FC = () => {
@@ -41,13 +41,13 @@ const AdminPage: React.FC = () => {
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.')) {
+    if (window.confirm('Bạn có chắc chắn muốn ngừng hoạt động (xóa mềm) người dùng này?')) {
       try {
-        await api.delete(`/users/${id}`);
-        toast.success('Xóa người dùng thành công!');
+        await api.patch(`/users/${id}/deactivate`);
+        toast.success('Đã ngừng hoạt động tài khoản!');
         fetchUsers(); // Refresh the list
       } catch (err: any) {
-        const errorMessage = err.response?.data?.message || 'Lỗi khi xóa người dùng.';
+        const errorMessage = err.response?.data?.message || 'Lỗi khi ngừng hoạt động tài khoản.';
         toast.error(errorMessage);
       }
     }
@@ -438,9 +438,8 @@ const AdminPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-accent-500 to-accent-600 text-white">
-                        <Activity className="w-3 h-3 mr-1" />
-                        Hoạt động
+                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${user.status === 'INACTIVE' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                        {user.status === 'INACTIVE' ? 'Ngừng hoạt động' : 'Hoạt động'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -453,7 +452,8 @@ const AdminPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleDeleteUser(user.id.toString())}
-                        className="text-red-600 hover:text-red-800 transition-colors duration-300 flex items-center"
+                        className={`transition-colors duration-300 flex items-center ${user.status === 'INACTIVE' ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'}`}
+                        disabled={user.status === 'INACTIVE'}
                       >
                         <UserX className="w-4 h-4 mr-1" />
                         Xóa

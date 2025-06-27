@@ -106,6 +106,26 @@ public class DoctorServiceImpl implements DoctorService {
         return doctorRepository.existsByEmail(email);
     }
 
+    @Override
+    public Doctor getDoctorByUserId(Long userId) {
+        return doctorRepository.findAll().stream()
+            .filter(doctor -> doctor.getUser() != null && doctor.getUser().getId().equals(userId))
+            .findFirst()
+            .orElse(null);
+    }
+
+    @Override
+    public DoctorDTO deactivateDoctor(Long id) {
+        Doctor doctor = doctorRepository.findById(id)
+            .orElse(null);
+        if (doctor == null) {
+            return null;
+        }
+        doctor.setStatus(com.swr302.hivsystem.hivbackend.model.DoctorStatus.INACTIVE);
+        Doctor updatedDoctor = doctorRepository.save(doctor);
+        return convertToDTO(updatedDoctor);
+    }
+
     private void updateDoctorFromDTO(Doctor doctor, DoctorDTO dto) {
         doctor.setDoctorCode(dto.getDoctorCode());
         doctor.setFullName(dto.getName());

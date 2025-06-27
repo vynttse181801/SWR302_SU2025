@@ -1,6 +1,7 @@
 package com.swr302.hivsystem.hivbackend.service;
 
 import com.swr302.hivsystem.hivbackend.dto.DoctorDTO;
+import com.swr302.hivsystem.hivbackend.model.Doctor;
 import java.util.List;
 
 public interface DoctorService {
@@ -15,4 +16,6 @@ public interface DoctorService {
     boolean existsByDoctorCode(String doctorCode);
     boolean existsByLicenseNumber(String licenseNumber);
     boolean existsByEmail(String email);
+    Doctor getDoctorByUserId(Long userId);
+    DoctorDTO deactivateDoctor(Long id);
 } 

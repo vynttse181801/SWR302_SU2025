@@ -167,6 +167,16 @@ public class UserController {
         return ResponseEntity.ok(userService.existsByEmail(email));
     }
 
+    @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> deactivateUser(@PathVariable Long id) {
+        UserDTO userDTO = userService.deactivateUser(id);
+        if (userDTO == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(userDTO);
+    }
+
     private UserDTO convertToDTO(User user) {
         if (user == null) {
             return null;

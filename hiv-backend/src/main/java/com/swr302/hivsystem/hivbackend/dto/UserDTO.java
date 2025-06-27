@@ -20,6 +20,7 @@ public class UserDTO {
     private Boolean isAnonymous;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private com.swr302.hivsystem.hivbackend.model.UserStatus status;
 
     public Long getId() {
         return id;
@@ -101,6 +102,14 @@ public class UserDTO {
         this.updatedAt = updatedAt;
     }
 
+    public com.swr302.hivsystem.hivbackend.model.UserStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(com.swr302.hivsystem.hivbackend.model.UserStatus status) {
+        this.status = status;
+    }
+
     @Override
     public String toString() {
         return "UserDTO{" +
@@ -113,6 +122,7 @@ public class UserDTO {
                 ", isAnonymous=" + isAnonymous +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", status=" + status +
                 '}';
     }
 
@@ -131,7 +141,9 @@ public class UserDTO {
         if (phoneNumber != null ? !phoneNumber.equals(userDTO.phoneNumber) : userDTO.phoneNumber != null) return false;
         if (role != null ? !role.equals(userDTO.role) : userDTO.role != null) return false;
         if (createdAt != null ? !createdAt.equals(userDTO.createdAt) : userDTO.createdAt != null) return false;
-        return updatedAt != null ? updatedAt.equals(userDTO.updatedAt) : userDTO.updatedAt == null;
+        if (updatedAt != null ? !updatedAt.equals(userDTO.updatedAt) : userDTO.updatedAt != null) return false;
+        if (status != null ? !status.equals(userDTO.status) : userDTO.status != null) return false;
+        return true;
     }
 
     @Override
@@ -145,6 +157,7 @@ public class UserDTO {
         result = 31 * result + (isAnonymous != null ? isAnonymous.hashCode() : 0);
         result = 31 * result + (createdAt != null ? createdAt.hashCode() : 0);
         result = 31 * result + (updatedAt != null ? updatedAt.hashCode() : 0);
+        result = 31 * result + (status != null ? status.hashCode() : 0);
         return result;
     }
 } 

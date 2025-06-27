@@ -81,6 +81,10 @@ public class UserServiceImpl implements UserService {
                     .orElseThrow(() -> new RuntimeException("Role not found: " + userDTO.getRole().getRoleName()));
             existingUser.setRole(newRole);
         }
+        // Nếu user đang INACTIVE thì chuyển lại thành ACTIVE khi cập nhật
+        if (existingUser.getStatus() != null && existingUser.getStatus().name().equals("INACTIVE")) {
+            existingUser.setStatus(com.swr302.hivsystem.hivbackend.model.UserStatus.ACTIVE);
+        }
 
         User updatedUser = userRepository.save(existingUser);
         return convertToDTO(updatedUser);
@@ -146,6 +150,18 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Override
+    public UserDTO deactivateUser(Long id) {
+        User user = userRepository.findById(id)
+            .orElse(null);
+        if (user == null) {
+            return null;
+        }
+        user.setStatus(com.swr302.hivsystem.hivbackend.model.UserStatus.INACTIVE);
+        User updatedUser = userRepository.save(user);
+        return convertToDTO(updatedUser);
+    }
+
     private UserDTO convertToDTO(User user) {
         if (user == null) {
             return null;
@@ -157,6 +173,7 @@ public class UserServiceImpl implements UserService {
         userDTO.setEmail(user.getEmail());
         userDTO.setPhoneNumber(user.getPhoneNumber());
         userDTO.setRole(user.getRole());
+        userDTO.setStatus(user.getStatus());
         return userDTO;
     }
 } 

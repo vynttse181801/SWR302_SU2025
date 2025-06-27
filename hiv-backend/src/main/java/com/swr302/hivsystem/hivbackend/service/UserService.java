@@ -16,4 +16,5 @@ public interface UserService {
     void changePassword(Long userId, ChangePasswordRequest changePasswordRequest);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    UserDTO deactivateUser(Long id);
 } 

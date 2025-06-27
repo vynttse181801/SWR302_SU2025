@@ -107,5 +107,19 @@ public class LabBookingController {
             .collect(Collectors.toList());
     }
 
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<LabBooking> updateLabBookingStatus(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        try {
+            String status = request.get("status");
+            if (status == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            LabBooking updatedLabBooking = labBookingService.updateLabBookingStatus(id, status);
+            return ResponseEntity.ok(updatedLabBooking);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 } 

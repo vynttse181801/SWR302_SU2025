@@ -1,26 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Phone, Mail, MapPin, Search, Filter, Plus, Edit, Trash, Eye, Bell, FileText, Activity } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { staffService } from '../services/api';
-import AppointmentManagement from '../components/AppointmentManagement';
-import PatientManagement from '../components/PatientManagement';
-import ReminderManagement from '../components/ReminderManagement';
-import LabBookingManagement from '../components/LabBookingManagement';
-import ConsultationManagement from '../components/ConsultationManagement';
-
-interface Appointment {
-  id: number;
-  patientName: string;
-  patientEmail: string;
-  patientPhone: string;
-  doctorName: string;
-  date: string;
-  time: string;
-  status: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
-  type: string;
-  notes?: string;
-  patientAddress?: string;
-}
+import { staffService } from '../../services/api';
+import AppointmentManagement from '../../components/AppointmentManagement';
+import PatientManagement from '../../components/PatientManagement';
+import ReminderManagement from '../../components/ReminderManagement';
+import LabBookingManagement from '../../components/LabBookingManagement';
+import ConsultationManagement from '../../components/ConsultationManagement';
+import { Appointment, LabBooking, User as UserType, OnlineConsultation } from '../../types';
 
 interface Patient {
   id: number;
@@ -54,32 +41,6 @@ interface Reminder {
   notes?: string;
 }
 
-interface LabBooking {
-  id: number;
-  patientName: string;
-  patientEmail: string;
-  patientPhone: string;
-  date: string;
-  status: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
-  type: string;
-  notes?: string;
-  patientAddress?: string;
-  testTypeId?: number;
-  patientId?: number;
-}
-
-interface Consultation {
-  id: number;
-  patientName: string;
-  patientEmail: string;
-  patientPhone: string;
-  date: string;
-  status: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
-  type: string;
-  notes?: string;
-  patientAddress?: string;
-}
-
 const StaffPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'appointments' | 'patients' | 'reminders' | 'labBookings' | 'consultations'>('appointments');
   const [loading, setLoading] = useState(false);
@@ -89,7 +50,7 @@ const StaffPage: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [labBookings, setLabBookings] = useState<LabBooking[]>([]);
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [consultations, setConsultations] = useState<OnlineConsultation[]>([]);
 
   // Load data on component mount
   useEffect(() => {

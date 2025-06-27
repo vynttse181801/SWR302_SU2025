@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { User, Role } from '../types';
+import { User } from '../types/index';
 import { useModal } from '../hooks/useModal';
 import Modal from '../components/Modal';
+import { FaUserSlash } from 'react-icons/fa';
 
 // Define Doctor type - this should ideally come from a central types file
 export type Doctor = {
@@ -13,6 +14,7 @@ export type Doctor = {
   specialty: string;
   maxAppointmentsPerDay: number;
   notes: string;
+  status: string;
 };
 
 // Placeholder for DoctorForm - will create a dedicated component later if needed
@@ -27,6 +29,7 @@ interface DoctorFormData {
   specialty: string;
   maxAppointmentsPerDay: number;
   notes: string;
+  status: string;
 }
 
 const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel }) => {
@@ -35,6 +38,7 @@ const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel }) => 
     specialty: doctor?.specialty || '',
     maxAppointmentsPerDay: doctor?.maxAppointmentsPerDay || 0,
     notes: doctor?.notes || '',
+    status: doctor?.status || 'ACTIVE',
   });
 
   useEffect(() => {
@@ -44,6 +48,7 @@ const DoctorForm: React.FC<DoctorFormProps> = ({ doctor, onSave, onCancel }) => 
         specialty: doctor.specialty,
         maxAppointmentsPerDay: doctor.maxAppointmentsPerDay,
         notes: doctor.notes,
+        status: doctor.status || 'ACTIVE',
       });
     }
   }, [doctor]);
@@ -165,6 +170,18 @@ const DoctorPage: React.FC = () => {
     }
   };
 
+  const handleDeactivateDoctor = async (id: number) => {
+    if (window.confirm('Bạn có chắc chắn muốn ngừng hoạt động bác sĩ này?')) {
+      try {
+        await api.patch(`/doctors/${id}/deactivate`);
+        toast.success('Đã ngừng hoạt động bác sĩ!');
+        fetchDoctors();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Lỗi khi ngừng hoạt động bác sĩ.');
+      }
+    }
+  };
+
   const handleAddEditDoctor = (doctor?: Doctor) => {
     setEditingDoctor(doctor);
     setIsFormModalOpen(true);
@@ -174,11 +191,11 @@ const DoctorPage: React.FC = () => {
     try {
       if (editingDoctor) {
         // Update existing doctor
-        await api.put(`/doctors/${editingDoctor.id}`, { ...doctorData, user: { id: doctorData.userId } });
+        await api.put(`/doctors/${editingDoctor.id}`, { ...doctorData, user: { id: doctorData.userId }, status: editingDoctor.status });
         toast.success('Doctor updated successfully!');
       } else {
         // Add new doctor
-        await api.post('/doctors', { ...doctorData, user: { id: doctorData.userId } });
+        await api.post('/doctors', { ...doctorData, user: { id: doctorData.userId }, status: 'ACTIVE' });
         toast.success('Doctor added successfully!');
       }
       setIsFormModalOpen(false);
@@ -229,6 +246,9 @@ const DoctorPage: React.FC = () => {
               <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Notes
               </th>
+              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Trạng thái
+              </th>
               <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100"></th>
             </tr>
           </thead>
@@ -250,6 +270,11 @@ const DoctorPage: React.FC = () => {
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                   <p className="text-gray-900 whitespace-no-wrap">{doctor.notes}</p>
                 </td>
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${doctor.status === 'INACTIVE' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                    {doctor.status === 'INACTIVE' ? 'Ngừng hoạt động' : 'Đang hoạt động'}
+                  </span>
+                </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
                   <button
                     onClick={() => handleAddEditDoctor(doctor)}
@@ -257,6 +282,15 @@ const DoctorPage: React.FC = () => {
                   >
                     Edit
                   </button>
+                  {doctor.status !== 'INACTIVE' && (
+                    <button
+                      onClick={() => handleDeactivateDoctor(doctor.id)}
+                      className="text-yellow-600 hover:text-yellow-900 mr-3 flex items-center"
+                      title="Ngừng hoạt động bác sĩ"
+                    >
+                      <FaUserSlash className="mr-1" /> Ngừng hoạt động
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDeleteDoctor(doctor.id)}
                     className="text-red-600 hover:text-red-900"

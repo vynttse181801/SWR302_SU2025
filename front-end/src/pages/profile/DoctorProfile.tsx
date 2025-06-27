@@ -29,6 +29,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link } from 'react-router-dom';
 import { FaFileMedical, FaEye } from 'react-icons/fa';
+import api from '../../services/api';
 
 type TabType = 'profile' | 'schedule' | 'consultation' | 'patient-history';
 
@@ -61,7 +62,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [consultations, setConsultations] = useState<Appointment[]>([]);
+  const [consultations, setConsultations] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedConsultationStatus, setSelectedConsultationStatus] = useState<string>('all');
@@ -72,7 +73,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const [formData, setFormData] = useState<DoctorFormData>({
     name: user?.name || '',
     email: user?.email || '',
-    phone: user?.phone || '',
+    phone: user?.phoneNumber || '',
     specialization: ((user as unknown) as Doctor)?.specialization || '',
     experience: ((user as unknown) as Doctor)?.experience || '',
     education: ((user as unknown) as Doctor)?.education || '',
@@ -92,84 +93,22 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     console.log('View patient details:', patientId);
   };
 
-  // Mock data for appointments
   useEffect(() => {
-    const mockAppointments: Appointment[] = [
-      {
-        id: '1',
-        patientId: '1',
-        patientName: 'Nguyễn Văn A',
-        doctorId: user?.id?.toString() || '',
-        date: '2024-03-20',
-        time: '09:00',
-        status: 'pending',
-        reason: 'Khám sức khỏe định kỳ',
-        notes: 'Bệnh nhân yêu cầu khám tổng quát'
-      },
-      {
-        id: '2',
-        patientId: '2',
-        patientName: 'Trần Thị B',
-        doctorId: user?.id?.toString() || '',
-        date: '2024-03-20',
-        time: '10:30',
-        status: 'confirmed',
-        reason: 'Tư vấn về bệnh tiểu đường',
-        notes: 'Bệnh nhân cần tư vấn về chế độ ăn'
-      },
-      {
-        id: '3',
-        patientId: '6',
-        patientName: 'Hoàng Văn F',
-        doctorId: user?.id?.toString() || '',
-        date: '2024-03-20',
-        time: '11:00',
-        status: 'completed',
-        reason: 'Khám về bệnh hô hấp',
-        notes: 'Bệnh nhân có triệu chứng ho và khó thở'
-      }
-    ];
-    setAppointments(mockAppointments);
-  }, [user?.id]);
-
-  useEffect(() => {
-    // Mock data for consultations
-    setConsultations([
-      {
-        id: 'c1',
-        patientId: '3',
-        patientName: 'Lê Văn C',
-        doctorId: '1',
-        date: '2024-03-20',
-        time: '14:00',
-        status: 'pending',
-        reason: 'Tư vấn về chế độ dinh dưỡng',
-        notes: 'Bệnh nhân muốn tư vấn về chế độ ăn cho người tiểu đường'
-      },
-      {
-        id: 'c2',
-        patientId: '4',
-        patientName: 'Phạm Thị D',
-        doctorId: '1',
-        date: '2024-03-20',
-        time: '15:30',
-        status: 'confirmed',
-        reason: 'Tư vấn về thuốc ARV',
-        notes: 'Bệnh nhân cần tư vấn về tác dụng phụ của thuốc'
-      },
-      {
-        id: 'c3',
-        patientId: '5',
-        patientName: 'Nguyễn Văn E',
-        doctorId: '1',
-        date: '2024-03-20',
-        time: '16:00',
-        status: 'completed',
-        reason: 'Tư vấn về chế độ tập luyện',
-        notes: 'Bệnh nhân đã được tư vấn về các bài tập phù hợp với tình trạng sức khỏe. Cần theo dõi tiến độ tập luyện và điều chỉnh cường độ phù hợp. Bệnh nhân tỏ ra tích cực và cam kết tuân thủ chế độ tập luyện được đề xuất.'
-      }
-    ]);
-  }, []);
+    if (user && user.id) {
+      // Lấy lịch khám bệnh (appointments)
+      api.get(`/appointments?doctorId=${user.id}`)
+        .then(res => setAppointments(res.data))
+        .catch(() => setAppointments([]));
+      // Lấy lịch tư vấn (consultations)
+      api.get('/online-consultations')
+        .then(res => {
+          // Lọc theo doctorId
+          const filtered = (res.data || []).filter((c: any) => c.appointment?.doctor?.id === user.id);
+          setConsultations(filtered);
+        })
+        .catch(() => setConsultations([]));
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -189,8 +128,8 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
         id: Number(user.id),
         name: formData.name,
         email: formData.email,
-        phone: formData.phone,
-        role: 'doctor' as const,
+        phoneNumber: formData.phone,
+        role: user.role,
         username: user.username
       };
 
@@ -211,9 +150,10 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
 
   const handleSaveNote = (consultationId: string) => {
     if (editingNote && editingNote.id === consultationId) {
+      const noteValue = editingNote.note;
       setConsultations(consultations.map(consultation => 
         consultation.id === consultationId 
-          ? { ...consultation, notes: editingNote!.note }
+          ? { ...consultation, notes: noteValue }
           : consultation
       ));
       setEditingNote(null);
@@ -248,6 +188,10 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   // Filter appointments based on selected status
   const filteredAppointments = appointments.filter(appointment => {
     if (selectedStatus === 'all') return true;
+    if (selectedStatus === 'pending') {
+      // Chỉ hiển thị lịch pending mà bác sĩ này phụ trách
+      return appointment.status === 'pending' && String(appointment.doctorId) === String(user?.id);
+    }
     return appointment.status === selectedStatus;
   });
 
@@ -400,6 +344,10 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
 
     const filteredAppointments = appointments.filter(appointment => {
       if (selectedStatus === 'all') return true;
+      if (selectedStatus === 'pending') {
+        // Chỉ hiển thị lịch pending mà bác sĩ này phụ trách
+        return appointment.status === 'pending' && String(appointment.doctorId) === String(user?.id);
+      }
       return appointment.status === selectedStatus;
     });
 
@@ -460,8 +408,18 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                       <User size={24} className="w-6 h-6 text-primary-600" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{appointment.patientName}</h3>
-                      <p className="text-sm text-gray-500">{appointment.reason}</p>
+                      <h3 className="font-medium text-gray-900">
+                        {appointment.patient?.fullName || appointment.patientName || 'Không rõ tên bệnh nhân'}
+                      </h3>
+                      <div className="text-sm text-gray-500">
+                        <b>Dịch vụ:</b> {appointment.medicalService?.name || 'Không rõ'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        <b>Thời gian:</b> {appointment.appointmentDate || appointment.date} {appointment.appointmentTime || appointment.time}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        <b>Trạng thái:</b> {appointment.status === 'pending' ? 'Chưa xác nhận' : appointment.status === 'confirmed' ? 'Đã xác nhận' : appointment.status === 'completed' ? 'Đã hoàn thành' : appointment.status === 'cancelled' ? 'Đã hủy' : appointment.status}
+                      </div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -472,12 +430,8 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                     }`}>
                       {appointment.status === 'pending' ? 'Chưa xác nhận' : appointment.status === 'confirmed' ? 'Đã xác nhận' : appointment.status === 'completed' ? 'Đã hoàn thành' : 'Đã hủy'}
                     </span>
-                    <div className="text-sm text-gray-500">
-                      {appointment.date} - {appointment.time}
                     </div>
                   </div>
-                </div>
-
                 {/* Doctor's Note / Patient Notes */}
                 {appointment.notes && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
@@ -494,7 +448,6 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                     </div>
                   </div>
                 )}
-
                 {/* Result Input/Display (for completed) */}
                 {appointment.status === 'completed' && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
@@ -535,7 +488,6 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                     </div>
                   </div>
                 )}
-
                 {/* Actions */}
                 <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-2">
                   {appointment.status === 'completed' && (
@@ -587,10 +539,10 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
       { value: 'cancelled', label: 'Đã hủy' },
     ];
 
-    const filteredConsultations = consultations.filter(consultation => {
-      if (selectedConsultationStatus === 'all') return true;
-      return consultation.status === selectedConsultationStatus;
-    });
+    console.log('Consultations:', consultations, 'User:', user);
+    const filteredConsultations = consultations.filter(
+      (c) => String(c.appointment?.doctor?.id) === String(user?.id)
+    );
 
     return (
       <div className="space-y-6">
@@ -638,7 +590,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
 
         <div className="grid gap-4">
           {filteredConsultations.length > 0 ? (
-            filteredConsultations.map((consultation) => (
+            filteredConsultations.map((consultation: any) => (
               <div
                 key={consultation.id}
                 className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-200"
@@ -649,8 +601,23 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                       <User size={24} className="w-6 h-6 text-primary-600" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{consultation.patientName}</h3>
-                      <p className="text-sm text-gray-500">{consultation.reason}</p>
+                      <h3 className="font-medium text-gray-900">
+                        {consultation.appointment?.patient?.fullName || 'Không rõ tên bệnh nhân'}
+                      </h3>
+                      <div className="text-sm text-gray-500">
+                        <b>Loại tư vấn:</b> {consultation.consultationType?.name || 'Không rõ'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        <b>Thời gian:</b> {consultation.startTime ? new Date(consultation.startTime).toLocaleString('vi-VN') : 'Không rõ'}
+                      </div>
+                      {consultation.meetingLink && (
+                        <div className="text-sm text-blue-600">
+                          <a href={consultation.meetingLink} target="_blank" rel="noopener noreferrer">Link phòng họp</a>
+                        </div>
+                      )}
+                      <div className="text-sm text-gray-500">
+                        <b>Trạng thái:</b> {consultation.status === 'pending' ? 'Chưa xác nhận' : consultation.status === 'confirmed' ? 'Đã xác nhận' : consultation.status === 'completed' ? 'Đã hoàn thành' : consultation.status === 'cancelled' ? 'Đã hủy' : consultation.status}
+                      </div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -661,9 +628,6 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                     }`}>
                       {consultation.status === 'pending' ? 'Chưa xác nhận' : consultation.status === 'confirmed' ? 'Đã xác nhận' : consultation.status === 'completed' ? 'Đã hoàn thành' : 'Đã hủy'}
                     </span>
-                    <div className="text-sm text-gray-500">
-                      {consultation.date} - {consultation.time}
-                    </div>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100">
@@ -689,7 +653,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                       </div>
                       {editingNote?.id === consultation.id ? (
                         <textarea
-                          value={editingNote.note}
+                          value={editingNote ? editingNote.note : ''}
                           onChange={handleNoteChange}
                           className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                           rows={4}

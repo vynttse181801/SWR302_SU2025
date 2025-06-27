@@ -3,7 +3,10 @@ import { motion } from 'framer-motion';
 import { testService, consultationService } from '../services/api';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { Calendar, Clock, User, FileText, CheckCircle, XCircle, Clock as ClockIcon } from 'lucide-react';
+import { Calendar, Clock, User, FileText, CheckCircle, XCircle, Clock as ClockIcon, Eye, Edit, Trash, Plus } from 'lucide-react';
+import { labResultService } from '../services/api';
+import { LabResult, LabTestType } from '../types';
+import Modal from '../components/Modal';
 
 interface LabBooking {
   id: number;
@@ -30,6 +33,17 @@ const TestResults: React.FC = () => {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [labResults, setLabResults] = useState<LabResult[]>([]);
+  const [testTypes, setTestTypes] = useState<LabTestType[]>([]);
+  const [selectedResult, setSelectedResult] = useState<LabResult | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    resultValue: '',
+    unit: '',
+    normalRange: '',
+    notes: ''
+  });
 
   useEffect(() => {
     fetchData();
@@ -38,13 +52,17 @@ const TestResults: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [labBookingsRes, consultationsRes] = await Promise.all([
+      const [labBookingsRes, consultationsRes, resultsRes, typesRes] = await Promise.all([
         testService.getLabBookingsByPatient(1), // Cần lấy patientId từ context
-        consultationService.getConsultationsByPatient(1) // Cần lấy patientId từ context
+        consultationService.getConsultationsByPatient(1), // Cần lấy patientId từ context
+        labResultService.getAllLabResults(),
+        testService.getTestTypes()
       ]);
       
       setLabBookings(labBookingsRes.data);
       setConsultations(consultationsRes.data);
+      setLabResults(resultsRes.data);
+      setTestTypes(typesRes.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Không thể tải dữ liệu');
     } finally {
@@ -80,6 +98,58 @@ const TestResults: React.FC = () => {
       default:
         return <ClockIcon className="w-4 h-4" />;
     }
+  };
+
+  const handleShowDetail = (result: LabResult) => {
+    setSelectedResult(result);
+    setShowDetailModal(true);
+  };
+
+  const handleShowEdit = (result: LabResult) => {
+    setSelectedResult(result);
+    setEditForm({
+      resultValue: result.resultValue,
+      unit: result.unit || '',
+      normalRange: result.normalRange || '',
+      notes: result.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateResult = async () => {
+    if (!selectedResult) return;
+    
+    try {
+      await labResultService.updateLabResult(selectedResult.id, {
+        ...selectedResult,
+        resultValue: editForm.resultValue,
+        unit: editForm.unit,
+        normalRange: editForm.normalRange,
+        notes: editForm.notes
+      });
+      setShowEditModal(false);
+      fetchData(); // Refresh data
+    } catch (error) {
+      console.error('Error updating lab result:', error);
+      alert('Có lỗi xảy ra khi cập nhật kết quả xét nghiệm');
+    }
+  };
+
+  const handleDeleteResult = async (id: number) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa kết quả xét nghiệm này?')) return;
+    
+    try {
+      await labResultService.deleteLabResult(id);
+      fetchData(); // Refresh data
+    } catch (error) {
+      console.error('Error deleting lab result:', error);
+      alert('Có lỗi xảy ra khi xóa kết quả xét nghiệm');
+    }
+  };
+
+  const getTestTypeName = (testTypeId: number) => {
+    const testType = testTypes.find(t => t.id === testTypeId);
+    return testType ? testType.name : 'N/A';
   };
 
   if (loading) {
@@ -239,6 +309,139 @@ const TestResults: React.FC = () => {
           )}
         </motion.div>
       </div>
+
+      {/* Modal chi tiết */}
+      {showDetailModal && selectedResult && (
+        <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Chi tiết kết quả xét nghiệm">
+          <div className="p-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Thông tin bệnh nhân</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><strong>Tên:</strong> {selectedResult.patient.fullName}</div>
+                    <div><strong>Email:</strong> {selectedResult.patient.email}</div>
+                    <div><strong>SĐT:</strong> {selectedResult.patient.phoneNumber}</div>
+                    <div><strong>Ngày sinh:</strong> {selectedResult.patient.dateOfBirth}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Thông tin xét nghiệm</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><strong>Loại xét nghiệm:</strong> {getTestTypeName(selectedResult.testType.id)}</div>
+                    <div><strong>Ngày xét nghiệm:</strong> {new Date(selectedResult.testDate).toLocaleDateString('vi-VN')}</div>
+                    <div><strong>Kết quả:</strong> {selectedResult.resultValue} {selectedResult.unit}</div>
+                    {selectedResult.normalRange && (
+                      <div><strong>Khoảng bình thường:</strong> {selectedResult.normalRange}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {selectedResult.notes && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Ghi chú</h3>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-700">{selectedResult.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Thông tin người nhập</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="text-sm">
+                    <div><strong>Người nhập:</strong> {selectedResult.enteredBy.fullName}</div>
+                    <div><strong>Ngày tạo:</strong> {new Date(selectedResult.createdAt).toLocaleString('vi-VN')}</div>
+                    <div><strong>Ngày cập nhật:</strong> {new Date(selectedResult.updatedAt).toLocaleString('vi-VN')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal chỉnh sửa */}
+      {showEditModal && selectedResult && (
+        <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Chỉnh sửa kết quả xét nghiệm">
+          <div className="p-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Kết quả *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.resultValue}
+                  onChange={(e) => setEditForm({...editForm, resultValue: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập kết quả xét nghiệm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đơn vị
+                </label>
+                <input
+                  type="text"
+                  value={editForm.unit}
+                  onChange={(e) => setEditForm({...editForm, unit: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ví dụ: mg/dL, ng/mL"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Khoảng bình thường
+                </label>
+                <input
+                  type="text"
+                  value={editForm.normalRange}
+                  onChange={(e) => setEditForm({...editForm, normalRange: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ví dụ: 70-100 mg/dL"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ghi chú
+                </label>
+                <textarea
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ghi chú về kết quả xét nghiệm"
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-6">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleUpdateResult}
+                disabled={!editForm.resultValue}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cập nhật
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

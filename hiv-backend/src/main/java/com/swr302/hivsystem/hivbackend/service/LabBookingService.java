@@ -47,4 +47,12 @@ public class LabBookingService {
     public void deleteLabBooking(Long id) {
         labBookingRepository.deleteById(id);
     }
+
+    public LabBooking updateLabBookingStatus(Long id, String status) {
+        LabBooking labBooking = labBookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("LabBooking not found with id " + id));
+
+        labBooking.setStatus(status);
+        return labBookingRepository.save(labBooking);
+    }
 } 

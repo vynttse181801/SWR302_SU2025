@@ -48,6 +48,10 @@ public class User implements UserDetails {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status = UserStatus.ACTIVE;
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -133,6 +137,14 @@ public class User implements UserDetails {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public UserStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(UserStatus status) {
+        this.status = status;
     }
 
     @Override

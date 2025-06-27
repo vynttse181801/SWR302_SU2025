@@ -182,4 +182,23 @@ public class OnlineConsultationController {
             })
             .collect(Collectors.toList());
     }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OnlineConsultation> updateOnlineConsultationStatus(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        Optional<OnlineConsultation> onlineConsultation = onlineConsultationRepository.findById(id);
+        if (onlineConsultation.isPresent()) {
+            String status = request.get("status");
+            if (status == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            OnlineConsultation existingOnlineConsultation = onlineConsultation.get();
+            existingOnlineConsultation.getAppointment().setStatus(status);
+            appointmentRepository.save(existingOnlineConsultation.getAppointment());
+            
+            return ResponseEntity.ok(onlineConsultationRepository.save(existingOnlineConsultation));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

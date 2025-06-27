@@ -27,6 +27,7 @@ export interface User {
   nextAppointment?: string;
   medicalRecordNumber?: string;
   notes?: string;
+  status?: string;
 }
 
 export interface Doctor extends User {
@@ -46,6 +47,21 @@ export interface Appointment {
   reason: string;
   notes?: string;
   result?: string;
+  patient?: User;
+  medicalService?: { name: string };
+  appointmentDate?: string;
+  appointmentTime?: string;
+}
+
+export interface OnlineConsultation {
+  id: number;
+  appointment: Appointment;
+  consultationType: { id: number; name: string };
+  meetingLink?: string;
+  startTime?: string;
+  endTime?: string;
+  notes?: string;
+  status?: string;
 }
 
 export type Link = {
@@ -80,3 +96,30 @@ export type LabTestType = {
   createdAt: string;
   updatedAt: string;
 };
+
+export interface LabBooking {
+  id: number;
+  patientId: number;
+  testTypeId: number;
+  testTypeName?: string;
+  date: string;
+  timeSlotId?: number;
+  notes: string;
+  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Results Ready';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LabResult {
+  id: number;
+  patient: User;
+  testType: LabTestType;
+  testDate: string;
+  resultValue: string;
+  unit?: string;
+  normalRange?: string;
+  notes?: string;
+  enteredBy: User;
+  createdAt: string;
+  updatedAt: string;
+}
