@@ -59,12 +59,54 @@ INSERT INTO lab_bookings (patient_id, test_type_id, date, time_slot_id, notes, s
 ((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM lab_test_types WHERE name = 'HIV Antibody Test'), GETDATE(), NULL, 'Chuẩn bị trước 30 phút', 'Scheduled', GETDATE(), GETDATE()),
 ((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM lab_test_types WHERE name = 'CD4 Count'), DATEADD(day, 1, GETDATE()), NULL, 'Không ăn sáng', 'Scheduled', GETDATE(), GETDATE());
 
--- Insert appointments (lịch khám bệnh)
+-- Insert appointments (lịch khám bệnh) - Original appointments
 INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
-((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE name = N'Khám tổng quát'), GETDATE(), '09:00:00', N'Scheduled', N'Bệnh nhân yêu cầu khám tổng quát', GETDATE(), GETDATE()),
-((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE name = N'Tư vấn HIV'), GETDATE(), '10:30:00', N'Scheduled', N'Bệnh nhân cần tư vấn về chế độ ăn', GETDATE(), GETDATE()),
-((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE name = N'Tư vấn dinh dưỡng'), DATEADD(day, 1, GETDATE()), '14:00:00', N'Pending', N'Bệnh nhân có triệu chứng ho và khó thở', GETDATE(), GETDATE()),
-((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE name = N'Khám tổng quát'), DATEADD(day, 2, GETDATE()), '15:30:00', N'Pending', N'Khám định kỳ', GETDATE(), GETDATE());
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 1), GETDATE(), '09:00:00', N'Scheduled', N'Bệnh nhân yêu cầu khám tổng quát', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 2), GETDATE(), '10:30:00', N'Scheduled', N'Bệnh nhân cần tư vấn về chế độ ăn', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 4), DATEADD(day, 1, GETDATE()), '14:00:00', N'Pending', N'Bệnh nhân có triệu chứng ho và khó thở', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 1), DATEADD(day, 2, GETDATE()), '15:30:00', N'Pending', N'Khám định kỳ', GETDATE(), GETDATE());
+
+-- Thêm các lịch khám bệnh với nhiều trạng thái khác nhau cho Doctor 1 (DOC001)
+-- Pending
+INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 1), DATEADD(day, 1, GETDATE()), '08:00:00', N'Pending', N'Bệnh nhân có triệu chứng sốt nhẹ', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 2), DATEADD(day, 1, GETDATE()), '11:00:00', N'Pending', N'Bệnh nhân cần tư vấn về thuốc ARV', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 3), DATEADD(day, 2, GETDATE()), '09:30:00', N'Pending', N'Xét nghiệm định kỳ 3 tháng', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 4), DATEADD(day, 3, GETDATE()), '14:30:00', N'Pending', N'Bệnh nhân muốn tư vấn về chế độ ăn kiêng', GETDATE(), GETDATE());
+-- Confirmed
+INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 1), DATEADD(day, 4, GETDATE()), '10:00:00', N'Confirmed', N'Bệnh nhân đã xác nhận lịch hẹn', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 2), DATEADD(day, 4, GETDATE()), '15:00:00', N'Confirmed', N'Bệnh nhân cần tư vấn về tác dụng phụ thuốc', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 3), DATEADD(day, 5, GETDATE()), '08:30:00', N'Confirmed', N'Xét nghiệm theo dõi điều trị', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 4), DATEADD(day, 5, GETDATE()), '13:00:00', N'Confirmed', N'Tư vấn dinh dưỡng cho người mới nhiễm', GETDATE(), GETDATE());
+-- Completed
+INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 1), DATEADD(day, -3, GETDATE()), '09:00:00', N'Completed', N'Bệnh nhân khám tổng quát định kỳ. Kết quả khám: Bệnh nhân sức khỏe ổn định, huyết áp 120/80, nhịp tim 72. Khuyến nghị tiếp tục duy trì chế độ ăn uống và tập luyện hiện tại.', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 2), DATEADD(day, -2, GETDATE()), '14:00:00', N'Completed', N'Bệnh nhân tư vấn về thuốc ARV. Kết quả tư vấn: Bệnh nhân đã hiểu rõ về tầm quan trọng của việc uống thuốc đúng giờ. Đã hướng dẫn cách xử lý tác dụng phụ và lịch tái khám.', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 3), DATEADD(day, -1, GETDATE()), '08:00:00', N'Completed', N'Xét nghiệm máu định kỳ. Kết quả xét nghiệm: CD4: 450 cells/μL, Viral load: <50 copies/mL. Kết quả tốt, tiếp tục duy trì phác đồ điều trị hiện tại.', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 4), DATEADD(day, -1, GETDATE()), '15:30:00', N'Completed', N'Tư vấn dinh dưỡng cho bệnh nhân HIV. Kết quả tư vấn: Đã hướng dẫn chế độ ăn giàu protein, vitamin và khoáng chất. Khuyến nghị tránh thực phẩm sống và chưa nấu chín.', GETDATE(), GETDATE());
+-- Cancelled
+INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 1), DATEADD(day, -5, GETDATE()), '10:00:00', N'Canceled', N'Bệnh nhân hủy do bận việc', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC001'), (SELECT id FROM medical_services WHERE id = 2), DATEADD(day, -4, GETDATE()), '14:00:00', N'Canceled', N'Bệnh nhân bị ốm, xin dời lịch', GETDATE(), GETDATE());
+
+-- Thêm các lịch khám bệnh với nhiều trạng thái khác nhau cho Doctor 2 (DOC002)
+-- Pending
+INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 1), DATEADD(day, 1, GETDATE()), '16:00:00', N'Pending', N'Bệnh nhân có triệu chứng mệt mỏi', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 2), DATEADD(day, 2, GETDATE()), '09:00:00', N'Pending', N'Bệnh nhân cần tư vấn về phòng ngừa', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 3), DATEADD(day, 3, GETDATE()), '11:30:00', N'Pending', N'Tư vấn dinh dưỡng cho người cao tuổi', GETDATE(), GETDATE());
+-- Confirmed
+INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 1), DATEADD(day, 4, GETDATE()), '08:00:00', N'Confirmed', N'Khám sức khỏe định kỳ', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 2), DATEADD(day, 5, GETDATE()), '10:30:00', N'Confirmed', N'Xét nghiệm theo dõi điều trị', GETDATE(), GETDATE());
+-- Completed
+INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 1), DATEADD(day, -2, GETDATE()), '14:00:00', N'Completed', N'Khám tổng quát định kỳ. Kết quả khám: Bệnh nhân sức khỏe ổn định, cân nặng 55kg, chiều cao 160cm. Khuyến nghị tăng cường dinh dưỡng và tập luyện nhẹ nhàng.', GETDATE(), GETDATE()),
+((SELECT id FROM patients WHERE patient_code = 'PAT001'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 3), DATEADD(day, -1, GETDATE()), '16:00:00', N'Completed', N'Tư vấn dinh dưỡng cho người nhiễm HIV. Kết quả tư vấn: Đã hướng dẫn chế độ ăn cân bằng, giàu protein và vitamin. Khuyến nghị uống đủ nước và tránh rượu bia.', GETDATE(), GETDATE());
+-- Cancelled
+INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at) VALUES
+((SELECT id FROM patients WHERE patient_code = 'PAT002'), (SELECT id FROM doctors WHERE doctor_code = 'DOC002'), (SELECT id FROM medical_services WHERE id = 2), DATEADD(day, -3, GETDATE()), '10:00:00', N'Canceled', N'Bệnh nhân có việc đột xuất', GETDATE(), GETDATE());
 
 -- Insert online consultations (lịch tư vấn)
 INSERT INTO online_consultations (appointment_id, consultation_type_id, meeting_link, start_time, end_time, notes, created_at, updated_at) VALUES

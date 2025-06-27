@@ -78,6 +78,30 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     experience: ((user as unknown) as Doctor)?.experience || '',
     education: ((user as unknown) as Doctor)?.education || '',
   });
+  const [appointmentPage, setAppointmentPage] = useState(1);
+  const [consultationPage, setConsultationPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  // Hàm chuẩn hóa và mapping trạng thái
+  const normalizeStatus = (status: string) => status?.toLowerCase();
+  const statusTextMap: Record<string, string> = {
+    pending: 'Chưa xác nhận',
+    scheduled: 'Đã lên lịch',
+    confirmed: 'Đã xác nhận',
+    completed: 'Đã hoàn thành',
+    cancelled: 'Đã hủy',
+    canceled: 'Đã hủy',
+    'no-show': 'Vắng mặt'
+  };
+  const statusColorMap: Record<string, string> = {
+    completed: 'bg-green-100 text-green-800',
+    cancelled: 'bg-red-100 text-red-800',
+    canceled: 'bg-red-100 text-red-800',
+    pending: 'bg-yellow-100 text-yellow-800',
+    confirmed: 'bg-blue-100 text-blue-800',
+    scheduled: 'bg-blue-100 text-blue-800',
+    'no-show': 'bg-gray-100 text-gray-800'
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -185,15 +209,18 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     }
   };
 
-  // Filter appointments based on selected status
+  // Filter and sort appointments based on selected status and time (descending)
   const filteredAppointments = appointments.filter(appointment => {
     if (selectedStatus === 'all') return true;
-    if (selectedStatus === 'pending') {
-      // Chỉ hiển thị lịch pending mà bác sĩ này phụ trách
-      return appointment.status === 'pending' && String(appointment.doctorId) === String(user?.id);
-    }
-    return appointment.status === selectedStatus;
+    const normalized = normalizeStatus(appointment.status);
+    return normalized === normalizeStatus(selectedStatus);
   });
+  const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+    const dateA = new Date(`${a.appointmentDate}T${a.appointmentTime}`);
+    const dateB = new Date(`${b.appointmentDate}T${b.appointmentTime}`);
+    return dateB.getTime() - dateA.getTime();
+  });
+  const paginatedAppointments = sortedAppointments.slice((appointmentPage - 1) * PAGE_SIZE, appointmentPage * PAGE_SIZE);
 
   const renderProfileTab = () => (
     <div className="space-y-6">
@@ -342,15 +369,6 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
       { value: 'cancelled', label: 'Đã hủy' },
     ];
 
-    const filteredAppointments = appointments.filter(appointment => {
-      if (selectedStatus === 'all') return true;
-      if (selectedStatus === 'pending') {
-        // Chỉ hiển thị lịch pending mà bác sĩ này phụ trách
-        return appointment.status === 'pending' && String(appointment.doctorId) === String(user?.id);
-      }
-      return appointment.status === selectedStatus;
-    });
-
     return (
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
@@ -396,8 +414,8 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
 
         {/* Appointments List */}
         <div className="grid gap-4">
-          {filteredAppointments.length > 0 ? (
-            filteredAppointments.map((appointment) => (
+          {paginatedAppointments.length > 0 ? (
+            paginatedAppointments.map((appointment) => (
               <div
                 key={appointment.id}
                 className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-200"
@@ -418,20 +436,16 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                         <b>Thời gian:</b> {appointment.appointmentDate || appointment.date} {appointment.appointmentTime || appointment.time}
                       </div>
                       <div className="text-sm text-gray-500">
-                        <b>Trạng thái:</b> {appointment.status === 'pending' ? 'Chưa xác nhận' : appointment.status === 'confirmed' ? 'Đã xác nhận' : appointment.status === 'completed' ? 'Đã hoàn thành' : appointment.status === 'cancelled' ? 'Đã hủy' : appointment.status}
+                        <b>Trạng thái:</b> {statusTextMap[normalizeStatus(appointment.status)] || appointment.status}
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`px-3 py-1 rounded-full text-sm ${
-                      appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {appointment.status === 'pending' ? 'Chưa xác nhận' : appointment.status === 'confirmed' ? 'Đã xác nhận' : appointment.status === 'completed' ? 'Đã hoàn thành' : 'Đã hủy'}
+                    <span className={`px-3 py-1 rounded-full text-sm ${statusColorMap[normalizeStatus(appointment.status)] || 'bg-gray-100 text-gray-800'}`}>
+                      {statusTextMap[normalizeStatus(appointment.status)] || appointment.status}
                     </span>
-                    </div>
                   </div>
+                </div>
                 {/* Doctor's Note / Patient Notes */}
                 {appointment.notes && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
@@ -526,6 +540,22 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
             </div>
           )}
         </div>
+        {/* Pagination */}
+        {sortedAppointments.length > PAGE_SIZE && (
+          <div className="flex justify-center mt-4 gap-2">
+            <button
+              onClick={() => setAppointmentPage(p => Math.max(1, p - 1))}
+              disabled={appointmentPage === 1}
+              className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+            >Trước</button>
+            <span>Trang {appointmentPage} / {Math.ceil(sortedAppointments.length / PAGE_SIZE)}</span>
+            <button
+              onClick={() => setAppointmentPage(p => p + 1)}
+              disabled={appointmentPage >= Math.ceil(sortedAppointments.length / PAGE_SIZE)}
+              className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+            >Sau</button>
+          </div>
+        )}
       </div>
     );
   };
@@ -542,7 +572,15 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     console.log('Consultations:', consultations, 'User:', user);
     const filteredConsultations = consultations.filter(
       (c) => String(c.appointment?.doctor?.id) === String(user?.id)
+    ).filter(
+      (c) => selectedConsultationStatus === 'all' || normalizeStatus(c.status) === normalizeStatus(selectedConsultationStatus)
     );
+    const sortedConsultations = [...filteredConsultations].sort((a, b) => {
+      const dateA = new Date(a.startTime);
+      const dateB = new Date(b.startTime);
+      return dateB.getTime() - dateA.getTime();
+    });
+    const paginatedConsultations = sortedConsultations.slice((consultationPage - 1) * PAGE_SIZE, consultationPage * PAGE_SIZE);
 
     return (
       <div className="space-y-6">
@@ -589,8 +627,8 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
         </div>
 
         <div className="grid gap-4">
-          {filteredConsultations.length > 0 ? (
-            filteredConsultations.map((consultation: any) => (
+          {paginatedConsultations.length > 0 ? (
+            paginatedConsultations.map((consultation: any) => (
               <div
                 key={consultation.id}
                 className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-200"
@@ -616,17 +654,13 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                         </div>
                       )}
                       <div className="text-sm text-gray-500">
-                        <b>Trạng thái:</b> {consultation.status === 'pending' ? 'Chưa xác nhận' : consultation.status === 'confirmed' ? 'Đã xác nhận' : consultation.status === 'completed' ? 'Đã hoàn thành' : consultation.status === 'cancelled' ? 'Đã hủy' : consultation.status}
+                        <b>Trạng thái:</b> {statusTextMap[normalizeStatus(consultation.status)] || consultation.status}
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`px-3 py-1 rounded-full text-sm ${
-                      consultation.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      consultation.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {consultation.status === 'pending' ? 'Chưa xác nhận' : consultation.status === 'confirmed' ? 'Đã xác nhận' : consultation.status === 'completed' ? 'Đã hoàn thành' : 'Đã hủy'}
+                    <span className={`px-3 py-1 rounded-full text-sm ${statusColorMap[normalizeStatus(consultation.status)] || 'bg-gray-100 text-gray-800'}`}>
+                      {statusTextMap[normalizeStatus(consultation.status)] || consultation.status}
                     </span>
                   </div>
                 </div>
@@ -707,6 +741,22 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
             </div>
           )}
         </div>
+        {/* Pagination */}
+        {sortedConsultations.length > PAGE_SIZE && (
+          <div className="flex justify-center mt-4 gap-2">
+            <button
+              onClick={() => setConsultationPage(p => Math.max(1, p - 1))}
+              disabled={consultationPage === 1}
+              className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+            >Trước</button>
+            <span>Trang {consultationPage} / {Math.ceil(sortedConsultations.length / PAGE_SIZE)}</span>
+            <button
+              onClick={() => setConsultationPage(p => p + 1)}
+              disabled={consultationPage >= Math.ceil(sortedConsultations.length / PAGE_SIZE)}
+              className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+            >Sau</button>
+          </div>
+        )}
       </div>
     );
   };
