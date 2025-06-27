@@ -28,7 +28,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link } from 'react-router-dom';
-import { FaFileMedical, FaEye } from 'react-icons/fa';
+import { FaFileMedical, FaEye, FaPlus } from 'react-icons/fa';
 import api, { consultationService } from '../../services/api';
 
 type TabType = 'profile' | 'schedule' | 'consultation' | 'patient-history';
@@ -82,6 +82,17 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const [consultationPage, setConsultationPage] = useState(1);
   const PAGE_SIZE = 10;
   const [doctorId, setDoctorId] = useState<number | null>(null);
+  const [patientTreatmentPlans, setPatientTreatmentPlans] = useState<any[]>([]);
+  const [loadingPatients, setLoadingPatients] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [refreshingPatients, setRefreshingPatients] = useState(false);
+  const [showCreateProtocolModal, setShowCreateProtocolModal] = useState(false);
+  const [selectedPatientForProtocol, setSelectedPatientForProtocol] = useState<Patient | null>(null);
+  const [arvProtocols, setArvProtocols] = useState<any[]>([]);
+  const [selectedArvProtocolId, setSelectedArvProtocolId] = useState('');
+  const [protocolStartDate, setProtocolStartDate] = useState('');
+  const [protocolNotes, setProtocolNotes] = useState('');
+  const [creatingProtocol, setCreatingProtocol] = useState(false);
 
   // Hàm chuẩn hóa và mapping trạng thái
   const normalizeStatus = (status: string) => status?.toLowerCase();
@@ -140,6 +151,8 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
       consultationService.getConsultationsByDoctor(doctorId)
         .then(res => setConsultations(res.data || []))
         .catch(() => setConsultations([]));
+      // Tự động load dữ liệu bệnh nhân
+      loadInitialPatientData();
     }
   }, [doctorId]);
 
@@ -551,8 +564,12 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
               </div>
             ))
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              Không có lịch khám nào
+            <div className="text-center py-12 bg-gray-50 rounded-xl">
+              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Không có bệnh nhân nào</h3>
+              <p className="text-gray-500">
+                Chưa có bệnh nhân nào đặt lịch khám với bác sĩ này
+              </p>
             </div>
           )}
         </div>
@@ -775,44 +792,176 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     );
   };
 
-  const renderPatientHistoryTab = () => {
-    const patients: Patient[] = [
-      {
-        id: '1',
-        patientId: 'P001',
-        name: 'Nguyễn Văn A',
-        age: 35,
-        gender: 'male',
-        lastVisit: '2024-02-15',
-        nextAppointment: '2024-03-15',
-        status: 'active',
-        avatar: 'https://i.pravatar.cc/150?img=1'
-      },
-      {
-        id: '2',
-        patientId: 'P002',
-        name: 'Trần Thị B',
-        age: 28,
-        gender: 'female',
-        lastVisit: '2024-02-10',
-        status: 'active',
-        avatar: 'https://i.pravatar.cc/150?img=2'
-      },
-      {
-        id: '3',
-        patientId: 'P003',
-        name: 'Lê Văn C',
-        age: 45,
-        gender: 'male',
-        lastVisit: '2024-01-20',
-        nextAppointment: '2024-03-20',
-        status: 'inactive',
-        avatar: 'https://i.pravatar.cc/150?img=3'
-      }
-    ];
+  // Thêm hàm load dữ liệu bệnh nhân ban đầu
+  const loadInitialPatientData = () => {
+    if (!doctorId) return;
+    
+    setLoadingPatients(true);
+    
+    // Lấy tất cả appointments của bác sĩ để có danh sách bệnh nhân
+    api.get(`/appointments?doctorId=${doctorId}`)
+      .then(res => {
+        const appointments = res.data || [];
+        
+        // Lấy danh sách unique patients từ appointments
+        const uniquePatients: { [id: string]: Patient } = {};
+        
+        appointments.forEach((appointment: any) => {
+          const patient = appointment.patient;
+          if (patient && patient.id && !uniquePatients[patient.id]) {
+            uniquePatients[patient.id] = {
+              id: patient.id,
+              patientId: patient.patientId || patient.id,
+              name: patient.fullName || patient.name || 'Không rõ tên',
+              age: patient.age || 0,
+              gender: patient.gender || 'male',
+              lastVisit: appointment.appointmentDate || appointment.date || '',
+              nextAppointment: undefined,
+              status: patient.status || 'active',
+              avatar: patient.avatar || `https://i.pravatar.cc/150?img=${patient.id}`
+            };
+          }
+        });
+        
+        setPatients(Object.values(uniquePatients));
+        
+        // Sau đó lấy treatment plans để hiển thị thông tin phác đồ
+        return api.get(`/patient-treatment-plans?doctorId=${doctorId}`);
+      })
+      .then(res => {
+        const treatmentPlans = res.data || [];
+        setPatientTreatmentPlans(treatmentPlans);
+      })
+      .catch(() => {
+        setPatients([]);
+        setPatientTreatmentPlans([]);
+      })
+      .finally(() => setLoadingPatients(false));
+  };
 
+  // Thêm hàm refresh dữ liệu bệnh nhân
+  const refreshPatientData = () => {
+    if (!doctorId) return;
+    
+    setRefreshingPatients(true);
+    
+    // Lấy tất cả appointments của bác sĩ để có danh sách bệnh nhân
+    api.get(`/appointments?doctorId=${doctorId}`)
+      .then(res => {
+        const appointments = res.data || [];
+        
+        // Lấy danh sách unique patients từ appointments
+        const uniquePatients: { [id: string]: Patient } = {};
+        
+        appointments.forEach((appointment: any) => {
+          const patient = appointment.patient;
+          if (patient && patient.id && !uniquePatients[patient.id]) {
+            uniquePatients[patient.id] = {
+              id: patient.id,
+              patientId: patient.patientId || patient.id,
+              name: patient.fullName || patient.name || 'Không rõ tên',
+              age: patient.age || 0,
+              gender: patient.gender || 'male',
+              lastVisit: appointment.appointmentDate || appointment.date || '',
+              nextAppointment: undefined,
+              status: patient.status || 'active',
+              avatar: patient.avatar || `https://i.pravatar.cc/150?img=${patient.id}`
+            };
+          }
+        });
+        
+        setPatients(Object.values(uniquePatients));
+        
+        // Sau đó lấy treatment plans để hiển thị thông tin phác đồ
+        return api.get(`/patient-treatment-plans?doctorId=${doctorId}`);
+      })
+      .then(res => {
+        const treatmentPlans = res.data || [];
+        setPatientTreatmentPlans(treatmentPlans);
+        toast.success('Đã cập nhật dữ liệu bệnh nhân');
+      })
+      .catch(() => {
+        setPatients([]);
+        setPatientTreatmentPlans([]);
+        toast.error('Không thể cập nhật dữ liệu bệnh nhân');
+      })
+      .finally(() => setRefreshingPatients(false));
+  };
+
+  // Thêm hàm lấy danh sách ARV protocols
+  const loadArvProtocols = () => {
+    api.get('/arv-protocols')
+      .then(res => setArvProtocols(res.data || []))
+      .catch(() => setArvProtocols([]));
+  };
+
+  // Thêm hàm tạo phác đồ ARV mới
+  const handleCreateProtocol = () => {
+    if (!selectedPatientForProtocol || !selectedArvProtocolId || !protocolStartDate || !doctorId) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    setCreatingProtocol(true);
+    const newTreatmentPlan = {
+      patient: { id: selectedPatientForProtocol.id },
+      doctor: { id: doctorId },
+      arvProtocol: { id: selectedArvProtocolId },
+      startDate: protocolStartDate,
+      notes: protocolNotes || ''
+    };
+
+    api.post('/patient-treatment-plans', newTreatmentPlan)
+      .then(() => {
+        toast.success('Tạo phác đồ ARV thành công!');
+        setShowCreateProtocolModal(false);
+        setSelectedPatientForProtocol(null);
+        setSelectedArvProtocolId('');
+        setProtocolStartDate('');
+        setProtocolNotes('');
+        // Refresh dữ liệu
+        refreshPatientData();
+      })
+      .catch(() => {
+        toast.error('Tạo phác đồ ARV thất bại!');
+      })
+      .finally(() => setCreatingProtocol(false));
+  };
+
+  // Thêm hàm mở modal tạo phác đồ
+  const openCreateProtocolModal = (patient: Patient) => {
+    setSelectedPatientForProtocol(patient);
+    setShowCreateProtocolModal(true);
+    loadArvProtocols();
+  };
+
+  const renderPatientHistoryTab = () => {
     return (
       <div className="space-y-6">
+        {/* Header với nút refresh */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-800">Lịch sử bệnh nhân</h2>
+          <button
+            onClick={refreshPatientData}
+            disabled={refreshingPatients}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200"
+          >
+            {refreshingPatients ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Đang cập nhật...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Cập nhật dữ liệu</span>
+              </>
+            )}
+          </button>
+        </div>
+
         {/* Search and Filter */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -833,64 +982,266 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {loadingPatients && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <p className="mt-2 text-gray-600">Đang tải danh sách bệnh nhân...</p>
+          </div>
+        )}
+
         {/* Patient List */}
-        <div className="space-y-4">
-          {patients.map((patient) => (
-            <div key={patient.id} className="bg-white rounded-lg shadow-md p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <img
-                  src={patient.avatar || 'https://i.pravatar.cc/150?img=4'}
-                  alt={patient.name}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
-                <div>
-                  <h3 className="text-lg font-semibold">{patient.name}</h3>
-                  <p className="text-gray-600">
-                    {patient.age} tuổi • {patient.gender === 'male' ? 'Nam' : 'Nữ'}
-                  </p>
-                  <div className="space-y-1 mt-2">
-                    <p className="text-sm text-gray-600">
-                      Lần khám cuối: {formatDate(patient.lastVisit)}
-                    </p>
-                    {patient.nextAppointment && (
-                      <p className="text-sm text-gray-600">
-                        Lịch hẹn tiếp: {formatDate(patient.nextAppointment)}
-                      </p>
-                    )}
-                    <p className="text-sm">
-                      Trạng thái:{' '}
-                      <span
-                        className={`font-medium ${
-                          patient.status === 'active'
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        {patient.status === 'active' ? 'Đang điều trị' : 'Ngừng điều trị'}
-                      </span>
-                    </p>
+        {!loadingPatients && (
+          <div className="space-y-4">
+            {patients.length > 0 ? (
+              patients.map((patient) => {
+                // Lấy phác đồ hiện tại của bệnh nhân
+                const currentPlan = patientTreatmentPlans
+                  .filter((plan: any) => plan.patient?.id === patient.id)
+                  .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0];
+                
+                // Lấy tất cả phác đồ của bệnh nhân
+                const patientPlans = patientTreatmentPlans
+                  .filter((plan: any) => plan.patient?.id === patient.id)
+                  .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+
+                return (
+                  <div key={patient.id} className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={patient.avatar || 'https://i.pravatar.cc/150?img=4'}
+                          alt={patient.name}
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                        <div>
+                          <h3 className="text-lg font-semibold">{patient.name}</h3>
+                          <p className="text-gray-600">
+                            {patient.age} tuổi • {patient.gender === 'male' ? 'Nam' : 'Nữ'}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Mã BN: {patient.patientId}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openCreateProtocolModal(patient)}
+                          className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm"
+                        >
+                          <FaPlus className="mr-2" />
+                          Tạo phác đồ ARV
+                        </button>
+                        <button
+                          onClick={() => handleViewPatientDetails(patient.patientId)}
+                          className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm"
+                        >
+                          <FaEye className="mr-2" />
+                          Xem chi tiết
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Treatment Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-blue-800 mb-2">Phác đồ hiện tại</h4>
+                        {currentPlan ? (
+                          <>
+                            <p className="text-blue-700">{currentPlan.arvProtocol?.name || 'Không rõ'}</p>
+                            <div className="text-sm text-blue-600 mt-1">
+                              <p>Từ: {currentPlan.startDate ? formatDate(currentPlan.startDate) : 'Không rõ'}</p>
+                              {currentPlan.endDate && (
+                                <p>Đến: {formatDate(currentPlan.endDate)}</p>
+                              )}
+                              {!currentPlan.endDate && (
+                                <p className="text-green-600 font-medium">Đang áp dụng</p>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div>
+                            <p className="text-gray-500">Chưa có phác đồ ARV</p>
+                            <button
+                              onClick={() => openCreateProtocolModal(patient)}
+                              className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                              + Tạo phác đồ ARV
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-green-800 mb-2">Lịch khám</h4>
+                        {patient.lastVisit && (
+                          <p className="text-green-700 text-sm">
+                            Lần khám cuối: {formatDate(patient.lastVisit)}
+                          </p>
+                        )}
+                        {patient.nextAppointment && (
+                          <p className="text-green-700 text-sm">
+                            Lịch hẹn tiếp: {formatDate(patient.nextAppointment)}
+                          </p>
+                        )}
+                        {!patient.lastVisit && (
+                          <p className="text-gray-500 text-sm">Chưa có lịch khám</p>
+                        )}
+                        <p className="text-sm mt-1">
+                          Trạng thái:{' '}
+                          <span
+                            className={`font-medium ${
+                              patient.status === 'active'
+                                ? 'text-green-600'
+                                : 'text-red-600'
+                            }`}
+                          >
+                            {patient.status === 'active' ? 'Đang điều trị' : 'Ngừng điều trị'}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Treatment History */}
+                    <div className="border-t pt-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">Lịch sử phác đồ ARV</h4>
+                      <div className="space-y-2">
+                        {patientPlans.length > 0 ? (
+                          patientPlans.map((plan: any, index: number) => (
+                            <div key={plan.id} className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                              <div>
+                                <p className="font-medium">{plan.arvProtocol?.name || 'Không rõ'}</p>
+                                <p className="text-sm text-gray-600">
+                                  {formatDate(plan.startDate)} - {plan.endDate ? formatDate(plan.endDate) : 'Hiện tại'}
+                                </p>
+                                {plan.notes && (
+                                  <p className="text-xs text-gray-500 mt-1">Ghi chú: {plan.notes}</p>
+                                )}
+                              </div>
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                plan.endDate ? 'bg-gray-200 text-gray-700' : 'bg-green-200 text-green-700'
+                              }`}>
+                                {plan.endDate ? 'Đã kết thúc' : 'Đang áp dụng'}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500">Chưa có lịch sử phác đồ ARV</p>
+                            <button
+                              onClick={() => openCreateProtocolModal(patient)}
+                              className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                              + Tạo phác đồ ARV đầu tiên
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-xl">
+                <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Không có bệnh nhân nào</h3>
+                <p className="text-gray-500">
+                  Chưa có bệnh nhân nào đặt lịch khám với bác sĩ này
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modal tạo phác đồ ARV */}
+        {showCreateProtocolModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Tạo phác đồ ARV mới</h3>
+                <button
+                  onClick={() => setShowCreateProtocolModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bệnh nhân
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedPatientForProtocol?.name || ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Chọn phác đồ ARV *
+                  </label>
+                  <select
+                    value={selectedArvProtocolId}
+                    onChange={(e) => setSelectedArvProtocolId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Chọn phác đồ ARV</option>
+                    {arvProtocols.map(protocol => (
+                      <option key={protocol.id} value={protocol.id}>
+                        {protocol.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ngày bắt đầu *
+                  </label>
+                  <input
+                    type="date"
+                    value={protocolStartDate}
+                    onChange={(e) => setProtocolStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ghi chú
+                  </label>
+                  <textarea
+                    value={protocolNotes}
+                    onChange={(e) => setProtocolNotes(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Nhập ghi chú về phác đồ điều trị..."
+                  />
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Link
-                  to={`/arv-protocol?patientId=${patient.patientId}`}
-                  className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 text-sm"
-                >
-                  <FaFileMedical className="mr-2" />
-                  Phác đồ ARV
-                </Link>
+              
+              <div className="flex justify-end gap-3 mt-6">
                 <button
-                  onClick={() => handleViewPatientDetails(patient.patientId)}
-                  className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm"
+                  onClick={() => setShowCreateProtocolModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
                 >
-                  <FaEye className="mr-2" />
-                  Xem chi tiết
+                  Hủy
+                </button>
+                <button
+                  onClick={handleCreateProtocol}
+                  disabled={creatingProtocol || !selectedArvProtocolId || !protocolStartDate}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {creatingProtocol ? 'Đang tạo...' : 'Tạo phác đồ'}
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
     );
   };

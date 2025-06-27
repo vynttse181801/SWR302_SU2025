@@ -32,7 +32,16 @@ public class PatientTreatmentPlanController {
     private ArvProtocolRepository arvProtocolRepository;
 
     @GetMapping
-    public List<PatientTreatmentPlan> getAllPatientTreatmentPlans() {
+    public List<PatientTreatmentPlan> getAllPatientTreatmentPlans(
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) Long patientId) {
+        if (doctorId != null && patientId != null) {
+            return patientTreatmentPlanRepository.findByDoctorIdAndPatientId(doctorId, patientId);
+        } else if (doctorId != null) {
+            return patientTreatmentPlanRepository.findByDoctorId(doctorId);
+        } else if (patientId != null) {
+            return patientTreatmentPlanRepository.findByPatientId(patientId);
+        }
         return patientTreatmentPlanRepository.findAll();
     }
 
