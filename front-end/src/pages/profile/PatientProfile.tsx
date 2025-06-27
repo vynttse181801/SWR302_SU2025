@@ -25,7 +25,9 @@ import {
   Pencil,
   KeyRound,
   Bell,
-  UserCircle
+  UserCircle,
+  Edit,
+  Lock
 } from 'lucide-react';
 import { User as UserType } from '../../types/index';
 import { useModal } from '../../hooks/useModal';
@@ -341,24 +343,32 @@ const ProfilePage: React.FC = () => {
 
   const handleChangePassword = async () => {
     setPasswordError(null);
+    
+    // Validation
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      setPasswordError('Vui lòng nhập đầy đủ tất cả các trường.');
+      return;
+    }
+    
     if (newPassword !== confirmNewPassword) {
       setPasswordError('Mật khẩu mới và xác nhận mật khẩu không khớp.');
       return;
     }
-    if (!currentPassword || !newPassword) {
-      setPasswordError('Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.');
+    
+    // Password strength validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      setPasswordError('Mật khẩu phải dài ít nhất 8 ký tự, bao gồm ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt.');
       return;
     }
 
     try {
-      if (authUser?.id) {
-        await authService.changePassword(authUser.id.toString(), { currentPassword, newPassword });
-        setShowChangePasswordModal(false);
-        toast.success('Mật khẩu đã được thay đổi thành công!');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmNewPassword('');
-      }
+      await authService.changePassword('', { currentPassword, newPassword });
+      setShowChangePasswordModal(false);
+      toast.success('Mật khẩu đã được thay đổi thành công!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
     } catch (err: any) {
       setPasswordError(err.response?.data?.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
     }
@@ -893,6 +903,45 @@ const ProfilePage: React.FC = () => {
                 </label>
               </div>
             </div>
+
+            {/* Action Buttons */}
+            <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              {!isEditing ? (
+                <>
+                  <button
+                    onClick={handleEdit}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                  >
+                    <Edit size={20} />
+                    Chỉnh sửa thông tin
+                  </button>
+                  <button
+                    onClick={() => setShowChangePasswordModal(true)}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors font-medium"
+                  >
+                    <Lock size={20} />
+                    Đổi mật khẩu
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={handleSave}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    <Save size={20} />
+                    Lưu thay đổi
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  >
+                    <X size={20} />
+                    Hủy
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         );
       case 'test-history':
@@ -1109,6 +1158,91 @@ const ProfilePage: React.FC = () => {
           </div>
         </Modal>
       )}
+      
+      {/* Modal đổi mật khẩu */}
+      {showChangePasswordModal && (
+        <Modal
+          isOpen={showChangePasswordModal}
+          onClose={() => setShowChangePasswordModal(false)}
+          title="Đổi mật khẩu"
+        >
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mật khẩu hiện tại
+              </label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                placeholder="Nhập mật khẩu hiện tại"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mật khẩu mới
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                placeholder="Nhập mật khẩu mới"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Mật khẩu phải dài ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Xác nhận mật khẩu mới
+              </label>
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                placeholder="Nhập lại mật khẩu mới"
+              />
+            </div>
+            
+            {passwordError && (
+              <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+                {passwordError}
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowChangePasswordModal(false);
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setConfirmNewPassword('');
+                  setPasswordError(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleChangePassword}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                Đổi mật khẩu
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      
+      {/* Rating Modal */}
+      {renderRatingModal()}
     </div>
   );
 };

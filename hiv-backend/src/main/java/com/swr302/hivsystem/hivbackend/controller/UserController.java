@@ -132,6 +132,21 @@ public class UserController {
         }
     }
 
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changeOwnPassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
+        try {
+            // Get current user from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            User currentUser = userService.getUserEntityByUsername(userDetails.getUsername());
+            
+            userService.changePassword(currentUser.getId(), changePasswordRequest);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {

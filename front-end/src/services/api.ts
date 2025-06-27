@@ -63,7 +63,7 @@ export const authService = {
         sessionStorage.removeItem('user');
     },
     changePassword: (userId: string, data: { currentPassword: string; newPassword: string }) => 
-        api.put(`/users/${userId}/change-password`, data),
+        api.put(`/users/change-password`, data),
 };
 
 // Doctor services

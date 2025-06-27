@@ -67,6 +67,7 @@ public class SecurityConfig {
                     "/api/consultation-types/**",
                     "/api/lab-tests/**"
                 ).permitAll() // Allow public access to specific endpoints
+                .requestMatchers("/api/users/change-password").authenticated() // Require authentication for password change
                 .anyRequest().authenticated() // All other requests require authentication
             )
             .formLogin(form -> form.disable())
