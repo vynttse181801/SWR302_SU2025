@@ -16,6 +16,7 @@ import tranThiB from '../assets/images/tran-thi-b.jpg';
 import leVanC from '../assets/images/le-van-c.jpg';
 import { LabTestType } from '../types';
 import PaymentForm from '../components/PaymentForm';
+import { consultationService } from '../services/api';
 
 interface TimeSlot {
   id: number;
@@ -95,8 +96,8 @@ const TestBooking = () => {
   useEffect(() => {
     const fetchConsultationTypes = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/consultation-types');
-        const data = await res.json();
+        const res = await consultationService.getConsultationTypes();
+        const data = res.data;
         setConsultationTypes(data);
         if (data.length > 0) {
           setFormData(prev => ({ ...prev, consultationTypeId: data[0].id }));

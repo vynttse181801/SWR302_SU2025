@@ -191,6 +191,8 @@ export const consultationService = {
         api.get('/consultation-time-slots', {
             params: { doctorId: doctorId, date: format(date, 'yyyy-MM-dd') }
         }),
+    getConsultationTypes: () => 
+        api.get('/consultation-types'),
     createConsultation: (consultationData: any) => 
         api.post('/online-consultations', consultationData),
     updateOnlineConsultation: (id: number|string, data: any) =>

@@ -64,6 +64,7 @@ public class SecurityConfig {
                     "/api/labtesttypes/**",
                     "/api/time-slots/**",
                     "/api/consultation-time-slots/**",
+                    "/api/consultation-types/**",
                     "/api/lab-tests/**"
                 ).permitAll() // Allow public access to specific endpoints
                 .anyRequest().authenticated() // All other requests require authentication
