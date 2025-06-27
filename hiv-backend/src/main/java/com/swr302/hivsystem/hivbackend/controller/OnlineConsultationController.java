@@ -183,6 +183,30 @@ public class OnlineConsultationController {
             .collect(Collectors.toList());
     }
 
+    @GetMapping("/doctor/{doctorId}")
+    public List<Map<String, Object>> getConsultationsByDoctor(@PathVariable Long doctorId) {
+        return onlineConsultationRepository.findAll()
+            .stream()
+            .filter(consultation -> consultation.getAppointment().getDoctor().getId().equals(doctorId))
+            .map(consultation -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", consultation.getId());
+                map.put("appointmentId", consultation.getAppointment().getId());
+                map.put("consultationType", consultation.getConsultationType().getName());
+                map.put("meetingLink", consultation.getMeetingLink());
+                map.put("startTime", consultation.getStartTime());
+                map.put("endTime", consultation.getEndTime());
+                map.put("notes", consultation.getNotes());
+                map.put("createdAt", consultation.getCreatedAt());
+                map.put("updatedAt", consultation.getUpdatedAt());
+                map.put("status", consultation.getAppointment().getStatus());
+                map.put("patientName", consultation.getAppointment().getPatient() != null ? consultation.getAppointment().getPatient().getFullName() : "");
+                map.put("patientId", consultation.getAppointment().getPatient() != null ? consultation.getAppointment().getPatient().getId() : "");
+                return map;
+            })
+            .collect(Collectors.toList());
+    }
+
     @PatchMapping("/{id}/status")
     public ResponseEntity<OnlineConsultation> updateOnlineConsultationStatus(@PathVariable Long id, @RequestBody Map<String, String> request) {
         Optional<OnlineConsultation> onlineConsultation = onlineConsultationRepository.findById(id);

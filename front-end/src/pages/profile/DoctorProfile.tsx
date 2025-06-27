@@ -29,7 +29,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link } from 'react-router-dom';
 import { FaFileMedical, FaEye } from 'react-icons/fa';
-import api from '../../services/api';
+import api, { consultationService } from '../../services/api';
 
 type TabType = 'profile' | 'schedule' | 'consultation' | 'patient-history';
 
@@ -81,6 +81,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const [appointmentPage, setAppointmentPage] = useState(1);
   const [consultationPage, setConsultationPage] = useState(1);
   const PAGE_SIZE = 10;
+  const [doctorId, setDoctorId] = useState<number | null>(null);
 
   // Hàm chuẩn hóa và mapping trạng thái
   const normalizeStatus = (status: string) => status?.toLowerCase();
@@ -119,20 +120,28 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
 
   useEffect(() => {
     if (user && user.id) {
+      // Lấy doctor profile theo userId
+      api.get(`/doctors?userId=${user.id}`)
+        .then(res => {
+          const doctor = Array.isArray(res.data) ? res.data[0] : res.data;
+          if (doctor && doctor.id) setDoctorId(doctor.id);
+        })
+        .catch(() => setDoctorId(null));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (doctorId) {
       // Lấy lịch khám bệnh (appointments)
-      api.get(`/appointments?doctorId=${user.id}`)
+      api.get(`/appointments?doctorId=${doctorId}`)
         .then(res => setAppointments(res.data))
         .catch(() => setAppointments([]));
       // Lấy lịch tư vấn (consultations)
-      api.get('/online-consultations')
-        .then(res => {
-          // Lọc theo doctorId
-          const filtered = (res.data || []).filter((c: any) => c.appointment?.doctor?.id === user.id);
-          setConsultations(filtered);
-        })
+      consultationService.getConsultationsByDoctor(doctorId)
+        .then(res => setConsultations(res.data || []))
         .catch(() => setConsultations([]));
     }
-  }, [user]);
+  }, [doctorId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -165,11 +174,18 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     }
   };
 
-  const handleAppointmentStatusChange = (appointmentId: string, newStatus: Appointment['status']) => {
-    setAppointments(appointments.map(apt => 
-      apt.id === appointmentId ? { ...apt, status: newStatus } : apt
-    ));
-    toast.success('Cập nhật trạng thái thành công');
+  const handleAppointmentStatusChange = (consultationId: string, newStatus: Appointment['status']) => {
+    // Cập nhật consultation status thay vì appointment status
+    consultationService.updateOnlineConsultationStatus(consultationId, newStatus)
+      .then(() => {
+        setConsultations(consultations.map(consultation => 
+          consultation.id === consultationId ? { ...consultation, status: newStatus } : consultation
+        ));
+        toast.success('Cập nhật trạng thái thành công');
+      })
+      .catch(() => {
+        toast.error('Cập nhật trạng thái thất bại');
+      });
   };
 
   const handleSaveNote = (consultationId: string) => {
@@ -571,8 +587,6 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
 
     console.log('Consultations:', consultations, 'User:', user);
     const filteredConsultations = consultations.filter(
-      (c) => String(c.appointment?.doctor?.id) === String(user?.id)
-    ).filter(
       (c) => selectedConsultationStatus === 'all' || normalizeStatus(c.status) === normalizeStatus(selectedConsultationStatus)
     );
     const sortedConsultations = [...filteredConsultations].sort((a, b) => {
@@ -640,10 +654,10 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900">
-                        {consultation.appointment?.patient?.fullName || 'Không rõ tên bệnh nhân'}
+                        {consultation.patientName || 'Không rõ tên bệnh nhân'}
                       </h3>
                       <div className="text-sm text-gray-500">
-                        <b>Loại tư vấn:</b> {consultation.consultationType?.name || 'Không rõ'}
+                        <b>Loại tư vấn:</b> {consultation.consultationType || 'Không rõ'}
                       </div>
                       <div className="text-sm text-gray-500">
                         <b>Thời gian:</b> {consultation.startTime ? new Date(consultation.startTime).toLocaleString('vi-VN') : 'Không rõ'}

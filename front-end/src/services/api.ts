@@ -201,6 +201,8 @@ export const consultationService = {
         api.delete(`/online-consultations/${id}`),
     getConsultationsByPatient: (patientId: number) =>
         api.get(`/online-consultations/patient/${patientId}`),
+    getConsultationsByDoctor: (doctorId: number) =>
+        api.get(`/online-consultations/doctor/${doctorId}`),
     updateOnlineConsultationStatus: (id: number|string, status: string) =>
         api.patch(`/online-consultations/${id}/status`, { status }),
 };
