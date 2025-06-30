@@ -143,7 +143,7 @@ const AppointmentBooking: React.FC = () => {
           >
             <option value="">Select a doctor</option>
             {doctors.map(doctor => (
-              <option key={doctor.id} value={doctor.id}>
+              <option key={doctor.id} /*value={doctor.id}*/>
                 {doctor.user.name || doctor.user.username} - {doctor.specialty}
               </option>
             ))}

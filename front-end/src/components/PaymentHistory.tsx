@@ -11,7 +11,7 @@ interface Payment {
   status: string;
   paymentDate: string;
   notes: string;
-  appointment?: {
+  onlineConsultation?: {
     id: number;
   };
   labBooking?: {
@@ -97,8 +97,8 @@ const PaymentHistory: React.FC = () => {
   };
 
   const getBookingType = (payment: Payment) => {
-    if (payment.appointment) {
-      return 'Lịch tư vấn';
+    if (payment.onlineConsultation) {
+      return 'Tư vấn trực tuyến';
     } else if (payment.labBooking) {
       return 'Lịch xét nghiệm';
     }

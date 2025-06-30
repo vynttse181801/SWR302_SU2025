@@ -16,8 +16,8 @@ public class Payment {
     private Patient patient;
 
     @OneToOne
-    @JoinColumn(name = "appointment_id", nullable = true)
-    private Appointment appointment;
+    @JoinColumn(name = "online_consultation_id", nullable = true)
+    private OnlineConsultation onlineConsultation;
 
     @OneToOne
     @JoinColumn(name = "lab_booking_id", nullable = true)
@@ -62,12 +62,12 @@ public class Payment {
         this.patient = patient;
     }
 
-    public Appointment getAppointment() {
-        return appointment;
+    public OnlineConsultation getOnlineConsultation() {
+        return onlineConsultation;
     }
 
-    public void setAppointment(Appointment appointment) {
-        this.appointment = appointment;
+    public void setOnlineConsultation(OnlineConsultation onlineConsultation) {
+        this.onlineConsultation = onlineConsultation;
     }
 
     public LabBooking getLabBooking() {

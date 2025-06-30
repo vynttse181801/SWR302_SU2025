@@ -15,6 +15,7 @@ import com.swr302.hivsystem.hivbackend.repository.DoctorRepository;
 import com.swr302.hivsystem.hivbackend.repository.ConsultationTimeSlotRepository;
 import com.swr302.hivsystem.hivbackend.repository.MedicalServiceRepository;
 import com.swr302.hivsystem.hivbackend.repository.PatientRepository;
+import com.swr302.hivsystem.hivbackend.service.MeetingLinkService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +52,9 @@ public class OnlineConsultationController {
 
     @Autowired
     private PatientRepository patientRepository;
+
+    @Autowired
+    private MeetingLinkService meetingLinkService;
 
     @GetMapping
     public List<OnlineConsultation> getAllOnlineConsultations() {
@@ -126,9 +130,18 @@ public class OnlineConsultationController {
             onlineConsultation.setStartTime(timeSlot.getStartTime());
             onlineConsultation.setEndTime(timeSlot.getEndTime());
             onlineConsultation.setNotes(requestDTO.getNotes());
-            onlineConsultation.setMeetingLink("Generated link or null for now");
             
-            return ResponseEntity.ok(onlineConsultationRepository.save(onlineConsultation));
+            // Tự động tạo link meet
+            String meetingLink = meetingLinkService.generateMeetingLink(
+                doctor.getFullName(),
+                patient.getFullName(),
+                timeSlot.getStartTime()
+            );
+            onlineConsultation.setMeetingLink(meetingLink);
+            
+            OnlineConsultation savedConsultation = onlineConsultationRepository.save(onlineConsultation);
+            
+            return ResponseEntity.ok(savedConsultation);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -219,6 +232,27 @@ public class OnlineConsultationController {
             OnlineConsultation existingOnlineConsultation = onlineConsultation.get();
             existingOnlineConsultation.getAppointment().setStatus(status);
             appointmentRepository.save(existingOnlineConsultation.getAppointment());
+            
+            return ResponseEntity.ok(onlineConsultationRepository.save(existingOnlineConsultation));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/regenerate-meeting-link")
+    public ResponseEntity<OnlineConsultation> regenerateMeetingLink(@PathVariable Long id) {
+        Optional<OnlineConsultation> onlineConsultation = onlineConsultationRepository.findById(id);
+        if (onlineConsultation.isPresent()) {
+            OnlineConsultation existingOnlineConsultation = onlineConsultation.get();
+            
+            // Tạo lại link meet
+            String newMeetingLink = meetingLinkService.generateMeetingLink(
+                existingOnlineConsultation.getAppointment().getDoctor().getFullName(),
+                existingOnlineConsultation.getAppointment().getPatient().getFullName(),
+                existingOnlineConsultation.getStartTime()
+            );
+            
+            existingOnlineConsultation.setMeetingLink(newMeetingLink);
             
             return ResponseEntity.ok(onlineConsultationRepository.save(existingOnlineConsultation));
         } else {
