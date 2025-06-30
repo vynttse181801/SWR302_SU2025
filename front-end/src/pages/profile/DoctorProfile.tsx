@@ -83,6 +83,18 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const PAGE_SIZE = 10;
   const [doctorId, setDoctorId] = useState<number | null>(null);
 
+  // Đặt biến statuses ở ngoài cùng để dùng chung cho cả hai phần
+  const statuses = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'pending', label: 'Chưa xác nhận' },
+    { value: 'scheduled', label: 'Đã lên lịch' },
+    { value: 'confirmed', label: 'Đã xác nhận' },
+    { value: 'completed', label: 'Đã hoàn thành' },
+    { value: 'cancelled', label: 'Đã hủy' },
+    { value: 'canceled', label: 'Đã hủy' },
+    { value: 'no-show', label: 'Vắng mặt' },
+  ];
+
   // Hàm chuẩn hóa và mapping trạng thái
   const normalizeStatus = (status: string) => status?.toLowerCase();
   const statusTextMap: Record<string, string> = {
@@ -225,11 +237,10 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     }
   };
 
-  // Filter and sort appointments based on selected status and time (descending)
+  // Lọc appointments
   const filteredAppointments = appointments.filter(appointment => {
     if (selectedStatus === 'all') return true;
-    const normalized = normalizeStatus(appointment.status);
-    return normalized === normalizeStatus(selectedStatus);
+    return normalizeStatus(appointment.status) === normalizeStatus(selectedStatus);
   });
   const sortedAppointments = [...filteredAppointments].sort((a, b) => {
     const dateA = new Date(`${a.appointmentDate}T${a.appointmentTime}`);
@@ -237,6 +248,17 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     return dateB.getTime() - dateA.getTime();
   });
   const paginatedAppointments = sortedAppointments.slice((appointmentPage - 1) * PAGE_SIZE, appointmentPage * PAGE_SIZE);
+
+  // Lọc consultations
+  const filteredConsultations = consultations.filter(
+    (c) => selectedConsultationStatus === 'all' || normalizeStatus(c.status) === normalizeStatus(selectedConsultationStatus)
+  );
+  const sortedConsultations = [...filteredConsultations].sort((a, b) => {
+    const dateA = new Date(a.startTime);
+    const dateB = new Date(b.startTime);
+    return dateB.getTime() - dateA.getTime();
+  });
+  const paginatedConsultations = sortedConsultations.slice((consultationPage - 1) * PAGE_SIZE, consultationPage * PAGE_SIZE);
 
   const renderProfileTab = () => (
     <div className="space-y-6">
