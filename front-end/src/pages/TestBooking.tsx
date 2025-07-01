@@ -17,6 +17,8 @@ import leVanC from '../assets/images/le-van-c.jpg';
 import { LabTestType } from '../types';
 import PaymentForm from '../components/PaymentForm';
 import { consultationService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 interface TimeSlot {
   id: number;
@@ -40,6 +42,7 @@ interface ConsultationType {
 const TestBooking = () => {
   const navigate = useNavigate();
   const { modalState, showModal, hideModal } = useModal();
+  const { user } = useAuth();
   const [testTypes, setTestTypes] = useState<LabTestType[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -58,6 +61,7 @@ const TestBooking = () => {
   const [bookingId, setBookingId] = useState<number | null>(null);
   const [selectedTestType, setSelectedTestType] = useState<LabTestType | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [patientId, setPatientId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTestTypes = async () => {
@@ -109,6 +113,14 @@ const TestBooking = () => {
     fetchConsultationTypes();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      api.get(`/patients/user/${user.id}`)
+        .then(res => setPatientId(res.data.id))
+        .catch(() => setError('Không tìm thấy thông tin bệnh nhân'));
+    }
+  }, [user]);
+
   const handleDateChange = (value: Date | Date[] | null) => {
     if (value && value instanceof Date) {
       setSelectedDate(value);
@@ -121,10 +133,15 @@ const TestBooking = () => {
     setError(null);
     setSuccess(null);
 
+    if (!patientId) {
+      setError('Không tìm thấy thông tin bệnh nhân');
+      return;
+    }
+
     try {
       const bookingRes = await testService.bookTest({
         ...formData,
-        patientId: 1,
+        patientId: patientId,
         status: 'pending',
         consultationTypeId: formData.consultationTypeId
       });

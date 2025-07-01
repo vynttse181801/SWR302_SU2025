@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, FileText, Calendar, Edit, Trash, Check, X, Eye, Mail, Phone, MapPin, Info, Plus, ClipboardList } from 'lucide-react';
 import Modal from './Modal';
 import { testService, staffService, labResultService } from '../services/api';
-import { LabTestType, LabBooking, LabResult } from '../types';
+import { LabTestType, LabBooking, LabResult } from '../types/index';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 interface PatientDetail {
   id: number;
@@ -45,29 +47,47 @@ const LabBookingManagement: React.FC<LabBookingManagementProps> = ({ labBookings
     notes: ''
   });
 
+  const { user } = useAuth();
+
+  // Load testTypes ngay khi component mount
+  useEffect(() => {
+    const fetchTestTypes = async () => {
+      setLoadingTestType(true);
+      try {
+        const res = await testService.getTestTypes();
+        setTestTypes(res.data);
+      } catch {
+        setTestTypes([]);
+      } finally {
+        setLoadingTestType(false);
+      }
+    };
+    fetchTestTypes();
+  }, []);
+
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Confirmed': 'bg-blue-100 text-blue-800',
-      'Completed': 'bg-green-100 text-green-800',
-      'Cancelled': 'bg-red-100 text-red-800',
-      'Results Ready': 'bg-purple-100 text-purple-800'
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'confirmed': 'bg-blue-100 text-blue-800',
+      'completed': 'bg-green-100 text-green-800',
+      'cancelled': 'bg-red-100 text-red-800',
+      'results ready': 'bg-purple-100 text-purple-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusText = (status: string) => {
     const texts: { [key: string]: string } = {
-      'Pending': 'Chờ xác nhận',
-      'Confirmed': 'Đã xác nhận',
-      'Completed': 'Hoàn thành',
-      'Cancelled': 'Đã hủy',
-      'Results Ready': 'Có kết quả'
+      'pending': 'Chờ xác nhận',
+      'confirmed': 'Đã xác nhận',
+      'completed': 'Hoàn thành',
+      'cancelled': 'Đã hủy',
+      'results ready': 'Có kết quả'
     };
     return texts[status] || status;
   };
 
-  const statusOptions: LabBooking['status'][] = ['Pending', 'Confirmed', 'Completed', 'Cancelled', 'Results Ready'];
+  const statusOptions: LabBooking['status'][] = ['pending', 'confirmed', 'completed', 'cancelled', 'results ready'];
 
   const handleShowDetail = async (booking: LabBooking) => {
     setSelectedBooking(booking);
@@ -124,7 +144,10 @@ const LabBookingManagement: React.FC<LabBookingManagementProps> = ({ labBookings
 
   const handleSubmitResult = async () => {
     if (!selectedBooking) return;
-    
+    if (!user || !user.id) {
+      alert('Không xác định được nhân viên nhập kết quả. Vui lòng đăng nhập lại.');
+      return;
+    }
     try {
       const resultData = {
         patient: { id: selectedBooking.patientId },
@@ -134,20 +157,16 @@ const LabBookingManagement: React.FC<LabBookingManagementProps> = ({ labBookings
         unit: resultForm.unit,
         normalRange: resultForm.normalRange,
         notes: resultForm.notes,
-        enteredBy: { id: 1 } // TODO: Lấy ID của staff hiện tại
+        enteredBy: { id: user.id }
       };
-      
       await labResultService.createLabResult(resultData);
-      
-      // Cập nhật trạng thái lịch xét nghiệm thành "Results Ready"
-      await testService.updateLabBookingStatus(selectedBooking.id, 'Results Ready');
-      
+      await testService.updateLabBookingStatus(selectedBooking.id, 'results ready');
+      toast.success('Lưu kết quả thành công!');
       setShowResultModal(false);
-      // Refresh data
       window.location.reload();
     } catch (error) {
       console.error('Error creating lab result:', error);
-      alert('Có lỗi xảy ra khi tạo kết quả xét nghiệm');
+      toast.error('Có lỗi xảy ra khi tạo kết quả xét nghiệm');
     }
   };
 
@@ -158,6 +177,19 @@ const LabBookingManagement: React.FC<LabBookingManagementProps> = ({ labBookings
     }
     return null;
   };
+
+  const getTestTypeName = (testTypeId: number) => {
+    const found = testTypes.find(t => t.id === testTypeId);
+    return found ? found.name : testTypeId;
+  };
+
+  const bookingResults = selectedBooking && labResults.length > 0
+    ? labResults.filter(
+        result =>
+          result.testType.id === selectedBooking.testTypeId &&
+          result.testDate === selectedBooking.date
+      )
+    : [];
 
   return (
     <>
@@ -176,10 +208,12 @@ const LabBookingManagement: React.FC<LabBookingManagementProps> = ({ labBookings
             {labBookings.map((booking) => (
               <tr key={booking.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {booking.patientName}
+                  {patientDetail?.fullName || booking.patientId}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.date}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.testTypeName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {getTestTypeName(booking.testTypeId)}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
                     {getStatusText(booking.status)}
@@ -187,7 +221,7 @@ const LabBookingManagement: React.FC<LabBookingManagementProps> = ({ labBookings
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
-                    {booking.status === 'Pending' && (
+                    {booking.status === 'pending' && (
                       <>
                         <button onClick={() => onConfirmLabBooking(booking.id)} className="text-green-600 hover:text-green-900" title="Duyệt">
                           <Check className="w-4 h-4" />
@@ -198,7 +232,7 @@ const LabBookingManagement: React.FC<LabBookingManagementProps> = ({ labBookings
                       </>
                     )}
                     
-                    {booking.status === 'Completed' && (
+                    {booking.status === 'completed' && (
                       <button 
                         onClick={() => handleShowResultModal(booking)} 
                         className="text-purple-600 hover:text-purple-900" 
@@ -279,9 +313,9 @@ const LabBookingManagement: React.FC<LabBookingManagementProps> = ({ labBookings
               </h3>
               {loadingResults ? (
                 <div className="text-gray-500 text-sm">Đang tải kết quả xét nghiệm...</div>
-              ) : labResults.length > 0 ? (
+              ) : bookingResults.length > 0 ? (
                 <div className="space-y-2">
-                  {labResults.map((result, index) => (
+                  {bookingResults.map((result, index) => (
                     <div key={result.id} className="border rounded p-2 text-sm">
                       <div><strong>Kết quả:</strong> {result.resultValue} {result.unit}</div>
                       {result.normalRange && <div><strong>Khoảng bình thường:</strong> {result.normalRange}</div>}

@@ -31,13 +31,12 @@ public class LabResult {
     @Column(name = "normal_range", columnDefinition = "NVARCHAR(100)")
     private String normalRange;
 
-    @Lob
     @Column(columnDefinition = "NVARCHAR(4000)")
     private String notes;
 
     @ManyToOne
     @JoinColumn(name = "entered_by_id", nullable = false)
-    private Staff enteredBy;
+    private User enteredBy;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -111,11 +110,11 @@ public class LabResult {
         this.notes = notes;
     }
 
-    public Staff getEnteredBy() {
+    public User getEnteredBy() {
         return enteredBy;
     }
 
-    public void setEnteredBy(Staff enteredBy) {
+    public void setEnteredBy(User enteredBy) {
         this.enteredBy = enteredBy;
     }
 

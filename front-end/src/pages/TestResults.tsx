@@ -7,6 +7,8 @@ import { Calendar, Clock, User, FileText, CheckCircle, XCircle, Clock as ClockIc
 import { labResultService } from '../services/api';
 import { LabResult, LabTestType } from '../types';
 import Modal from '../components/Modal';
+import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 interface LabBooking {
   id: number;
@@ -28,6 +30,7 @@ interface Consultation {
 }
 
 const TestResults: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'tests' | 'consultations'>('tests');
   const [labBookings, setLabBookings] = useState<LabBooking[]>([]);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
@@ -44,21 +47,32 @@ const TestResults: React.FC = () => {
     normalRange: '',
     notes: ''
   });
+  const [patientId, setPatientId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      // Gọi API lấy patientId theo user.id
+      api.get(`/patients/user/${user.id}`)
+        .then(res => setPatientId(res.data.id))
+        .catch(() => setError('Không tìm thấy thông tin bệnh nhân'));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (patientId) fetchData();
+    // eslint-disable-next-line
+  }, [patientId]);
 
   const fetchData = async () => {
+    if (!patientId) return;
     try {
       setLoading(true);
       const [labBookingsRes, consultationsRes, resultsRes, typesRes] = await Promise.all([
-        testService.getLabBookingsByPatient(1), // Cần lấy patientId từ context
-        consultationService.getConsultationsByPatient(1), // Cần lấy patientId từ context
+        testService.getLabBookingsByPatient(patientId),
+        consultationService.getConsultationsByPatient(patientId),
         labResultService.getAllLabResults(),
         testService.getTestTypes()
       ]);
-      
       setLabBookings(labBookingsRes.data);
       setConsultations(consultationsRes.data);
       setLabResults(resultsRes.data);

@@ -74,6 +74,27 @@ public class PatientController {
         }
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<PatientDTO> getPatientByUserId(@PathVariable Long userId) {
+        try {
+            logger.info("Getting patient profile for user ID: {}", userId);
+            Optional<Patient> patientOptional = patientRepository.findByUser_Id(userId);
+            
+            if (patientOptional.isPresent()) {
+                Patient patient = patientOptional.get();
+                PatientDTO patientDTO = patientService.getPatientById(patient.getId());
+                logger.info("Found patient profile: {} for user ID: {}", patient.getId(), userId);
+                return ResponseEntity.ok(patientDTO);
+            } else {
+                logger.info("No patient profile found for user ID: {}", userId);
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            logger.error("Error getting patient profile for user ID: " + userId, e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
     @GetMapping("/{id:[\\d]+}")
     public ResponseEntity<Patient> getPatientById(@PathVariable Long id) {
         Optional<Patient> patient = patientRepository.findById(id);

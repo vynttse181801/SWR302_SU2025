@@ -263,10 +263,8 @@ export const staffService = {
         api.get(`/lab-tests/${id}`),
     updateLabBooking: (id: number, data: any) => 
         api.put(`/lab-tests/${id}`, data),
-    confirmLabBooking: (id: number) => 
-        api.put(`/lab-tests/${id}/confirm`),
-    cancelLabBooking: (id: number) => 
-        api.put(`/lab-tests/${id}/cancel`),
+    updateLabBookingStatus: (id: number, status: string) =>
+        api.patch(`/lab-tests/${id}/status`, { status }),
 
     // Statistics
     getAppointmentStats: () => 
@@ -279,10 +277,8 @@ export const staffService = {
     // Online consultation management
     getAllOnlineConsultations: () => 
         api.get('/online-consultations'),
-    confirmOnlineConsultation: (id: number) => 
-        api.put(`/online-consultations/${id}/confirm`),
-    cancelOnlineConsultation: (id: number) => 
-        api.put(`/online-consultations/${id}/cancel`),
+    updateOnlineConsultationStatus: (id: number|string, status: string) =>
+        api.patch(`/online-consultations/${id}/status`, { status }),
 };
 
 export default api; 

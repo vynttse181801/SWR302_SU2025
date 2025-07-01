@@ -250,9 +250,9 @@ const StaffPage: React.FC = () => {
   // Lab booking handlers
   const handleConfirmLabBooking = async (id: number) => {
     try {
-      await staffService.confirmLabBooking(id);
+      await staffService.updateLabBookingStatus(id, 'confirmed');
       setLabBookings(prev => prev.map(booking => 
-        booking.id === id ? { ...booking, status: 'CONFIRMED' as const } : booking
+        booking.id === id ? { ...booking, status: 'confirmed' as const } : booking
       ));
       toast.success('Xác nhận lịch xét nghiệm thành công!');
     } catch (error) {
@@ -262,9 +262,9 @@ const StaffPage: React.FC = () => {
 
   const handleCancelLabBooking = async (id: number) => {
     try {
-      await staffService.cancelLabBooking(id);
+      await staffService.updateLabBookingStatus(id, 'cancelled');
       setLabBookings(prev => prev.map(booking => 
-        booking.id === id ? { ...booking, status: 'CANCELLED' as const } : booking
+        booking.id === id ? { ...booking, status: 'cancelled' as const } : booking
       ));
       toast.success('Hủy lịch xét nghiệm thành công!');
     } catch (error) {
@@ -274,7 +274,7 @@ const StaffPage: React.FC = () => {
 
   const handleUpdateLabBookingStatus = async (id: number, status: string) => {
     try {
-      await staffService.updateLabBooking(id, { status });
+      await staffService.updateLabBookingStatus(id, status);
       setLabBookings(prev =>
         prev.map(booking =>
           booking.id === id ? { ...booking, status: status as LabBooking['status'] } : booking
@@ -289,9 +289,9 @@ const StaffPage: React.FC = () => {
   // Consultation handlers
   const handleConfirmConsultation = async (id: number) => {
     try {
-      await staffService.confirmOnlineConsultation(id);
+      await staffService.updateOnlineConsultationStatus(id, 'confirmed');
       setConsultations(prev => prev.map(consultation =>
-        consultation.id === id ? { ...consultation, status: 'CONFIRMED' as const } : consultation
+        consultation.id === id ? { ...consultation, status: 'confirmed' as const } : consultation
       ));
       toast.success('Xác nhận lịch tư vấn thành công!');
     } catch (error) {
@@ -301,9 +301,9 @@ const StaffPage: React.FC = () => {
 
   const handleCancelConsultation = async (id: number) => {
     try {
-      await staffService.cancelOnlineConsultation(id);
+      await staffService.updateOnlineConsultationStatus(id, 'cancelled');
       setConsultations(prev => prev.map(consultation =>
-        consultation.id === id ? { ...consultation, status: 'CANCELLED' as const } : consultation
+        consultation.id === id ? { ...consultation, status: 'cancelled' as const } : consultation
       ));
       toast.success('Hủy lịch tư vấn thành công!');
     } catch (error) {

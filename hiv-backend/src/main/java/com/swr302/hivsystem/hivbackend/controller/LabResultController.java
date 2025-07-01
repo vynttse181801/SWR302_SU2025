@@ -2,11 +2,12 @@ package com.swr302.hivsystem.hivbackend.controller;
 
 import com.swr302.hivsystem.hivbackend.model.LabResult;
 import com.swr302.hivsystem.hivbackend.model.Patient;
-import com.swr302.hivsystem.hivbackend.model.Staff;
+import com.swr302.hivsystem.hivbackend.model.User;
 import com.swr302.hivsystem.hivbackend.repository.LabResultRepository;
 import com.swr302.hivsystem.hivbackend.repository.PatientRepository;
-import com.swr302.hivsystem.hivbackend.repository.StaffRepository;
+import com.swr302.hivsystem.hivbackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,7 @@ public class LabResultController {
     private PatientRepository patientRepository;
 
     @Autowired
-    private StaffRepository staffRepository;
+    private UserRepository userRepository;
 
     @GetMapping
     public List<LabResult> getAllLabResults() {
@@ -51,14 +52,14 @@ public class LabResultController {
         }
         labResult.setPatient(patientOptional.get());
 
-        // Validate staff exists
-        Optional<Staff> staffOptional = staffRepository.findById(labResult.getEnteredBy().getId());
-        if (staffOptional.isEmpty()) {
+        // Validate user exists
+        Optional<User> userOptional = userRepository.findById(labResult.getEnteredBy().getId());
+        if (userOptional.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        labResult.setEnteredBy(staffOptional.get());
+        labResult.setEnteredBy(userOptional.get());
 
-        return ResponseEntity.ok(labResultRepository.save(labResult));
+        return ResponseEntity.status(HttpStatus.CREATED).body(labResultRepository.save(labResult));
     }
 
     @PutMapping("/{id}")

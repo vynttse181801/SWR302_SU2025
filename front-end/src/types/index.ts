@@ -105,7 +105,7 @@ export interface LabBooking {
   date: string;
   timeSlotId?: number;
   notes: string;
-  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Results Ready';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'results ready';
   createdAt: string;
   updatedAt: string;
 }

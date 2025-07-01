@@ -36,8 +36,9 @@ import { authService, patientService, testService, consultationService } from '.
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
+import { labResultService } from '../../services/api';
 
-type TabType = 'profile' | 'test-history' | 'consultation-history' | 'arv-protocol';
+type TabType = 'profile' | 'test-booking' | 'test-history' | 'consultation-history' | 'arv-protocol';
 
 interface Rating {
   id: string;
@@ -141,6 +142,8 @@ const ProfilePage: React.FC = () => {
   const [showCancelConsultationModal, setShowCancelConsultationModal] = useState(false);
   const [selectedConsultationToCancel, setSelectedConsultationToCancel] = useState<ServiceItem | null>(null);
 
+  const [labResults, setLabResults] = useState<any[]>([]);
+
   // Handle navigation state
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -158,7 +161,7 @@ const ProfilePage: React.FC = () => {
   }, [authUser?.id]);
 
   useEffect(() => {
-    if (activeTab === 'test-history' && patientId) {
+    if (activeTab === 'test-booking' && patientId) {
       api.get(`/lab-tests/patient/${patientId}`).then(res => {
         const sorted = res.data
           .map((item: any) => ({
@@ -186,6 +189,14 @@ const ProfilePage: React.FC = () => {
           details: item.notes || '',
         })));
       }).catch(() => setConsultationHistory([]));
+    }
+  }, [activeTab, patientId]);
+
+  useEffect(() => {
+    if (activeTab === 'test-history' && patientId) {
+      labResultService.getLabResultsByPatient(patientId).then(res => {
+        setLabResults(res.data);
+      }).catch(() => setLabResults([]));
     }
   }, [activeTab, patientId]);
 
@@ -944,12 +955,12 @@ const ProfilePage: React.FC = () => {
             </div>
           </>
         );
-      case 'test-history':
+      case 'test-booking':
         return (
           <>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Lịch sử xét nghiệm</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Lịch xét nghiệm</h2>
             {testHistory.length === 0 ? (
-              <p className="text-gray-600">Chưa có lịch sử xét nghiệm nào.</p>
+              <p className="text-gray-600">Chưa có lịch xét nghiệm nào.</p>
             ) : (
               <div>
                 {testHistory.map((item) => (
@@ -957,6 +968,42 @@ const ProfilePage: React.FC = () => {
                     {renderServiceItem(item)}
                   </div>
                 ))}
+              </div>
+            )}
+          </>
+        );
+      case 'test-history':
+        return (
+          <>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Lịch sử kết quả xét nghiệm</h2>
+            {labResults.length === 0 ? (
+              <p className="text-gray-600">Chưa có kết quả xét nghiệm nào.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ngày</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Loại xét nghiệm</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kết quả</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Đơn vị</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Khoảng bình thường</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ghi chú</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {labResults.map(result => (
+                      <tr key={result.id}>
+                        <td className="px-4 py-2 whitespace-nowrap">{result.testDate}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{result.testType?.name || ''}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{result.resultValue}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{result.unit}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{result.normalRange}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{result.notes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </>
@@ -1009,7 +1056,8 @@ const ProfilePage: React.FC = () => {
 
   const tabs = [
     { id: 'profile', label: 'Thông tin cá nhân', icon: User, color: 'primary' },
-    { id: 'test-history', label: 'Lịch xét nghiệm', icon: ClipboardList, color: 'secondary' },
+    { id: 'test-booking', label: 'Lịch xét nghiệm', icon: ClipboardList, color: 'secondary' },
+    { id: 'test-history', label: 'Lịch sử xét nghiệm', icon: FileText, color: 'secondary' },
     { id: 'consultation-history', label: 'Lịch tư vấn', icon: MessageSquare, color: 'accent' },
     { id: 'arv-protocol', label: 'Phác đồ ARV', icon: PillIcon, color: 'green' },
   ];
