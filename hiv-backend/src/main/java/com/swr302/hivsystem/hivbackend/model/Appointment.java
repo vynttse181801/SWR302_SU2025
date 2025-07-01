@@ -31,7 +31,7 @@ public class Appointment {
     private LocalTime appointmentTime;
 
     @Column(nullable = false, length = 50)
-    private String status = "Pending"; // Pending, Scheduled, Completed, Canceled, No-Show
+    private String status = "pending"; // Pending, Confirm, Completed, Canceled
 
     @Lob
     private String notes;

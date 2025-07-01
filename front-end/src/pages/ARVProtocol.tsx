@@ -1,7 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, AlertCircle, Activity, Heart, Pill, RefreshCcw, Baby, AlertTriangle, Droplet, ClipboardList } from 'lucide-react';
+import { arvProtocolService } from '../services/api';
 
 const ARVProtocolPage: React.FC = () => {
+  const [protocols, setProtocols] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    arvProtocolService.getProtocols()
+      .then(res => {
+        setProtocols(res.data || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError('Không thể tải danh sách phác đồ ARV');
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -186,6 +203,31 @@ const ARVProtocolPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Phác đồ ARV từ backend */}
+          <section className="py-6">
+            <div className="container mx-auto px-4 max-w-4xl">
+              <h2 className="text-xl font-bold text-primary-800 mb-4">Danh sách phác đồ ARV (từ hệ thống)</h2>
+              {loading ? (
+                <p>Đang tải...</p>
+              ) : error ? (
+                <p className="text-red-500">{error}</p>
+              ) : (
+                <ul className="space-y-4">
+                  {protocols.map(protocol => (
+                    <li key={protocol.id} className="bg-white rounded-lg shadow p-4 border border-gray-100">
+                      <h3 className="font-semibold text-primary-700 text-lg mb-1">{protocol.name}</h3>
+                      <p className="text-gray-700 mb-1">{protocol.description}</p>
+                      <div className="text-sm text-gray-500">
+                        {protocol.isForPregnant && <span className="mr-2">👩‍🍼 Dành cho phụ nữ mang thai</span>}
+                        {protocol.isForChildren && <span>🧒 Dành cho trẻ em</span>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
         </div>
       </section>
     </div>

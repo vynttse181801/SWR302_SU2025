@@ -21,20 +21,20 @@ INSERT INTO doctors (user_id, doctor_code, full_name, specialization, qualificat
 
 -- Insert patients
 INSERT INTO patients (user_id, patient_code, full_name, date_of_birth, gender, address, phone_number, email, created_at, updated_at) VALUES
-((SELECT id FROM users WHERE username = 'patient1'), 'PAT001', 'Patient One', '1990-01-01', 'Male', '123 Main St', '0123456783', 'patient1@example.com', GETDATE(), GETDATE()),
-((SELECT id FROM users WHERE username = 'patient2'), 'PAT002', 'Patient Two', '1992-02-02', 'Female', '456 Oak St', '0123456784', 'patient2@example.com', GETDATE(), GETDATE());
+((SELECT id FROM users WHERE username = 'patient1'), 'PAT001', 'Patient One', '1990-01-01', 'Male', N'123 Main St', '0123456783', 'patient1@example.com', GETDATE(), GETDATE()),
+((SELECT id FROM users WHERE username = 'patient2'), 'PAT002', 'Patient Two', '1992-02-02', 'Female', N'456 Oak St', '0123456784', 'patient2@example.com', GETDATE(), GETDATE());
 
 -- Insert medical services
 INSERT INTO medical_services (name, description, default_duration, price, created_at, updated_at) VALUES
-('Khám tổng quát', 'Khám sức khỏe tổng quát và tư vấn', 30, 200000, GETDATE(), GETDATE()),
-('Tư vấn HIV', 'Tư vấn về HIV và các bệnh lây truyền qua đường tình dục', 45, 150000, GETDATE(), GETDATE()),
-('Xét nghiệm máu', 'Xét nghiệm máu cơ bản', 15, 300000, GETDATE(), GETDATE()),
-('Tư vấn dinh dưỡng', 'Tư vấn về chế độ dinh dưỡng cho người nhiễm HIV', 30, 100000, GETDATE(), GETDATE());
+(N'Khám tổng quát', N'Khám sức khỏe tổng quát và tư vấn', 30, 200000, GETDATE(), GETDATE()),
+(N'Tư vấn HIV', N'Tư vấn về HIV và các bệnh lây truyền qua đường tình dục', 45, 150000, GETDATE(), GETDATE()),
+(N'Xét nghiệm máu', N'Xét nghiệm máu cơ bản', 15, 300000, GETDATE(), GETDATE()),
+(N'Tư vấn dinh dưỡng', N'Tư vấn về chế độ dinh dưỡng cho người nhiễm HIV', 30, 100000, GETDATE(), GETDATE());
 
 -- Insert consultation types
 INSERT INTO consultation_types (name, description, created_at, updated_at) VALUES
-('Online', 'Tư vấn trực tuyến qua video call', GETDATE(), GETDATE()),
-('Offline', 'Tư vấn trực tiếp tại phòng khám', GETDATE(), GETDATE());
+(N'Online', N'Tư vấn trực tuyến qua video call', GETDATE(), GETDATE()),
+(N'Offline', N'Tư vấn trực tiếp tại phòng khám', GETDATE(), GETDATE());
 
 -- Insert consultation time slots for today
 INSERT INTO consultation_time_slots (doctor_id, start_time, end_time, is_booked, created_at, updated_at) VALUES
@@ -49,10 +49,17 @@ INSERT INTO consultation_time_slots (doctor_id, start_time, end_time, is_booked,
 
 -- Insert lab test types
 INSERT INTO lab_test_types (name, description, price, duration_minutes, created_at, updated_at) VALUES
-('HIV Antibody Test', 'Xét nghiệm kháng thể HIV để phát hiện nhiễm HIV', 150000.0, 30, GETDATE(), GETDATE()),
-('CD4 Count', 'Đếm số lượng tế bào CD4 để đánh giá hệ miễn dịch', 300000.0, 45, GETDATE(), GETDATE()),
-('Viral Load Test', 'Đo lượng virus HIV trong máu', 500000.0, 60, GETDATE(), GETDATE()),
-('Complete Blood Count (CBC)', 'Xét nghiệm tổng phân tích tế bào máu', 200000.0, 30, GETDATE(), GETDATE());
+(N'HIV Antibody Test', N'Xét nghiệm kháng thể HIV để phát hiện nhiễm HIV', 150000.0, 30, GETDATE(), GETDATE()),
+(N'CD4 Count', N'Đếm số lượng tế bào CD4 để đánh giá hệ miễn dịch', 300000.0, 45, GETDATE(), GETDATE()),
+(N'Viral Load Test', N'Đo lượng virus HIV trong máu', 500000.0, 60, GETDATE(), GETDATE()),
+(N'Complete Blood Count (CBC)', N'Xét nghiệm tổng phân tích tế bào máu', 200000.0, 30, GETDATE(), GETDATE());
+
+-- Insert ARV Protocols (phác đồ ARV)
+INSERT INTO arv_protocols (name, description, is_for_pregnant, is_for_children, created_at, updated_at) VALUES
+(N'Phác đồ bậc 1 (TDF + 3TC + EFV)', N'Phác đồ điều trị ARV bậc 1 dành cho người lớn, bao gồm Tenofovir (TDF), Lamivudine (3TC) và Efavirenz (EFV). Áp dụng cho bệnh nhân chưa từng điều trị ARV.', 0, 0, GETDATE(), GETDATE()),
+(N'Phác đồ bậc 1 cho phụ nữ mang thai (TDF + 3TC + DTG)', N'Phác đồ điều trị ARV bậc 1 dành cho phụ nữ mang thai, bao gồm Tenofovir (TDF), Lamivudine (3TC) và Dolutegravir (DTG).', 1, 0, GETDATE(), GETDATE()),
+(N'Phác đồ bậc 1 cho trẻ em (ABC + 3TC + LPV/r)', N'Phác đồ điều trị ARV bậc 1 dành cho trẻ em, bao gồm Abacavir (ABC), Lamivudine (3TC) và Lopinavir/ritonavir (LPV/r).', 0, 1, GETDATE(), GETDATE()),
+(N'Phác đồ bậc 2 (AZT + 3TC + LPV/r)', N'Phác đồ điều trị ARV bậc 2 dành cho bệnh nhân thất bại với phác đồ bậc 1, bao gồm Zidovudine (AZT), Lamivudine (3TC) và Lopinavir/ritonavir (LPV/r).', 0, 0, GETDATE(), GETDATE());
 
 -- Insert lab bookings
 INSERT INTO lab_bookings (patient_id, test_type_id, date, time_slot_id, notes, status, created_at, updated_at) VALUES
@@ -116,4 +123,3 @@ INSERT INTO online_consultations (appointment_id, consultation_type_id, meeting_
 -- Insert consultation histories (lịch sử tư vấn đã hoàn thành)
 INSERT INTO consultation_histories (appointment_id, doctor_notes, patient_feedback, consultation_content, created_at, updated_at) VALUES
 ((SELECT TOP 1 id FROM appointments WHERE patient_id = (SELECT id FROM patients WHERE patient_code = 'PAT001') AND doctor_id = (SELECT id FROM doctors WHERE doctor_code = 'DOC001')), N'Bệnh nhân đã được tư vấn về các bài tập phù hợp với tình trạng sức khỏe. Cần theo dõi tiến độ tập luyện và điều chỉnh cường độ phù hợp.', N'Bác sĩ rất tận tâm và giải thích rõ ràng', N'Tư vấn về chế độ tập luyện cho người nhiễm HIV. Bệnh nhân tỏ ra tích cực và cam kết tuân thủ chế độ tập luyện được đề xuất.', GETDATE(), GETDATE());
-
