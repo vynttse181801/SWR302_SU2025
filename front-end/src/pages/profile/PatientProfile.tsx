@@ -144,6 +144,9 @@ const ProfilePage: React.FC = () => {
 
   const [labResults, setLabResults] = useState<any[]>([]);
 
+  const [treatmentPlans, setTreatmentPlans] = useState<any[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+
   // Handle navigation state
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -197,6 +200,16 @@ const ProfilePage: React.FC = () => {
       labResultService.getLabResultsByPatient(patientId).then(res => {
         setLabResults(res.data);
       }).catch(() => setLabResults([]));
+    }
+  }, [activeTab, patientId]);
+
+  useEffect(() => {
+    if (activeTab === 'arv-protocol' && patientId) {
+      setLoadingPlans(true);
+      api.get(`/patient-treatment-plans?patientId=${patientId}`)
+        .then(res => setTreatmentPlans(res.data || []))
+        .catch(() => setTreatmentPlans([]))
+        .finally(() => setLoadingPlans(false));
     }
   }, [activeTab, patientId]);
 
@@ -1026,33 +1039,45 @@ const ProfilePage: React.FC = () => {
           </>
         );
       case 'arv-protocol':
-        return (
-          <>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Phác đồ ARV</h2>
-            <p className="text-gray-600">Thông tin chi tiết về phác đồ ARV của bạn sẽ hiển thị tại đây.</p>
-            {/* Example content, replace with actual data */}
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mt-6 rounded-md">
-              <h3 className="text-lg font-semibold text-blue-800 mb-2">Phác đồ hiện tại:</h3>
-              <p className="text-sm text-blue-700">Tên phác đồ: <span className="font-medium">Tenofovir + Lamivudine + Dolutegravir</span></p>
-              <p className="text-sm text-blue-700">Ngày bắt đầu: <span className="font-medium">01/01/2023</span></p>
-              <p className="text-sm text-blue-700">Liều lượng: <span className="font-medium">1 viên/ngày</span></p>
-              <p className="text-sm text-blue-700">Bác sĩ kê đơn: <span className="font-medium">Dr. Nguyễn Văn A</span></p>
-              <p className="text-sm text-blue-700 mt-2">Ghi chú: <span className="font-medium">Uống vào cùng một thời điểm mỗi ngày.</span></p>
-            </div>
-
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-6 rounded-md">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-2">Lịch sử phác đồ:</h3>
-              <ul className="list-disc pl-5 text-sm text-yellow-700">
-                <li><span className="font-medium">Efavirenz + Lamivudine + Tenofovir</span> (01/07/2022 - 31/12/2022)</li>
-                <li><span className="font-medium">Nevirapine + Lamivudine + Zidovudine</span> (01/01/2022 - 30/06/2022)</li>
-              </ul>
-            </div>
-          </>
-        );
+        return renderArvProtocolTab();
       default:
         return null;
     }
   };
+
+  const renderArvProtocolTab = () => (
+    <div className="max-w-2xl mx-auto mt-8">
+      <h2 className="text-2xl font-bold text-primary-700 mb-4 flex items-center gap-2">
+        <PillIcon className="text-primary-600" /> Phác đồ ARV của bạn
+      </h2>
+      {loadingPlans ? (
+        <p>Đang tải...</p>
+      ) : treatmentPlans.length === 0 ? (
+        <p className="text-gray-500 italic">Chưa có phác đồ ARV</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl shadow border border-gray-200 my-4">
+          <table className="min-w-full text-sm bg-white rounded-xl overflow-hidden">
+            <thead>
+              <tr className="bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700">
+                <th className="px-4 py-2 border-b text-center font-semibold">Ngày bắt đầu</th>
+                <th className="px-4 py-2 border-b text-center font-semibold">Phác đồ</th>
+                <th className="px-4 py-2 border-b text-center font-semibold">Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody>
+              {treatmentPlans.map((plan, idx) => (
+                <tr key={plan.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="border-b px-4 py-2 text-center">{new Date(plan.startDate).toLocaleDateString('vi-VN')}</td>
+                  <td className="border-b px-4 py-2">{plan.arvProtocol?.name || ''}</td>
+                  <td className="border-b px-4 py-2">{plan.notes || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 
   const tabs = [
     { id: 'profile', label: 'Thông tin cá nhân', icon: User, color: 'primary' },

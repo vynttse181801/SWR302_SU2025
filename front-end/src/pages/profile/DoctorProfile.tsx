@@ -31,6 +31,7 @@ import { Link } from 'react-router-dom';
 import { FaFileMedical, FaEye, FaPlus } from 'react-icons/fa';
 import api, { consultationService } from '../../services/api';
 import ConsultationDetailModal from '../../components/ConsultationDetailModal';
+import PatientDetailModal from '../../components/PatientDetailModal';
 
 type TabType = 'profile' | 'schedule' | 'consultation' | 'patient-history';
 
@@ -96,6 +97,8 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const [creatingProtocol, setCreatingProtocol] = useState(false);
   const [selectedConsultation, setSelectedConsultation] = useState<any>(null);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const [showPatientDetailModal, setShowPatientDetailModal] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
   // Đặt biến statuses ở ngoài cùng để dùng chung cho cả hai phần
   const statuses = [
@@ -140,8 +143,9 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   };
 
   const handleViewPatientDetails = (patientId: string) => {
-    // TODO: Implement patient details view
-    console.log('View patient details:', patientId);
+    const patient = patients.find(p => p.id === patientId);
+    setSelectedPatient(patient || null);
+    setShowPatientDetailModal(true);
   };
 
   useEffect(() => {
@@ -1089,7 +1093,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                           Tạo phác đồ ARV
                         </button>
                         <button
-                          onClick={() => handleViewPatientDetails(patient.patientId)}
+                          onClick={() => handleViewPatientDetails(patient.id)}
                           className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm"
                         >
                           <FaEye className="mr-2" />
@@ -1386,8 +1390,15 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
         consultation={selectedConsultation}
         onUpdate={handleUpdateConsultation}
       />
-      </div>
-    );
-  };
+
+      {/* Patient Detail Modal */}
+      <PatientDetailModal
+        isOpen={showPatientDetailModal}
+        onClose={() => setShowPatientDetailModal(false)}
+        patient={selectedPatient}
+      />
+    </div>
+  );
+};
 
 export default DoctorProfile; 
