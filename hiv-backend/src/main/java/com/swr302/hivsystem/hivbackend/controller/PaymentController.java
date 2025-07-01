@@ -1,11 +1,11 @@
 package com.swr302.hivsystem.hivbackend.controller;
 
-import com.swr302.hivsystem.hivbackend.model.Appointment;
 import com.swr302.hivsystem.hivbackend.model.LabBooking;
+import com.swr302.hivsystem.hivbackend.model.OnlineConsultation;
 import com.swr302.hivsystem.hivbackend.model.Patient;
 import com.swr302.hivsystem.hivbackend.model.Payment;
-import com.swr302.hivsystem.hivbackend.repository.AppointmentRepository;
 import com.swr302.hivsystem.hivbackend.repository.LabBookingRepository;
+import com.swr302.hivsystem.hivbackend.repository.OnlineConsultationRepository;
 import com.swr302.hivsystem.hivbackend.repository.PatientRepository;
 import com.swr302.hivsystem.hivbackend.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public class PaymentController {
     private PatientRepository patientRepository;
 
     @Autowired
-    private AppointmentRepository appointmentRepository;
+    private OnlineConsultationRepository onlineConsultationRepository;
 
     @Autowired
     private LabBookingRepository labBookingRepository;
@@ -50,14 +50,14 @@ public class PaymentController {
         }
         payment.setPatient(patientOptional.get());
 
-        if (payment.getAppointment() != null && payment.getAppointment().getId() != null) {
-            Optional<Appointment> appointmentOptional = appointmentRepository.findById(payment.getAppointment().getId());
-            if (appointmentOptional.isEmpty()) {
+        if (payment.getOnlineConsultation() != null && payment.getOnlineConsultation().getId() != null) {
+            Optional<OnlineConsultation> onlineConsultationOptional = onlineConsultationRepository.findById(payment.getOnlineConsultation().getId());
+            if (onlineConsultationOptional.isEmpty()) {
                 return ResponseEntity.badRequest().build();
             }
-            payment.setAppointment(appointmentOptional.get());
+            payment.setOnlineConsultation(onlineConsultationOptional.get());
         } else {
-            payment.setAppointment(null);
+            payment.setOnlineConsultation(null);
         }
 
         if (payment.getLabBooking() != null && payment.getLabBooking().getId() != null) {

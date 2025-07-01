@@ -108,12 +108,12 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     try {
       // Tạo payment data để gửi đến API
       const paymentData = {
-        amount: amount,
+        amount: Number(amount),
         method: paymentMethod,
         paymentDate: new Date().toISOString(),
-        notes: `Thanh toán cho ${bookingType === 'appointment' ? 'lịch tư vấn' : 'lịch xét nghiệm'} #${bookingId}`,
+        notes: `Thanh toán cho ${bookingType === 'appointment' ? 'tư vấn trực tuyến' : 'lịch xét nghiệm'} #${bookingId}`,
         patient: { id: 1 }, // Cần lấy từ context hoặc props
-        appointment: bookingType === 'appointment' ? { id: bookingId } : null,
+        onlineConsultation: bookingType === 'appointment' ? { id: bookingId } : null,
         labBooking: bookingType === 'test' ? { id: bookingId } : null,
         status: 'PENDING'
       };
@@ -164,7 +164,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           <div>
             <h3 className="text-xl font-bold text-gray-900">Thanh toán</h3>
             <p className="text-sm text-gray-500">
-              {bookingType === 'appointment' ? 'Lịch tư vấn' : 'Lịch xét nghiệm'}
+              {bookingType === 'appointment' ? 'Tư vấn trực tuyến' : 'Lịch xét nghiệm'}
             </p>
           </div>
           <div className="text-right">

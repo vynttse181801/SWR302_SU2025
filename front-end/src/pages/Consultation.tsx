@@ -41,6 +41,11 @@ interface ConsultationForm {
   notes: string;
 }
 
+const FIXED_TIME_SLOTS = [
+  "08:00", "09:00", "10:00", "11:00",
+  "13:00", "14:00", "15:00", "16:00"
+];
+
 const ConsultationPage: React.FC = () => {
   const navigate = useNavigate();
   const { modalState, showModal, hideModal } = useModal();
@@ -90,6 +95,8 @@ const ConsultationPage: React.FC = () => {
   const [showPayment, setShowPayment] = useState(false);
   const [consultationId, setConsultationId] = useState<number | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [meetingLink, setMeetingLink] = useState<string | null>(null);
+  const [showMeetingInfo, setShowMeetingInfo] = useState(false);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -112,7 +119,6 @@ const ConsultationPage: React.FC = () => {
       try {
         if (formData.doctorId && selectedDate) {
           const response = await consultationService.getTimeSlots(formData.doctorId, selectedDate);
-          console.log('Time Slots API response:', response.data);
           setTimeSlots(
             response.data.map((slot: any) => ({
               ...slot,
@@ -120,16 +126,20 @@ const ConsultationPage: React.FC = () => {
               isAvailable: !slot.isBooked
             }))
           );
+        } else {
+          setTimeSlots([]); // Xóa khung giờ nếu chưa chọn bác sĩ
         }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Không thể tải khung giờ');
       }
     };
-
-    if (selectedDate) {
+  
+    if (formData.doctorId && selectedDate) {
       fetchTimeSlots();
+    } else {
+      setTimeSlots([]);
     }
-  }, [selectedDate]);
+  }, [selectedDate, formData.doctorId]);
 
   useEffect(() => {
     const fetchConsultationTypes = async () => {
@@ -168,8 +178,15 @@ const ConsultationPage: React.FC = () => {
         notes: formData.notes,
         consultationTypeId: formData.consultationTypeId
       });
+      
       setConsultationId(consultationRes.data.id);
       setSelectedDoctor(doctors.find(d => d.id === formData.doctorId) || null);
+      
+      // Lưu link meet nếu có
+      if (consultationRes.data.meetingLink) {
+        setMeetingLink(consultationRes.data.meetingLink);
+      }
+      
       setShowPayment(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.');
@@ -178,17 +195,8 @@ const ConsultationPage: React.FC = () => {
 
   const handlePaymentSuccess = (paymentData: any) => {
     setShowPayment(false);
-    setSuccess('Thanh toán thành công!');
-    setFormData({
-      doctorId: 0,
-      date: new Date(),
-      timeSlotId: 0,
-      symptoms: '',
-      notes: '',
-      consultationTypeId: consultationTypes.length > 0 ? consultationTypes[0].id : 1
-    });
-    setConsultationId(null);
-    setSelectedDoctor(null);
+    setSuccess('Thanh toán thành công! Lịch tư vấn đã được đặt.');
+    setShowMeetingInfo(true);
     // Có thể chuyển hướng hoặc cập nhật UI tại đây
   };
 
@@ -245,7 +253,7 @@ const ConsultationPage: React.FC = () => {
                 </div>
               </div>
 
-              {formData.doctorId && (
+              {formData.doctorId !== 0 && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   {doctors.find(d => d.id === formData.doctorId) && (
                     <div className="space-y-3">
@@ -309,23 +317,17 @@ const ConsultationPage: React.FC = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn thời gian</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  {timeSlots.map((slot) => (
+                  {FIXED_TIME_SLOTS.map((time, idx) => (
                     <button
-                      key={slot.id}
-                      disabled={!slot.isAvailable}
-                      onClick={() => setFormData(prev => ({ ...prev, timeSlotId: slot.id }))}
+                      key={time}
+                      onClick={() => setFormData(prev => ({ ...prev, timeSlotId: idx + 1 }))}
                       className={`p-3 text-center rounded-lg transition-all ${
-                        !slot.isAvailable
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : formData.timeSlotId === slot.id
+                        formData.timeSlotId === idx + 1
                           ? 'bg-primary-500 text-white ring-2 ring-primary-300'
                           : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
                       }`}
                     >
-                      <span className="text-lg font-medium">{slot.time}</span>
-                      {!slot.isAvailable && (
-                        <span className="block text-xs mt-1">Đã đặt</span>
-                      )}
+                      <span className="text-lg font-medium">{time}</span>
                     </button>
                   ))}
                 </div>
@@ -396,6 +398,83 @@ const ConsultationPage: React.FC = () => {
           onPaymentSuccess={handlePaymentSuccess}
           onPaymentCancel={() => setShowPayment(false)}
         />
+      ) : showMeetingInfo && meetingLink && selectedDoctor ? (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Đặt lịch thành công!</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Lịch tư vấn với {selectedDoctor.name} đã được đặt thành công.
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 className="font-medium text-blue-900 mb-2">Link tham gia cuộc họp:</h4>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={meetingLink}
+                    readOnly
+                    className="flex-1 p-2 text-sm border border-blue-300 rounded bg-white"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(meetingLink);
+                      alert('Đã sao chép link vào clipboard!');
+                    }}
+                    className="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <button
+                  onClick={() => window.open(meetingLink, '_blank')}
+                  className="w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Tham gia ngay
+                </button>
+              </div>
+              
+              <div className="space-y-2 text-sm text-gray-600">
+                <p><strong>Bác sĩ:</strong> {selectedDoctor.name}</p>
+                <p><strong>Ngày:</strong> {format(formData.date, 'dd/MM/yyyy')}</p>
+                <p><strong>Thời gian:</strong> {FIXED_TIME_SLOTS[formData.timeSlotId - 1]}</p>
+              </div>
+              
+              <div className="mt-6 space-y-3">
+                <button
+                  onClick={() => {
+                    setShowMeetingInfo(false);
+                    setFormData({
+                      doctorId: 0,
+                      date: new Date(),
+                      timeSlotId: 0,
+                      symptoms: '',
+                      notes: '',
+                      consultationTypeId: consultationTypes.length > 0 ? consultationTypes[0].id : 1
+                    });
+                    setConsultationId(null);
+                    setSelectedDoctor(null);
+                    setMeetingLink(null);
+                  }}
+                  className="w-full px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+                >
+                  Đặt lịch mới
+                </button>
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+                >
+                  Xem lịch của tôi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-8">
         </div>

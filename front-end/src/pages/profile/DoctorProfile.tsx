@@ -30,6 +30,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Link } from 'react-router-dom';
 import { FaFileMedical, FaEye, FaPlus } from 'react-icons/fa';
 import api, { consultationService } from '../../services/api';
+import ConsultationDetailModal from '../../components/ConsultationDetailModal';
 
 type TabType = 'profile' | 'schedule' | 'consultation' | 'patient-history';
 
@@ -93,6 +94,8 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const [protocolStartDate, setProtocolStartDate] = useState('');
   const [protocolNotes, setProtocolNotes] = useState('');
   const [creatingProtocol, setCreatingProtocol] = useState(false);
+  const [selectedConsultation, setSelectedConsultation] = useState<any>(null);
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
 
   // Đặt biến statuses ở ngoài cùng để dùng chung cho cả hai phần
   const statuses = [
@@ -210,6 +213,28 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
       })
       .catch(() => {
         toast.error('Cập nhật trạng thái thất bại');
+      });
+  };
+
+  const handleViewConsultationDetail = (consultation: any) => {
+    setSelectedConsultation(consultation);
+    setShowConsultationModal(true);
+  };
+
+  const handleUpdateConsultation = (consultationId: string, updatedData: any) => {
+    // Cập nhật consultation với dữ liệu mới
+    consultationService.updateOnlineConsultation(consultationId, updatedData)
+      .then(() => {
+        setConsultations(prev => prev.map(consultation =>
+          consultation.id === consultationId
+            ? { ...consultation, ...updatedData }
+            : consultation
+        ));
+        toast.success('Cập nhật lịch tư vấn thành công');
+        setShowConsultationModal(false);
+      })
+      .catch(() => {
+        toast.error('Cập nhật lịch tư vấn thất bại');
       });
   };
 
@@ -715,6 +740,15 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                     <span className={`px-3 py-1 rounded-full text-sm ${statusColorMap[normalizeStatus(consultation.status)] || 'bg-gray-100 text-gray-800'}`}>
                       {statusTextMap[normalizeStatus(consultation.status)] || consultation.status}
                     </span>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleViewConsultationDetail(consultation)}
+                        className="flex items-center space-x-1 px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
+                        <FaEye className="w-3 h-3" />
+                        <span>Chi tiết</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100">
@@ -1341,8 +1375,19 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+
+      {/* Consultation Detail Modal */}
+      <ConsultationDetailModal
+        isOpen={showConsultationModal}
+        onClose={() => {
+          setShowConsultationModal(false);
+          setSelectedConsultation(null);
+        }}
+        consultation={selectedConsultation}
+        onUpdate={handleUpdateConsultation}
+      />
+      </div>
+    );
+  };
 
 export default DoctorProfile; 
