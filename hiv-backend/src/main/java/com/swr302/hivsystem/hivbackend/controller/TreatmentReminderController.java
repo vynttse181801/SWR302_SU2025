@@ -1,10 +1,10 @@
 package com.swr302.hivsystem.hivbackend.controller;
 
 import com.swr302.hivsystem.hivbackend.model.Patient;
-import com.swr302.hivsystem.hivbackend.model.Staff;
+import com.swr302.hivsystem.hivbackend.model.User;
 import com.swr302.hivsystem.hivbackend.model.TreatmentReminder;
 import com.swr302.hivsystem.hivbackend.repository.PatientRepository;
-import com.swr302.hivsystem.hivbackend.repository.StaffRepository;
+import com.swr302.hivsystem.hivbackend.repository.UserRepository;
 import com.swr302.hivsystem.hivbackend.repository.TreatmentReminderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,7 @@ public class TreatmentReminderController {
     private TreatmentReminderRepository treatmentReminderRepository;
 
     @Autowired
-    private StaffRepository staffRepository;
+    private UserRepository userRepository;
 
     @Autowired
     private PatientRepository patientRepository;
@@ -39,7 +39,7 @@ public class TreatmentReminderController {
 
     @PostMapping
     public ResponseEntity<TreatmentReminder> createTreatmentReminder(@RequestBody TreatmentReminder treatmentReminder) {
-        Optional<Staff> createdByOptional = staffRepository.findById(treatmentReminder.getCreatedBy().getId());
+        Optional<User> createdByOptional = userRepository.findById(treatmentReminder.getCreatedBy().getId());
         Optional<Patient> patientOptional = patientRepository.findById(treatmentReminder.getPatient().getId());
 
         if (createdByOptional.isEmpty() || patientOptional.isEmpty()) {
@@ -61,6 +61,31 @@ public class TreatmentReminderController {
             existingTreatmentReminder.setReminderDate(treatmentReminderDetails.getReminderDate());
             existingTreatmentReminder.setStatus(treatmentReminderDetails.getStatus());
             return ResponseEntity.ok(treatmentReminderRepository.save(existingTreatmentReminder));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/{id}/send")
+    public ResponseEntity<TreatmentReminder> sendTreatmentReminder(@PathVariable Long id) {
+        Optional<TreatmentReminder> treatmentReminder = treatmentReminderRepository.findById(id);
+        if (treatmentReminder.isPresent()) {
+            TreatmentReminder reminder = treatmentReminder.get();
+            reminder.setStatus("SENT");
+            // TODO: Thêm logic gửi email/SMS nếu cần
+            return ResponseEntity.ok(treatmentReminderRepository.save(reminder));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/{id}/complete")
+    public ResponseEntity<TreatmentReminder> completeTreatmentReminder(@PathVariable Long id) {
+        Optional<TreatmentReminder> treatmentReminder = treatmentReminderRepository.findById(id);
+        if (treatmentReminder.isPresent()) {
+            TreatmentReminder reminder = treatmentReminder.get();
+            reminder.setStatus("COMPLETED");
+            return ResponseEntity.ok(treatmentReminderRepository.save(reminder));
         } else {
             return ResponseEntity.notFound().build();
         }

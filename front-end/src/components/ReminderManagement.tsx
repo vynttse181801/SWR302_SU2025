@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Calendar, FileText, Clock, User, Plus, Edit, Trash, Send, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 
 interface Reminder {
   id: number;
@@ -14,6 +15,7 @@ interface Reminder {
   status: 'PENDING' | 'SENT' | 'COMPLETED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   notes?: string;
+  patient: { id: number };
 }
 
 interface ReminderManagementProps {
@@ -23,6 +25,7 @@ interface ReminderManagementProps {
   onUpdateReminder: (id: number, data: Partial<Reminder>) => void;
   onDeleteReminder: (id: number) => void;
   onCreateReminder: (data: Omit<Reminder, 'id'>) => void;
+  patients: { id: number; fullName: string }[];
 }
 
 const ReminderManagement: React.FC<ReminderManagementProps> = ({
@@ -31,12 +34,14 @@ const ReminderManagement: React.FC<ReminderManagementProps> = ({
   onCompleteReminder,
   onUpdateReminder,
   onDeleteReminder,
-  onCreateReminder
+  onCreateReminder,
+  patients
 }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
-  const [formData, setFormData] = useState<Partial<Reminder>>({});
+  const [formData, setFormData] = useState<Partial<Reminder> & { patientId?: number }>({});
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
@@ -111,20 +116,30 @@ const ReminderManagement: React.FC<ReminderManagementProps> = ({
       dueDate: reminder.dueDate,
       dueTime: reminder.dueTime,
       priority: reminder.priority,
-      notes: reminder.notes
+      notes: reminder.notes,
+      patientId: reminder.patient.id
     });
     setIsEditModalOpen(true);
   };
 
   const handleSave = () => {
+    if (!formData.patientId) {
+      toast.error('Vui lòng chọn bệnh nhân!');
+      return;
+    }
     if (isCreateModalOpen) {
-      onCreateReminder(formData as Omit<Reminder, 'id'>);
+      onCreateReminder({
+        ...formData,
+        patient: { id: formData.patientId },
+      } as Omit<Reminder, 'id'>);
       toast.success('Tạo nhắc nhở thành công!');
     } else if (isEditModalOpen && selectedReminder) {
-      onUpdateReminder(selectedReminder.id, formData);
+      onUpdateReminder(selectedReminder.id, {
+        ...formData,
+        patient: { id: formData.patientId },
+      });
       toast.success('Cập nhật nhắc nhở thành công!');
     }
-    
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
     setSelectedReminder(null);
@@ -151,6 +166,20 @@ const ReminderManagement: React.FC<ReminderManagementProps> = ({
     const due = new Date(dueDate + (dueTime ? `T${dueTime}` : ''));
     return now > due;
   };
+
+  useEffect(() => {
+    if (isCreateModalOpen && formData.patientId) {
+      api.get(`/online-consultations/patient/${formData.patientId}`)
+        .then(res => {
+          const now = new Date();
+          const upcoming = res.data.filter((item: any) => new Date(item.startTime) > now);
+          setUpcomingAppointments(upcoming);
+        })
+        .catch(() => setUpcomingAppointments([]));
+    } else {
+      setUpcomingAppointments([]);
+    }
+  }, [isCreateModalOpen, formData.patientId]);
 
   return (
     <div className="space-y-6">
@@ -258,96 +287,135 @@ const ReminderManagement: React.FC<ReminderManagementProps> = ({
 
       {/* Create/Edit Modal */}
       {(isCreateModalOpen || isEditModalOpen) && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {isCreateModalOpen ? 'Tạo nhắc nhở mới' : 'Chỉnh sửa nhắc nhở'}
-              </h3>
-              <div className="space-y-4">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">
+              {isCreateModalOpen ? 'Tạo nhắc nhở mới' : 'Chỉnh sửa nhắc nhở'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bệnh nhân</label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={formData.patientId || ''}
+                  onChange={e => setFormData({ ...formData, patientId: Number(e.target.value) })}
+                >
+                  <option value="">-- Chọn bệnh nhân --</option>
+                  {patients.map(patient => (
+                    <option key={patient.id} value={patient.id}>{patient.fullName}</option>
+                  ))}
+                </select>
+              </div>
+              {isCreateModalOpen && upcomingAppointments.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Loại nhắc nhở</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Chọn từ lịch sắp tới</label>
                   <select
-                    value={formData.type || ''}
-                    onChange={(e) => setFormData({...formData, type: e.target.value as Reminder['type']})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border rounded px-3 py-2 mb-2"
+                    onChange={e => {
+                      const selected = upcomingAppointments.find(a => a.id === Number(e.target.value));
+                      if (selected) {
+                        setFormData(f => ({
+                          ...f,
+                          dueDate: selected.startTime ? selected.startTime.slice(0, 10) : '',
+                          dueTime: selected.startTime ? selected.startTime.slice(11, 16) : '',
+                          message: selected.consultationType ? `Nhắc lịch: ${selected.consultationType} với bác sĩ ${selected.doctorName}` : 'Nhắc lịch tư vấn',
+                          type: 'APPOINTMENT'
+                        }));
+                      }
+                    }}
+                    defaultValue=""
                   >
-                    <option value="MEDICATION">Thuốc</option>
-                    <option value="FOLLOW_UP">Tái khám</option>
-                    <option value="TEST">Xét nghiệm</option>
-                    <option value="APPOINTMENT">Lịch hẹn</option>
+                    <option value="">-- Chọn lịch --</option>
+                    {upcomingAppointments.map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.consultationType || 'Tư vấn'} - {a.startTime ? a.startTime.slice(0, 16).replace('T', ' ') : ''} - BS {a.doctorName}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tin nhắn</label>
-                  <textarea
-                    value={formData.message || ''}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Nhập nội dung nhắc nhở..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày hạn</label>
-                  <input
-                    type="date"
-                    value={formData.dueDate || ''}
-                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Giờ hạn (tùy chọn)</label>
-                  <input
-                    type="time"
-                    value={formData.dueTime || ''}
-                    onChange={(e) => setFormData({...formData, dueTime: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mức độ ưu tiên</label>
-                  <select
-                    value={formData.priority || ''}
-                    onChange={(e) => setFormData({...formData, priority: e.target.value as Reminder['priority']})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="LOW">Thấp</option>
-                    <option value="MEDIUM">Trung bình</option>
-                    <option value="HIGH">Cao</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú (tùy chọn)</label>
-                  <textarea
-                    value={formData.notes || ''}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ghi chú bổ sung..."
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => {
-                    setIsCreateModalOpen(false);
-                    setIsEditModalOpen(false);
-                    setSelectedReminder(null);
-                    setFormData({});
-                  }}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Loại nhắc nhở</label>
+                <select
+                  value={formData.type || ''}
+                  onChange={(e) => setFormData({...formData, type: e.target.value as Reminder['type']})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  {isCreateModalOpen ? 'Tạo' : 'Lưu'}
-                </button>
+                  <option value="MEDICATION">Thuốc</option>
+                  <option value="FOLLOW_UP">Tái khám</option>
+                  <option value="TEST">Xét nghiệm</option>
+                  <option value="APPOINTMENT">Lịch hẹn</option>
+                </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tin nhắn</label>
+                <textarea
+                  value={formData.message || ''}
+                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập nội dung nhắc nhở..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ngày hạn</label>
+                <input
+                  type="date"
+                  value={formData.dueDate || ''}
+                  onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Giờ hạn (tùy chọn)</label>
+                <input
+                  type="time"
+                  value={formData.dueTime || ''}
+                  onChange={(e) => setFormData({...formData, dueTime: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mức độ ưu tiên</label>
+                <select
+                  value={formData.priority || ''}
+                  onChange={(e) => setFormData({...formData, priority: e.target.value as Reminder['priority']})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="LOW">Thấp</option>
+                  <option value="MEDIUM">Trung bình</option>
+                  <option value="HIGH">Cao</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú (tùy chọn)</label>
+                <textarea
+                  value={formData.notes || ''}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ghi chú bổ sung..."
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setIsEditModalOpen(false);
+                  setSelectedReminder(null);
+                  setFormData({});
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                {isCreateModalOpen ? 'Tạo' : 'Lưu'}
+              </button>
             </div>
           </div>
         </div>

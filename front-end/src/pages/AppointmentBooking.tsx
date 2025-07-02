@@ -112,8 +112,11 @@ const AppointmentBooking: React.FC = () => {
     }
 
     try {
+      const selectedSlot = timeSlots.find(slot => slot.id === formData.timeSlotId);
       await appointmentService.createAppointment({
         ...formData,
+        appointmentDate: formData.date ? formData.date.toISOString().split('T')[0] : undefined,
+        appointmentTime: selectedSlot ? selectedSlot.time : undefined,
         patientId: 1, // This should come from the authenticated user's context
         status: 'pending'
       });

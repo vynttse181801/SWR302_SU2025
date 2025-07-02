@@ -37,8 +37,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import { labResultService } from '../../services/api';
+import { staffService } from '../../services/api';
 
-type TabType = 'profile' | 'test-booking' | 'test-history' | 'consultation-history' | 'arv-protocol';
+type TabType = 'profile' | 'test-booking' | 'test-history' | 'consultation-history' | 'arv-protocol' | 'reminders';
 
 interface Rating {
   id: string;
@@ -147,6 +148,13 @@ const ProfilePage: React.FC = () => {
   const [treatmentPlans, setTreatmentPlans] = useState<any[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
 
+  const [reminders, setReminders] = useState<any[]>([]);
+
+  const [selectedEventId, setSelectedEventId] = useState('');
+
+  const [showEditReminderModal, setShowEditReminderModal] = useState(false);
+  const [editReminder, setEditReminder] = useState<any>(null);
+
   // Handle navigation state
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -164,7 +172,8 @@ const ProfilePage: React.FC = () => {
   }, [authUser?.id]);
 
   useEffect(() => {
-    if (activeTab === 'test-booking' && patientId) {
+    if (patientId) {
+      // Lấy lịch xét nghiệm
       api.get(`/lab-tests/patient/${patientId}`).then(res => {
         const sorted = res.data
           .map((item: any) => ({
@@ -179,21 +188,26 @@ const ProfilePage: React.FC = () => {
           .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setTestHistory(sorted);
       }).catch(() => setTestHistory([]));
-    }
-    if (activeTab === 'consultation-history' && patientId) {
+
+      // Lấy lịch tư vấn
       api.get(`/online-consultations/patient/${patientId}`).then(res => {
         setConsultationHistory(res.data.map((item: any) => ({
           id: item.id,
           title: item.consultationType || 'Tư vấn',
-          date: item.startTime ? new Date(item.startTime).toLocaleDateString('vi-VN') : '',
-          time: item.startTime ? new Date(item.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
+          date: item.startTime ? item.startTime.slice(0, 10) : '', // yyyy-mm-dd
+          time: item.startTime ? item.startTime.slice(11, 16) : '', // HH:mm
           status: item.status || 'pending',
           doctor: item.doctorName || '',
           details: item.notes || '',
         })));
       }).catch(() => setConsultationHistory([]));
+
+      // Lấy kế hoạch uống thuốc
+      api.get(`/patient-treatment-plans?patientId=${patientId}`)
+        .then(res => setTreatmentPlans(res.data || []))
+        .catch(() => setTreatmentPlans([]));
     }
-  }, [activeTab, patientId]);
+  }, [patientId]);
 
   useEffect(() => {
     if (activeTab === 'test-history' && patientId) {
@@ -210,6 +224,69 @@ const ProfilePage: React.FC = () => {
         .then(res => setTreatmentPlans(res.data || []))
         .catch(() => setTreatmentPlans([]))
         .finally(() => setLoadingPlans(false));
+    }
+  }, [activeTab, patientId]);
+
+  useEffect(() => {
+    if (patientId) {
+      staffService.getRemindersByPatient(patientId).then(res => {
+        setReminders(res.data || []);
+      }).catch(() => setReminders([]));
+    }
+  }, [patientId]);
+
+  useEffect(() => {
+    if (reminders.length > 0) {
+      reminders.forEach(reminder => {
+        if (
+          reminder.status === 'SENT' &&
+          reminder.reminderDate
+        ) {
+          toast.info(
+            `Bạn có nhắc nhở: ${reminder.reminderType} lúc ${reminder.reminderDate.replace('T', ' ')}`,
+            { autoClose: 10000 }
+          );
+        }
+      });
+    }
+  }, [reminders]);
+
+  // GỌI LẠI API LẤY LỊCH KHI VÀO TAB 'reminders'
+  useEffect(() => {
+    if (activeTab === 'reminders' && patientId) {
+      // Lấy lịch xét nghiệm
+      api.get(`/lab-tests/patient/${patientId}`).then(res => {
+        const sorted = res.data
+          .map((item: any) => ({
+            id: item.id,
+            title: item.testTypeName || 'Xét nghiệm',
+            date: item.date,
+            time: convertTimeSlotIdToTime(item.timeSlot),
+            status: item.status,
+            doctor: item.doctorName || '',
+            details: item.notes || '',
+          }))
+          .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTestHistory(sorted);
+      }).catch(() => setTestHistory([]));
+
+      // Lấy lịch tư vấn
+      api.get(`/online-consultations/patient/${patientId}`).then(res => {
+        setConsultationHistory(res.data.map((item: any) => ({
+          id: item.id,
+          title: item.consultationType || 'Tư vấn',
+          date: item.startTime ? item.startTime.slice(0, 10) : '', // yyyy-mm-dd
+          time: item.startTime ? item.startTime.slice(11, 16) : '', // HH:mm
+          status: item.status || 'pending',
+          doctor: item.doctorName || '',
+          details: item.notes || '',
+        })));
+      }).catch(() => setConsultationHistory([]));
+
+      // Lấy kế hoạch uống thuốc
+      api.get(`/patient-treatment-plans?patientId=${patientId}`)
+        .then(res => setTreatmentPlans(res.data || []))
+        .catch(() => setTreatmentPlans([]));
     }
   }, [activeTab, patientId]);
 
@@ -1040,6 +1117,8 @@ const ProfilePage: React.FC = () => {
         );
       case 'arv-protocol':
         return renderArvProtocolTab();
+      case 'reminders':
+        return renderReminders();
       default:
         return null;
     }
@@ -1079,12 +1158,287 @@ const ProfilePage: React.FC = () => {
     </div>
   );
 
+  const [showCreateReminderModal, setShowCreateReminderModal] = useState(false);
+  const [reminderForm, setReminderForm] = useState({
+    reminderType: 'MEDICATION',
+    reminderDate: '',
+    notes: '',
+    priority: 'MEDIUM'
+  });
+
+  // Tổng hợp các sự kiện sắp tới cho dropdown gợi ý
+  const now = new Date();
+  const upcomingEvents = [
+    // Lịch hẹn tư vấn
+    ...consultationHistory.filter(item => {
+      const d = new Date(item.date + 'T' + (item.time || '00:00'));
+      return d >= now;
+    }).map(item => ({
+      id: 'consult-' + item.id,
+      type: 'APPOINTMENT',
+      label: `Lịch tư vấn: ${item.date} ${item.time}`,
+      date: item.date + 'T' + (item.time ? item.time : '00:00'),
+      notes: item.details || ''
+    })),
+    // Lịch xét nghiệm
+    ...testHistory.filter(item => {
+      const d = new Date(item.date + 'T' + (item.time || '00:00'));
+      return d >= now;
+    }).map(item => ({
+      id: 'test-' + item.id,
+      type: 'TEST',
+      label: `Lịch xét nghiệm: ${item.date} ${item.time}`,
+      date: item.date + 'T' + (item.time ? item.time : '00:00'),
+      notes: item.details || ''
+    })),
+    // Lịch uống thuốc từ treatmentPlans (nếu có)
+    ...treatmentPlans.filter(plan => plan.nextMedicationDate).map(plan => ({
+      id: 'med-' + plan.id,
+      type: 'MEDICATION',
+      label: `Uống thuốc: ${plan.nextMedicationDate}`,
+      date: plan.nextMedicationDate,
+      notes: plan.notes || ''
+    }))
+  ];
+
+  const handleCreateReminder = async () => {
+    if (!reminderForm.reminderType || !reminderForm.reminderDate) {
+      toast.error('Vui lòng nhập đủ thông tin!');
+      return;
+    }
+    if (!reminderForm.notes) {
+      toast.error('Ghi chú là bắt buộc!');
+      return;
+    }
+    const now = new Date();
+    const selectedDate = new Date(reminderForm.reminderDate);
+    if (selectedDate <= now) {
+      toast.error('Vui lòng chọn thời gian nhắc nhở trong tương lai!');
+      return;
+    }
+    try {
+      await staffService.createReminder({
+        reminderType: reminderForm.reminderType,
+        reminderDate: reminderForm.reminderDate,
+        status: 'SENT',
+        patient: { id: user.id },
+        createdBy: { id: user.id },
+        notes: reminderForm.notes,
+        priority: reminderForm.priority
+      });
+      toast.success('Tạo nhắc nhở thành công!');
+      setShowCreateReminderModal(false);
+      setReminderForm({ reminderType: 'MEDICATION', reminderDate: '', notes: '', priority: 'MEDIUM' });
+      // Reload reminders
+      staffService.getRemindersByPatient(user.id).then(res => {
+        setReminders(res.data || []);
+      });
+    } catch {
+      toast.error('Tạo nhắc nhở thất bại!');
+    }
+  };
+
+  const renderReminders = () => {
+    return (
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold flex items-center"><Bell className="w-5 h-5 mr-2"/>Lịch nhắc nhở</h3>
+          <button className="btn-gradient-primary px-3 py-1 rounded text-white" onClick={() => setShowCreateReminderModal(true)}>Tạo nhắc nhở</button>
+        </div>
+        {reminders.length === 0 ? (
+          <div className="text-gray-500">Không có nhắc nhở nào.</div>
+        ) : (
+          <ul className="divide-y divide-gray-200">
+            {reminders.map((reminder, idx) => (
+              <li key={reminder.id || idx} className="py-2 flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{reminder.reminderType}</div>
+                  <div className="text-sm text-gray-500">{reminder.reminderDate?.replace('T', ' ')}</div>
+                  {reminder.notes && <div className="text-xs text-gray-400">{reminder.notes}</div>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded ${reminder.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : reminder.status === 'SENT' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{reminder.status}</span>
+                  <button className="text-blue-600 hover:underline text-xs" onClick={() => handleEditReminder(reminder)}>Sửa</button>
+                  <button className="text-red-600 hover:underline text-xs" onClick={() => handleDeleteReminder(reminder)}>Xóa</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {/* Modal tạo nhắc nhở */}
+        {showCreateReminderModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+              <h3 className="text-lg font-semibold mb-4">Tạo nhắc nhở mới</h3>
+              <div className="space-y-4">
+                {/* Dropdown gợi ý từ lịch sắp tới giữ nguyên */}
+                {upcomingEvents.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Chọn từ lịch sắp tới</label>
+                    <select
+                      className="w-full border rounded px-3 py-2"
+                      value={selectedEventId}
+                      onChange={e => {
+                        setSelectedEventId(e.target.value);
+                        const selected = upcomingEvents.find(ev => ev.id === e.target.value);
+                        if (selected) {
+                          setReminderForm(f => ({
+                            ...f,
+                            reminderType: selected.type,
+                            reminderDate: selected.date.length === 16 ? selected.date : selected.date.slice(0, 16),
+                            notes: selected.notes,
+                            priority: 'MEDIUM'
+                          }));
+                        }
+                      }}
+                    >
+                      <option value="">-- Chọn từ lịch sắp tới --</option>
+                      {upcomingEvents.map(ev => (
+                        <option key={ev.id} value={ev.id}>{ev.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Loại nhắc nhở</label>
+                  <select className="w-full border rounded px-3 py-2" value={reminderForm.reminderType} onChange={e => setReminderForm(f => ({ ...f, reminderType: e.target.value }))}>
+                    <option value="MEDICATION">Uống thuốc</option>
+                    <option value="APPOINTMENT">Lịch hẹn</option>
+                    <option value="FOLLOW_UP">Tái khám</option>
+                    <option value="TEST">Xét nghiệm</option>
+                  </select>
+                  {reminderForm.reminderType === 'MEDICATION' && (!treatmentPlans || treatmentPlans.length === 0) && (
+                    <div className="text-sm text-orange-600 mt-1">Bạn chưa có lịch uống thuốc. Vui lòng liên hệ bác sĩ hoặc nhân viên y tế để được hướng dẫn.</div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Thời gian nhắc nhở</label>
+                  <input type="datetime-local" className="w-full border rounded px-3 py-2" value={reminderForm.reminderDate} onChange={e => setReminderForm(f => ({ ...f, reminderDate: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Mức độ ưu tiên</label>
+                  <select className="w-full border rounded px-3 py-2" value={reminderForm.priority} onChange={e => setReminderForm(f => ({ ...f, priority: e.target.value }))}>
+                    <option value="LOW">Thấp</option>
+                    <option value="MEDIUM">Trung bình</option>
+                    <option value="HIGH">Cao</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Ghi chú <span className="text-red-500">*</span></label>
+                  <input type="text" className="w-full border rounded px-3 py-2" placeholder="Nhập ghi chú..." value={reminderForm.notes} onChange={e => setReminderForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <button className="px-4 py-2 rounded bg-gray-200" onClick={() => setShowCreateReminderModal(false)}>Hủy</button>
+                <button className="px-4 py-2 rounded bg-blue-600 text-white" onClick={handleCreateReminder}>Lưu</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showEditReminderModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+              <h3 className="text-lg font-semibold mb-4">Chỉnh sửa nhắc nhở</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Loại nhắc nhở</label>
+                  <select className="w-full border rounded px-3 py-2" value={reminderForm.reminderType} onChange={e => setReminderForm(f => ({ ...f, reminderType: e.target.value }))}>
+                    <option value="MEDICATION">Uống thuốc</option>
+                    <option value="APPOINTMENT">Lịch hẹn</option>
+                    <option value="FOLLOW_UP">Tái khám</option>
+                    <option value="TEST">Xét nghiệm</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Thời gian nhắc nhở</label>
+                  <input type="datetime-local" className="w-full border rounded px-3 py-2" value={reminderForm.reminderDate} onChange={e => setReminderForm(f => ({ ...f, reminderDate: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Mức độ ưu tiên</label>
+                  <select className="w-full border rounded px-3 py-2" value={reminderForm.priority} onChange={e => setReminderForm(f => ({ ...f, priority: e.target.value }))}>
+                    <option value="LOW">Thấp</option>
+                    <option value="MEDIUM">Trung bình</option>
+                    <option value="HIGH">Cao</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Ghi chú <span className="text-red-500">*</span></label>
+                  <input type="text" className="w-full border rounded px-3 py-2" placeholder="Nhập ghi chú..." value={reminderForm.notes} onChange={e => setReminderForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowEditReminderModal(false); setEditReminder(null); }}>Hủy</button>
+                <button className="px-4 py-2 rounded bg-blue-600 text-white" onClick={handleUpdateReminder}>Lưu</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const handleEditReminder = (reminder: any) => {
+    setEditReminder(reminder);
+    setReminderForm({
+      reminderType: reminder.reminderType,
+      reminderDate: reminder.reminderDate ? reminder.reminderDate.slice(0, 16) : '',
+      notes: reminder.notes || '',
+      priority: reminder.priority || 'MEDIUM',
+    });
+    setShowEditReminderModal(true);
+  };
+
+  const handleUpdateReminder = async () => {
+    if (!editReminder) return;
+    if (!reminderForm.reminderType || !reminderForm.reminderDate) {
+      toast.error('Vui lòng nhập đủ thông tin!');
+      return;
+    }
+    if (!reminderForm.notes) {
+      toast.error('Ghi chú là bắt buộc!');
+      return;
+    }
+    try {
+      await staffService.updateReminder(editReminder.id, {
+        reminderType: reminderForm.reminderType,
+        reminderDate: reminderForm.reminderDate,
+        notes: reminderForm.notes,
+        priority: reminderForm.priority
+      });
+      toast.success('Cập nhật nhắc nhở thành công!');
+      setShowEditReminderModal(false);
+      setEditReminder(null);
+      setReminderForm({ reminderType: 'MEDICATION', reminderDate: '', notes: '', priority: 'MEDIUM' });
+      // Reload reminders
+      staffService.getRemindersByPatient(user.id).then(res => {
+        setReminders(res.data || []);
+      });
+    } catch {
+      toast.error('Cập nhật nhắc nhở thất bại!');
+    }
+  };
+
+  const handleDeleteReminder = async (reminder: any) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa nhắc nhở này?')) return;
+    try {
+      await staffService.deleteReminder(reminder.id);
+      toast.success('Đã xóa nhắc nhở!');
+      // Reload reminders
+      staffService.getRemindersByPatient(user.id).then(res => {
+        setReminders(res.data || []);
+      });
+    } catch {
+      toast.error('Xóa nhắc nhở thất bại!');
+    }
+  };
+
   const tabs = [
     { id: 'profile', label: 'Thông tin cá nhân', icon: User, color: 'primary' },
     { id: 'test-booking', label: 'Lịch xét nghiệm', icon: ClipboardList, color: 'secondary' },
     { id: 'test-history', label: 'Lịch sử xét nghiệm', icon: FileText, color: 'secondary' },
     { id: 'consultation-history', label: 'Lịch tư vấn', icon: MessageSquare, color: 'accent' },
     { id: 'arv-protocol', label: 'Phác đồ ARV', icon: PillIcon, color: 'green' },
+    { id: 'reminders', label: 'Lịch nhắc nhở', icon: Clock, color: 'accent' },
   ];
 
   // Hàm chuyển đổi timeSlotId sang giờ

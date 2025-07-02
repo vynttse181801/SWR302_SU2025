@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useModal } from '../hooks/useModal';
 import Modal from '../components/Modal';
 import PaymentForm from '../components/PaymentForm';
+import api from '../services/api';
 
 interface Doctor {
   id: number;
@@ -45,6 +46,23 @@ const FIXED_TIME_SLOTS = [
   "08:00", "09:00", "10:00", "11:00",
   "13:00", "14:00", "15:00", "16:00"
 ];
+
+// Hàm tạo local ISO string không bị lệch múi giờ
+function toLocalISOString(date: Date) {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return date.getFullYear() + '-' +
+    pad(date.getMonth() + 1) + '-' +
+    pad(date.getDate()) + 'T' +
+    pad(date.getHours()) + ':' +
+    pad(date.getMinutes()) + ':' +
+    pad(date.getSeconds());
+}
+
+// Hàm lấy ngày local chuẩn yyyy-MM-dd
+function getLocalDateString(date: Date) {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+}
 
 const ConsultationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -97,6 +115,7 @@ const ConsultationPage: React.FC = () => {
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [meetingLink, setMeetingLink] = useState<string | null>(null);
   const [showMeetingInfo, setShowMeetingInfo] = useState(false);
+  const [creatingSlot, setCreatingSlot] = useState(false);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -317,19 +336,65 @@ const ConsultationPage: React.FC = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn thời gian</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  {FIXED_TIME_SLOTS.map((time, idx) => (
-                    <button
-                      key={time}
-                      onClick={() => setFormData(prev => ({ ...prev, timeSlotId: idx + 1 }))}
-                      className={`p-3 text-center rounded-lg transition-all ${
-                        formData.timeSlotId === idx + 1
-                          ? 'bg-primary-500 text-white ring-2 ring-primary-300'
-                          : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
-                      }`}
-                    >
-                      <span className="text-lg font-medium">{time}</span>
-                    </button>
-                  ))}
+                  {FIXED_TIME_SLOTS.map((time) => {
+                    // Tìm slot đã tồn tại với giờ này
+                    const slot = timeSlots.find(slot => slot.time === time);
+                    const isBooked = slot ? !slot.isAvailable : false;
+                    return (
+                      <button
+                        key={time}
+                        disabled={isBooked || creatingSlot}
+                        className={`p-3 text-center rounded-lg transition-all ${
+                          formData.timeSlotId && slot && formData.timeSlotId === slot.id
+                            ? 'bg-primary-500 text-white ring-2 ring-primary-300'
+                            : 'bg-gray-50 text-gray-900 hover:bg-gray-100 hover:ring-1 hover:ring-gray-300'
+                        } ${isBooked ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                        onClick={async () => {
+                          if (slot) {
+                            setFormData(prev => ({ ...prev, timeSlotId: slot.id }));
+                          } else if (formData.doctorId && formData.date) {
+                            setCreatingSlot(true);
+                            // Tạo slot mới
+                            const startTime = new Date(formData.date);
+                            const [hour, minute] = time.split(":");
+                            startTime.setHours(Number(hour), Number(minute), 0, 0);
+                            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 tiếng
+                            try {
+                              const res = await api.post('/consultation-time-slots', {
+                                doctor: { id: formData.doctorId },
+                                startTime: toLocalISOString(startTime),
+                                endTime: toLocalISOString(endTime),
+                                isBooked: false
+                              });
+                              // Sau khi tạo, refetch lại slots
+                              const slotsRes = await api.get('/consultation-time-slots', {
+                                params: {
+                                  doctorId: formData.doctorId,
+                                  date: getLocalDateString(formData.date)
+                                }
+                              });
+                              setTimeSlots(slotsRes.data.map((slot: any) => ({
+                                ...slot,
+                                time: slot.time || (slot.startTime ? slot.startTime.slice(11, 16) : ''),
+                                isAvailable: !slot.isBooked
+                              })));
+                              // Lấy slot vừa tạo
+                              const newSlot = slotsRes.data.find((s: any) => (s.time || (s.startTime ? s.startTime.slice(11, 16) : '')) === time);
+                              if (newSlot) {
+                                setFormData(prev => ({ ...prev, timeSlotId: newSlot.id }));
+                              }
+                            } catch (err) {
+                              alert('Không thể tạo khung giờ mới!');
+                            } finally {
+                              setCreatingSlot(false);
+                            }
+                          }
+                        }}
+                      >
+                        <span className="text-lg font-medium">{time}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

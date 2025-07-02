@@ -8,6 +8,7 @@ import ReminderManagement from '../../components/ReminderManagement';
 import LabBookingManagement from '../../components/LabBookingManagement';
 import ConsultationManagement from '../../components/ConsultationManagement';
 import { Appointment, LabBooking, User as UserType, OnlineConsultation } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Patient {
   id: number;
@@ -52,10 +53,27 @@ const StaffPage: React.FC = () => {
   const [labBookings, setLabBookings] = useState<LabBooking[]>([]);
   const [consultations, setConsultations] = useState<OnlineConsultation[]>([]);
 
+  const { user } = useAuth();
+
   // Load data on component mount
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'reminders') {
+      staffService.getAllReminders().then(res => {
+        // Map lại key cho đúng với ReminderManagement
+        const mapped = (res.data || []).map((item: any) => ({
+          ...item,
+          type: item.reminderType,
+          dueDate: item.reminderDate ? item.reminderDate.slice(0, 10) : '',
+          dueTime: item.reminderDate ? item.reminderDate.slice(11, 16) : '',
+        }));
+        setReminders(mapped);
+      });
+    }
+  }, [activeTab]);
 
   const enrichLabBookingsWithPatientName = async (bookings: LabBooking[]) => {
     return Promise.all(bookings.map(async (booking) => {
@@ -217,7 +235,10 @@ const StaffPage: React.FC = () => {
 
   const handleUpdateReminder = async (id: number, data: Partial<Reminder>) => {
     try {
-      await staffService.updateReminder(id, data);
+      await staffService.updateReminder(id, {
+        ...data,
+        createdBy: { id: user?.id },
+      });
       setReminders(prev => prev.map(reminder => 
         reminder.id === id ? { ...reminder, ...data } : reminder
       ));
@@ -239,7 +260,16 @@ const StaffPage: React.FC = () => {
 
   const handleCreateReminder = async (data: Omit<Reminder, 'id'>) => {
     try {
-      await staffService.createReminder(data);
+      const reminderDate = data.dueDate && data.dueTime
+        ? `${data.dueDate}T${data.dueTime}:00`
+        : `${data.dueDate}T00:00:00`;
+      await staffService.createReminder({
+        reminderType: data.type,
+        reminderDate,
+        status: data.status,
+        patient: { id: data.patientId },
+        createdBy: { id: user.id },
+      });
       await loadData(); // Reload reminders
       toast.success('Tạo nhắc nhở thành công!');
     } catch (error) {
@@ -424,6 +454,7 @@ const StaffPage: React.FC = () => {
               onUpdateReminder={handleUpdateReminder}
               onDeleteReminder={handleDeleteReminder}
               onCreateReminder={handleCreateReminder}
+              patients={patients}
             />
           )}
 

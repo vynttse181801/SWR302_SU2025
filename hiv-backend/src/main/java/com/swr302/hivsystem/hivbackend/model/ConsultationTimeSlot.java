@@ -42,7 +42,6 @@ public class ConsultationTimeSlot {
 
     @ManyToOne
     @JoinColumn(name = "doctor_id")
-    @JsonIgnore
     private Doctor doctor;
 
     @PrePersist

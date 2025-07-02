@@ -245,6 +245,8 @@ export const staffService = {
         api.get('/treatment-reminders'),
     getReminderById: (id: number) => 
         api.get(`/treatment-reminders/${id}`),
+    getRemindersByPatient: (patientId: number) =>
+        api.get(`/treatment-reminders?patientId=${patientId}`),
     createReminder: (data: any) => 
         api.post('/treatment-reminders', data),
     updateReminder: (id: number, data: any) => 

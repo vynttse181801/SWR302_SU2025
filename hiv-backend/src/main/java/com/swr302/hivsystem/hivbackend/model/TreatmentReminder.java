@@ -12,7 +12,7 @@ public class TreatmentReminder {
 
     @ManyToOne
     @JoinColumn(name = "created_by_id", nullable = false)
-    private Staff createdBy;
+    private User createdBy;
 
     @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false)
@@ -43,11 +43,11 @@ public class TreatmentReminder {
         this.id = id;
     }
 
-    public Staff getCreatedBy() {
+    public User getCreatedBy() {
         return createdBy;
     }
 
-    public void setCreatedBy(Staff createdBy) {
+    public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
     }
 

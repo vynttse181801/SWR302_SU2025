@@ -16,8 +16,8 @@ INSERT INTO users (username, password, email, full_name, phone_number, role_id, 
 
 -- Insert doctors
 INSERT INTO doctors (user_id, doctor_code, full_name, specialization, qualification, license_number, experience, rating, avatar_url, created_at, updated_at) VALUES
-((SELECT id FROM users WHERE username = 'doctor1'), 'DOC001', 'Doctor One', 'HIV Specialist', 'MD', 'LIC001', 10, 4.5, 'https://example.com/doctor1.jpg', GETDATE(), GETDATE()),
-((SELECT id FROM users WHERE username = 'doctor2'), 'DOC002', 'Doctor Two', 'General Practitioner', 'MD', 'LIC002', 8, 4.8, 'https://example.com/doctor2.jpg', GETDATE(), GETDATE());
+((SELECT id FROM users WHERE username = 'doctor1'), 'DOC001', 'Doctor One', 'HIV Specialist', 'MD', 'LIC001', 10, 4.5, 'https://png.pngtree.com/png-clipart/20241005/original/pngtree-vector-cute-cartoon-doctor-with-uniform-png-image_16205650.png', GETDATE(), GETDATE()),
+((SELECT id FROM users WHERE username = 'doctor2'), 'DOC002', 'Doctor Two', 'General Practitioner', 'MD', 'LIC002', 8, 4.8, 'https://img.lovepik.com/photo/60165/5208.jpg_wh860.jpg', GETDATE(), GETDATE());
 
 -- Insert patients
 INSERT INTO patients (user_id, patient_code, full_name, date_of_birth, gender, address, phone_number, email, created_at, updated_at) VALUES
