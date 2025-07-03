@@ -20,4 +20,5 @@ public interface TreatmentReminderRepository extends JpaRepository<TreatmentRemi
     List<TreatmentReminder> findByPatient_IdAndStatus(Long patientId, String status);
     List<TreatmentReminder> findByPatient_IdAndReminderType(Long patientId, String reminderType);
     List<TreatmentReminder> findByPatient_IdAndStatusAndReminderType(Long patientId, String status, String reminderType);
+    List<TreatmentReminder> findByPatient_IdAndReminderTypeAndReminderDate(Long patientId, String reminderType, LocalDateTime reminderDate);
 } 

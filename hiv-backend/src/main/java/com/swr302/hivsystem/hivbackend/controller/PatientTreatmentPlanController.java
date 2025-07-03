@@ -65,6 +65,17 @@ public class PatientTreatmentPlanController {
         patientTreatmentPlan.setDoctor(doctorOptional.get());
         patientTreatmentPlan.setArvProtocol(arvProtocolOptional.get());
 
+        // Tự động set endDate cho phác đồ cũ
+        List<PatientTreatmentPlan> oldPlans = patientTreatmentPlanRepository.findByPatientId(patientTreatmentPlan.getPatient().getId());
+        if (oldPlans != null && !oldPlans.isEmpty()) {
+            for (PatientTreatmentPlan plan : oldPlans) {
+                if (plan.getEndDate() == null || plan.getEndDate().isAfter(patientTreatmentPlan.getStartDate())) {
+                    plan.setEndDate(patientTreatmentPlan.getStartDate().minusDays(1));
+                    patientTreatmentPlanRepository.save(plan);
+                }
+            }
+        }
+
         return ResponseEntity.ok(patientTreatmentPlanRepository.save(patientTreatmentPlan));
     }
 

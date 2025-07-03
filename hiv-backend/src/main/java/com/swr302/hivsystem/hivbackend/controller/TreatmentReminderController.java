@@ -136,8 +136,11 @@ public class TreatmentReminderController {
         int count = 0;
         LocalDateTime now = LocalDateTime.now();
         for (MedicationSchedule schedule : schedules) {
-            // Chỉ tạo nhắc nhở cho các lịch uống thuốc trong tương lai
-            if (schedule.getIntakeTime().isAfter(now)) {
+            // Chỉ tạo nhắc nhở cho các lịch uống thuốc trong tương lai và chưa hoàn thành
+            if (schedule.getIntakeTime().isAfter(now) && (schedule.getStatus() == null || !"COMPLETED".equalsIgnoreCase(schedule.getStatus()))) {
+                // Kiểm tra đã có nhắc nhở cùng thời gian chưa
+                boolean exists = !treatmentReminderRepository.findByPatient_IdAndReminderTypeAndReminderDate(patientId, "MEDICATION", schedule.getIntakeTime()).isEmpty();
+                if (exists) continue;
                 TreatmentReminder reminder = new TreatmentReminder();
                 reminder.setCreatedBy(createdBy);
                 reminder.setPatient(patient);
@@ -155,8 +158,15 @@ public class TreatmentReminderController {
     @DeleteMapping("/medication-reminders/patient/{patientId}")
     public ResponseEntity<String> deleteMedicationRemindersByPatient(@PathVariable Long patientId) {
         try {
-            treatmentReminderRepository.deleteAllMedicationRemindersByPatient(patientId, "MEDICATION");
-            return ResponseEntity.ok("Đã xóa tất cả nhắc nhở uống thuốc cho bệnh nhân " + patientId);
+            List<TreatmentReminder> reminders = treatmentReminderRepository.findByPatient_IdAndReminderType(patientId, "MEDICATION");
+            int count = 0;
+            for (TreatmentReminder reminder : reminders) {
+                if (!"COMPLETED".equalsIgnoreCase(reminder.getStatus())) {
+                    treatmentReminderRepository.delete(reminder);
+                    count++;
+                }
+            }
+            return ResponseEntity.ok("Đã xóa " + count + " nhắc nhở uống thuốc chưa hoàn thành cho bệnh nhân " + patientId);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Lỗi khi xóa nhắc nhở uống thuốc: " + e.getMessage());
