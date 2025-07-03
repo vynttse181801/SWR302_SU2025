@@ -123,3 +123,13 @@ INSERT INTO online_consultations (appointment_id, consultation_type_id, meeting_
 -- Insert consultation histories (lịch sử tư vấn đã hoàn thành)
 INSERT INTO consultation_histories (appointment_id, doctor_notes, patient_feedback, consultation_content, created_at, updated_at) VALUES
 ((SELECT TOP 1 id FROM appointments WHERE patient_id = (SELECT id FROM patients WHERE patient_code = 'PAT001') AND doctor_id = (SELECT id FROM doctors WHERE doctor_code = 'DOC001')), N'Bệnh nhân đã được tư vấn về các bài tập phù hợp với tình trạng sức khỏe. Cần theo dõi tiến độ tập luyện và điều chỉnh cường độ phù hợp.', N'Bác sĩ rất tận tâm và giải thích rõ ràng', N'Tư vấn về chế độ tập luyện cho người nhiễm HIV. Bệnh nhân tỏ ra tích cực và cam kết tuân thủ chế độ tập luyện được đề xuất.', GETDATE(), GETDATE());
+
+-- Insert medications (thuốc ARV mẫu)
+INSERT INTO medications (name, description, dosage, frequency, created_at, updated_at) VALUES
+(N'Tenofovir', N'Thuốc ARV nhóm NRTI', N'300mg', N'07:00,19:00', GETDATE(), GETDATE()),
+(N'Lamivudine', N'Thuốc ARV nhóm NRTI', N'150mg', N'07:00,19:00', GETDATE(), GETDATE()),
+(N'Efavirenz', N'Thuốc ARV nhóm NNRTI', N'600mg', N'19:00', GETDATE(), GETDATE()),
+(N'Abacavir', N'Thuốc ARV nhóm NRTI', N'300mg', N'07:00,19:00', GETDATE(), GETDATE()),
+(N'Zidovudine', N'Thuốc ARV nhóm NRTI', N'300mg', N'07:00,19:00', GETDATE(), GETDATE()),
+(N'Dolutegravir', N'Thuốc ARV nhóm INSTI', N'50mg', N'07:00', GETDATE(), GETDATE()),
+(N'Lopinavir/ritonavir', N'Thuốc ARV nhóm PI', N'200mg/50mg', N'07:00,19:00', GETDATE(), GETDATE());

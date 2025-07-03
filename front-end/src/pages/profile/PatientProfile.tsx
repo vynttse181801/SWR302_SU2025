@@ -38,8 +38,9 @@ import api from '../../services/api';
 import { toast } from 'react-toastify';
 import { labResultService } from '../../services/api';
 import { staffService } from '../../services/api';
+import { medicationService, prescriptionService } from '../../services/api';
 
-type TabType = 'profile' | 'test-booking' | 'test-history' | 'consultation-history' | 'arv-protocol' | 'reminders';
+type TabType = 'profile' | 'test-booking' | 'test-history' | 'consultation-history' | 'arv-protocol' | 'reminders' | 'medication-schedule';
 
 interface Rating {
   id: string;
@@ -61,6 +62,95 @@ interface ServiceItem {
   resultNote?: string;
   testType?: string;
 }
+
+// PrescriptionForm cho bác sĩ kê đơn thuốc cho bệnh nhân
+const PrescriptionForm: React.FC<{ patientId: number, treatmentPlans: any[], onSuccess: () => void }> = ({ patientId, treatmentPlans, onSuccess }) => {
+  const [medications, setMedications] = useState<any[]>([]);
+  const [form, setForm] = useState({
+    treatmentPlanId: '',
+    medicationId: '',
+    dosage: '',
+    frequency: '',
+    durationDays: '',
+    notes: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    medicationService.getAllMedications().then(res => setMedications(res.data || []));
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.treatmentPlanId || !form.medicationId || !form.dosage || !form.frequency || !form.durationDays) {
+      toast.error('Vui lòng nhập đủ thông tin!');
+      return;
+    }
+    setLoading(true);
+    try {
+      await prescriptionService.createPrescription({
+        treatmentPlan: { id: Number(form.treatmentPlanId) },
+        medication: { id: Number(form.medicationId) },
+        dosage: form.dosage,
+        frequency: form.frequency,
+        durationDays: Number(form.durationDays),
+        notes: form.notes
+      });
+      toast.success('Kê đơn thuốc thành công!');
+      setForm({ treatmentPlanId: '', medicationId: '', dosage: '', frequency: '', durationDays: '', notes: '' });
+      onSuccess();
+    } catch {
+      toast.error('Kê đơn thuốc thất bại!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-4 mb-6">
+      <h4 className="font-semibold mb-2">Kê đơn thuốc ARV</h4>
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Phác đồ điều trị</label>
+        <select name="treatmentPlanId" className="w-full border rounded px-3 py-2" value={form.treatmentPlanId} onChange={handleChange} required>
+          <option value="">-- Chọn phác đồ --</option>
+          {treatmentPlans.map(plan => (
+            <option key={plan.id} value={plan.id}>{plan.notes || `Phác đồ #${plan.id}`} (Bắt đầu: {plan.startDate})</option>
+          ))}
+        </select>
+      </div>
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Thuốc</label>
+        <select name="medicationId" className="w-full border rounded px-3 py-2" value={form.medicationId} onChange={handleChange} required>
+          <option value="">-- Chọn thuốc --</option>
+          {medications.map(med => (
+            <option key={med.id} value={med.id}>{med.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Liều lượng</label>
+        <input name="dosage" className="w-full border rounded px-3 py-2" value={form.dosage} onChange={handleChange} required />
+      </div>
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Giờ uống (cách nhau bằng dấu phẩy, VD: 07:00,19:00)</label>
+        <input name="frequency" className="w-full border rounded px-3 py-2" value={form.frequency} onChange={handleChange} required />
+      </div>
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Số ngày điều trị</label>
+        <input name="durationDays" type="number" min="1" className="w-full border rounded px-3 py-2" value={form.durationDays} onChange={handleChange} required />
+      </div>
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Ghi chú</label>
+        <textarea name="notes" className="w-full border rounded px-3 py-2" value={form.notes} onChange={handleChange} />
+      </div>
+      <button type="submit" className="btn-gradient-primary px-4 py-2 rounded text-white" disabled={loading}>{loading ? 'Đang lưu...' : 'Kê đơn'}</button>
+    </form>
+  );
+};
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -154,6 +244,20 @@ const ProfilePage: React.FC = () => {
 
   const [showEditReminderModal, setShowEditReminderModal] = useState(false);
   const [editReminder, setEditReminder] = useState<any>(null);
+
+  // Thêm state cho lịch uống thuốc
+  const [medicationSchedules, setMedicationSchedules] = useState<any[]>([]);
+
+  // Lấy lịch uống thuốc khi có patientId
+  useEffect(() => {
+    if (patientId) {
+      medicationService.getMedicationSchedulesByPatient(patientId).then(res => {
+        let data = res.data;
+        if (!Array.isArray(data)) data = [];
+        setMedicationSchedules(data);
+      }).catch(() => setMedicationSchedules([]));
+    }
+  }, [patientId]);
 
   // Handle navigation state
   useEffect(() => {
@@ -287,6 +391,17 @@ const ProfilePage: React.FC = () => {
       api.get(`/patient-treatment-plans?patientId=${patientId}`)
         .then(res => setTreatmentPlans(res.data || []))
         .catch(() => setTreatmentPlans([]));
+    }
+  }, [activeTab, patientId]);
+
+  // Lấy lịch uống thuốc khi vào tab 'medication-schedule'
+  useEffect(() => {
+    if (activeTab === 'medication-schedule' && patientId) {
+      medicationService.getMedicationSchedulesByPatient(patientId).then(res => {
+        let data = res.data;
+        if (!Array.isArray(data)) data = [];
+        setMedicationSchedules(data);
+      }).catch(() => setMedicationSchedules([]));
     }
   }, [activeTab, patientId]);
 
@@ -964,6 +1079,33 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
             <div className="mt-8">
+              <h2 className="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2">
+                <PillIcon className="text-blue-500" /> Lịch uống thuốc
+              </h2>
+              {medicationSchedules.length === 0 ? (
+                <p className="text-gray-500 italic">Chưa có lịch uống thuốc</p>
+              ) : (
+                <div className="overflow-x-auto rounded-xl shadow border border-gray-200 my-4">
+                  <table className="min-w-full text-sm bg-white rounded-xl overflow-hidden">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700">
+                        <th className="px-4 py-2 border-b text-center font-semibold">Thời gian uống</th>
+                        <th className="px-4 py-2 border-b text-center font-semibold">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {medicationSchedules.map((schedule, idx) => (
+                        <tr key={schedule.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="border-b px-4 py-2 text-center">{new Date(schedule.intakeTime).toLocaleString('vi-VN')}</td>
+                          <td className="border-b px-4 py-2 text-center">{schedule.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="mt-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Cài đặt thông báo</h2>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -979,7 +1121,22 @@ const ProfilePage: React.FC = () => {
                     value=""
                     className="sr-only peer"
                     checked={reminderStatus.medication}
-                    onChange={() => setReminderStatus(prev => ({ ...prev, medication: !prev.medication }))}
+                    onChange={async () => {
+                      const newValue = !reminderStatus.medication;
+                      setReminderStatus(prev => ({ ...prev, medication: newValue }));
+                      if (newValue && patientId && user?.id) {
+                        try {
+                          await staffService.createMedicationRemindersFromSchedules(patientId, user.id);
+                          toast.success('Đã tạo nhắc nhở uống thuốc từ lịch có sẵn!');
+                          // Reload reminders nếu muốn
+                          staffService.getRemindersByPatient(patientId).then(res => {
+                            setReminders(res.data || []);
+                          });
+                        } catch {
+                          toast.error('Không thể tạo nhắc nhở uống thuốc!');
+                        }
+                      }
+                    }}
                   />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
                 </label>
@@ -1119,6 +1276,36 @@ const ProfilePage: React.FC = () => {
         return renderArvProtocolTab();
       case 'reminders':
         return renderReminders();
+      case 'medication-schedule':
+        return (
+          <div className="max-w-2xl mx-auto mt-8">
+            <h2 className="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2">
+              <PillIcon className="text-blue-500" /> Lịch uống thuốc
+            </h2>
+            {medicationSchedules.length === 0 ? (
+              <p className="text-gray-500 italic">Chưa có lịch uống thuốc</p>
+            ) : (
+              <div className="overflow-x-auto rounded-xl shadow border border-gray-200 my-4">
+                <table className="min-w-full text-sm bg-white rounded-xl overflow-hidden">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700">
+                      <th className="px-4 py-2 border-b text-center font-semibold">Thời gian uống</th>
+                      <th className="px-4 py-2 border-b text-center font-semibold">Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {medicationSchedules.map((schedule, idx) => (
+                      <tr key={schedule.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="border-b px-4 py-2 text-center">{new Date(schedule.intakeTime).toLocaleString('vi-VN')}</td>
+                        <td className="border-b px-4 py-2 text-center">{schedule.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
       default:
         return null;
     }
@@ -1154,6 +1341,9 @@ const ProfilePage: React.FC = () => {
             </tbody>
           </table>
         </div>
+      )}
+      {authUser?.role?.roleName === 'ROLE_DOCTOR' && patientId && (
+        <PrescriptionForm patientId={patientId} treatmentPlans={treatmentPlans} onSuccess={() => {}} />
       )}
     </div>
   );
@@ -1258,6 +1448,27 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-1 rounded ${reminder.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : reminder.status === 'SENT' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{reminder.status}</span>
+                  <select
+                    value={reminder.status}
+                    onChange={async (e) => {
+                      const newStatus = e.target.value;
+                      try {
+                        await staffService.updateReminder(reminder.id, {
+                          ...reminder,
+                          status: newStatus
+                        });
+                        toast.success('Cập nhật trạng thái thành công!');
+                        staffService.getRemindersByPatient(user.id).then(res => setReminders(res.data || []));
+                      } catch {
+                        toast.error('Cập nhật trạng thái thất bại!');
+                      }
+                    }}
+                    className="border rounded px-2 py-1 text-xs ml-2"
+                  >
+                    <option value="PENDING">Chờ xử lý</option>
+                    <option value="SENT">Đã gửi</option>
+                    <option value="COMPLETED">Hoàn thành</option>
+                  </select>
                   <button className="text-blue-600 hover:underline text-xs" onClick={() => handleEditReminder(reminder)}>Sửa</button>
                   <button className="text-red-600 hover:underline text-xs" onClick={() => handleDeleteReminder(reminder)}>Xóa</button>
                 </div>
@@ -1439,6 +1650,7 @@ const ProfilePage: React.FC = () => {
     { id: 'consultation-history', label: 'Lịch tư vấn', icon: MessageSquare, color: 'accent' },
     { id: 'arv-protocol', label: 'Phác đồ ARV', icon: PillIcon, color: 'green' },
     { id: 'reminders', label: 'Lịch nhắc nhở', icon: Clock, color: 'accent' },
+    { id: 'medication-schedule', label: 'Lịch uống thuốc', icon: Clock, color: 'accent' },
   ];
 
   // Hàm chuyển đổi timeSlotId sang giờ

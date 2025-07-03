@@ -29,7 +29,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link } from 'react-router-dom';
 import { FaFileMedical, FaEye, FaPlus } from 'react-icons/fa';
-import api, { consultationService } from '../../services/api';
+import api, { consultationService, medicationService, prescriptionService } from '../../services/api';
 import ConsultationDetailModal from '../../components/ConsultationDetailModal';
 import PatientDetailModal from '../../components/PatientDetailModal';
 
@@ -99,6 +99,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [showPatientDetailModal, setShowPatientDetailModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState<{patientId: string|number, plans: any[]} | null>(null);
 
   // Đặt biến statuses ở ngoài cùng để dùng chung cho cả hai phần
   const statuses = [
@@ -780,7 +781,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                         <textarea
                           value={editingNote ? editingNote.note : ''}
                           onChange={handleNoteChange}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                           rows={4}
                           placeholder="Nhập ghi chú về buổi tư vấn..."
                         />
@@ -995,6 +996,148 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     loadArvProtocols();
   };
 
+  // PrescriptionForm cho bác sĩ kê đơn thuốc cho bệnh nhân
+  const PrescriptionForm: React.FC<{ patientId: string|number, treatmentPlans: any[], onSuccess?: () => void, onClose?: () => void }> = ({ patientId, treatmentPlans, onSuccess, onClose }) => {
+    const [medications, setMedications] = useState<any[]>([]);
+    const [form, setForm] = useState({
+      treatmentPlanId: '',
+      notes: ''
+    });
+    const [details, setDetails] = useState([
+      { medicationId: '', dosage: '', times: [''], durationDays: '', notes: '' }
+    ]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+      medicationService.getAllMedications().then(res => setMedications(res.data || []));
+    }, []);
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+      setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+    };
+
+    const handleDetailChange = (idx: number, field: string, value: string) => {
+      setDetails(ds => ds.map((d, i) => i === idx ? { ...d, [field]: value } : d));
+    };
+
+    // Thao tác với times (giờ uống)
+    const handleTimeChange = (detailIdx: number, timeIdx: number, value: string) => {
+      setDetails(ds => ds.map((d, i) => i === detailIdx ? { ...d, times: d.times.map((t, j) => j === timeIdx ? value : t) } : d));
+    };
+    const addTime = (detailIdx: number) => {
+      setDetails(ds => ds.map((d, i) => i === detailIdx ? { ...d, times: [...d.times, ''] } : d));
+    };
+    const removeTime = (detailIdx: number, timeIdx: number) => {
+      setDetails(ds => ds.map((d, i) => i === detailIdx ? { ...d, times: d.times.filter((_, j) => j !== timeIdx) } : d));
+    };
+
+    const addDetail = () => setDetails(ds => [...ds, { medicationId: '', dosage: '', times: [''], durationDays: '', notes: '' }]);
+    const removeDetail = (idx: number) => setDetails(ds => ds.filter((_, i) => i !== idx));
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!form.treatmentPlanId || details.some(d => !d.medicationId || !d.dosage || !d.durationDays || d.times.some(t => !t))) {
+        toast.error('Vui lòng nhập đủ thông tin cho tất cả các thuốc!');
+        return;
+      }
+      setLoading(true);
+      try {
+        await prescriptionService.createPrescription({
+          treatmentPlanId: Number(form.treatmentPlanId),
+          notes: form.notes,
+          details: details.map(d => ({
+            medicationId: Number(d.medicationId),
+            dosage: d.dosage,
+            frequency: d.times.filter(Boolean).join(','),
+            durationDays: Number(d.durationDays),
+            notes: d.notes
+          }))
+        });
+        toast.success('Kê đơn thuốc thành công!');
+        setForm({ treatmentPlanId: '', notes: '' });
+        setDetails([{ medicationId: '', dosage: '', times: [''], durationDays: '', notes: '' }]);
+        onSuccess && onSuccess();
+      } catch {
+        toast.error('Kê đơn thuốc thất bại!');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg relative" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+          <button onClick={onClose} className="absolute top-2 right-2 text-gray-400 hover:text-gray-700"><X size={20} /></button>
+          <form onSubmit={handleSubmit} className="">
+            <h4 className="font-semibold mb-2">Kê đơn thuốc ARV</h4>
+            <div className="mb-2">
+              <label className="block text-sm font-medium mb-1">Phác đồ điều trị</label>
+              <select name="treatmentPlanId" className="w-full border rounded px-3 py-2" value={form.treatmentPlanId} onChange={handleFormChange} required>
+                <option value="">-- Chọn phác đồ --</option>
+                {treatmentPlans.map(plan => (
+                  <option key={plan.id} value={plan.id}>{plan.notes || `Phác đồ #${plan.id}`} (Bắt đầu: {plan.startDate})</option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-2">
+              <label className="block text-sm font-medium mb-1">Ghi chú đơn thuốc</label>
+              <textarea name="notes" className="w-full border rounded px-3 py-2" value={form.notes} onChange={handleFormChange} />
+            </div>
+            <h5 className="font-semibold mb-2 mt-4">Danh sách thuốc</h5>
+            {details.map((detail, idx) => (
+              <div key={idx} className="border rounded p-3 mb-2 relative bg-gray-50">
+                <div className="mb-2">
+                  <label className="block text-xs font-medium mb-1">Thuốc</label>
+                  <select name="medicationId" className="w-full border rounded px-3 py-2" value={detail.medicationId} onChange={e => handleDetailChange(idx, 'medicationId', e.target.value)} required>
+                    <option value="">-- Chọn thuốc --</option>
+                    {medications.map(med => (
+                      <option key={med.id} value={med.id}>{med.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-2">
+                  <label className="block text-xs font-medium mb-1">Liều lượng</label>
+                  <input name="dosage" className="w-full border rounded px-3 py-2" value={detail.dosage} onChange={e => handleDetailChange(idx, 'dosage', e.target.value)} required />
+                </div>
+                <div className="mb-2">
+                  <label className="block text-xs font-medium mb-1">Giờ uống</label>
+                  {detail.times.map((time, tIdx) => (
+                    <div key={tIdx} className="flex items-center gap-2 mb-1">
+                      <input
+                        type="time"
+                        value={time}
+                        onChange={e => handleTimeChange(idx, tIdx, e.target.value)}
+                        className="border rounded px-2 py-1"
+                        required
+                      />
+                      {detail.times.length > 1 && (
+                        <button type="button" onClick={() => removeTime(idx, tIdx)} className="text-red-500">X</button>
+                      )}
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => addTime(idx)} className="text-blue-600 text-sm">+ Thêm giờ</button>
+                </div>
+                <div className="mb-2">
+                  <label className="block text-xs font-medium mb-1">Số ngày điều trị</label>
+                  <input name="durationDays" type="number" min="1" className="w-full border rounded px-3 py-2" value={detail.durationDays} onChange={e => handleDetailChange(idx, 'durationDays', e.target.value)} required />
+                </div>
+                <div className="mb-2">
+                  <label className="block text-xs font-medium mb-1">Ghi chú</label>
+                  <input name="notes" className="w-full border rounded px-3 py-2" value={detail.notes} onChange={e => handleDetailChange(idx, 'notes', e.target.value)} />
+                </div>
+                {details.length > 1 && (
+                  <button type="button" className="absolute top-2 right-2 text-red-500 hover:text-red-700" onClick={() => removeDetail(idx)}><X size={16} /></button>
+                )}
+              </div>
+            ))}
+            <button type="button" className="mb-4 px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200" onClick={addDetail}>+ Thêm thuốc</button>
+            <button type="submit" className="btn-gradient-primary px-4 py-2 rounded text-white" disabled={loading}>{loading ? 'Đang lưu...' : 'Kê đơn'}</button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   const renderPatientHistoryTab = () => {
     return (
       <div className="space-y-6">
@@ -1198,6 +1341,16 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Prescription Form */}
+                    {user?.role?.roleName === 'ROLE_DOCTOR' && (
+                      <button
+                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        onClick={() => setShowPrescriptionModal({patientId: patient.id, plans: patientPlans})}
+                      >
+                        Kê đơn thuốc
+                      </button>
+                    )}
                   </div>
                 );
               })
@@ -1301,6 +1454,15 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {showPrescriptionModal && (
+          <PrescriptionForm
+            patientId={showPrescriptionModal.patientId}
+            treatmentPlans={showPrescriptionModal.plans}
+            onSuccess={() => { setShowPrescriptionModal(null); refreshPatientData(); }}
+            onClose={() => setShowPrescriptionModal(null)}
+          />
         )}
       </div>
     );

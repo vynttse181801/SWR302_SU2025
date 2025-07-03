@@ -257,6 +257,8 @@ export const staffService = {
         api.put(`/treatment-reminders/${id}/send`),
     completeReminder: (id: number) => 
         api.put(`/treatment-reminders/${id}/complete`),
+    createMedicationRemindersFromSchedules: (patientId: number, createdById: number) =>
+        api.post(`/treatment-reminders/medication-reminders/patient/${patientId}?createdById=${createdById}`),
 
     // Lab test management
     getAllLabBookings: () => 
@@ -281,6 +283,15 @@ export const staffService = {
         api.get('/online-consultations'),
     updateOnlineConsultationStatus: (id: number|string, status: string) =>
         api.patch(`/online-consultations/${id}/status`, { status }),
+};
+
+export const medicationService = {
+    getAllMedications: () => api.get('/medications'),
+    getMedicationSchedulesByPatient: (patientId: number) => api.get(`/medication-schedules/patient/${patientId}`),
+};
+
+export const prescriptionService = {
+    createPrescription: (data: any) => api.post('/prescriptions', data),
 };
 
 export default api; 

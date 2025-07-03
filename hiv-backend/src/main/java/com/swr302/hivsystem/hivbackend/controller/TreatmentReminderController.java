@@ -3,15 +3,18 @@ package com.swr302.hivsystem.hivbackend.controller;
 import com.swr302.hivsystem.hivbackend.model.Patient;
 import com.swr302.hivsystem.hivbackend.model.User;
 import com.swr302.hivsystem.hivbackend.model.TreatmentReminder;
+import com.swr302.hivsystem.hivbackend.model.MedicationSchedule;
 import com.swr302.hivsystem.hivbackend.repository.PatientRepository;
 import com.swr302.hivsystem.hivbackend.repository.UserRepository;
 import com.swr302.hivsystem.hivbackend.repository.TreatmentReminderRepository;
+import com.swr302.hivsystem.hivbackend.repository.MedicationScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/treatment-reminders")
@@ -25,6 +28,9 @@ public class TreatmentReminderController {
 
     @Autowired
     private PatientRepository patientRepository;
+
+    @Autowired
+    private MedicationScheduleRepository medicationScheduleRepository;
 
     @GetMapping
     public List<TreatmentReminder> getAllTreatmentReminders() {
@@ -99,5 +105,34 @@ public class TreatmentReminderController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // API tạo nhắc nhở uống thuốc từ lịch uống thuốc có sẵn cho bệnh nhân
+    @PostMapping("/medication-reminders/patient/{patientId}")
+    public ResponseEntity<String> createMedicationRemindersFromSchedules(@PathVariable Long patientId, @RequestParam Long createdById) {
+        List<MedicationSchedule> schedules = medicationScheduleRepository.findByPrescription_TreatmentPlan_Patient_Id(patientId);
+        Optional<User> createdByOpt = userRepository.findById(createdById);
+        Optional<Patient> patientOpt = patientRepository.findById(patientId);
+        if (createdByOpt.isEmpty() || patientOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Invalid user or patient");
+        }
+        User createdBy = createdByOpt.get();
+        Patient patient = patientOpt.get();
+        int count = 0;
+        LocalDateTime now = LocalDateTime.now();
+        for (MedicationSchedule schedule : schedules) {
+            // Chỉ tạo nhắc nhở cho các lịch uống thuốc trong tương lai
+            if (schedule.getIntakeTime().isAfter(now)) {
+                TreatmentReminder reminder = new TreatmentReminder();
+                reminder.setCreatedBy(createdBy);
+                reminder.setPatient(patient);
+                reminder.setReminderType("MEDICATION");
+                reminder.setReminderDate(schedule.getIntakeTime());
+                reminder.setStatus("PENDING");
+                treatmentReminderRepository.save(reminder);
+                count++;
+            }
+        }
+        return ResponseEntity.ok("Đã tạo " + count + " nhắc nhở uống thuốc cho bệnh nhân.");
     }
 } 

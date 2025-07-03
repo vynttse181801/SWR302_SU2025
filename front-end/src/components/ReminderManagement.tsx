@@ -240,6 +240,21 @@ const ReminderManagement: React.FC<ReminderManagementProps> = ({
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(reminder.status)}`}>
                   {getStatusText(reminder.status)}
                 </span>
+                <select
+                  value={reminder.status}
+                  onChange={e => {
+                    const newStatus = e.target.value;
+                    onUpdateReminder(reminder.id, {
+                      ...reminder,
+                      status: newStatus
+                    });
+                  }}
+                  className="border rounded px-2 py-1 text-xs ml-2"
+                >
+                  <option value="PENDING">Chờ xử lý</option>
+                  <option value="SENT">Đã gửi</option>
+                  <option value="COMPLETED">Hoàn thành</option>
+                </select>
                 <div className="flex items-center space-x-2">
                   {reminder.status === 'PENDING' && (
                     <button
