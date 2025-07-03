@@ -34,6 +34,7 @@ const Header: React.FC<HeaderProps> = ({ links, isAuthenticated, user, onLogout 
   };
 
   const isAdmin = getUserRole(user) === 'ROLE_ADMIN';
+  const isDoctor = getUserRole(user) === 'ROLE_DOCTOR';
 
   return (
     <header className={`sticky top-0 z-50 transition-all duration-300 ${
@@ -43,23 +44,28 @@ const Header: React.FC<HeaderProps> = ({ links, isAuthenticated, user, onLogout 
     }`}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between flex-wrap md:flex-nowrap gap-4">
-          <Link 
-            to={isAdmin ? "/admin" : "/"} 
-            className="flex items-center space-x-2 group"
-          >
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500 bg-clip-text text-transparent
-              group-hover:from-primary-500 group-hover:via-secondary-400 group-hover:to-accent-400 transition-all duration-300">
-              HIV Care
-            </span>
-            {isAdmin && (
-              <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-medium">
-                ADMIN
+          {isDoctor ? (
+            <span className="flex items-center space-x-2 group cursor-default">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500 bg-clip-text text-transparent group-hover:from-primary-500 group-hover:via-secondary-400 group-hover:to-accent-400 transition-all duration-300">
+                HIV Care
               </span>
-            )}
-          </Link>
+              {isAdmin && (
+                <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-medium">ADMIN</span>
+              )}
+            </span>
+          ) : (
+            <Link to={isAdmin ? "/admin" : "/"} className="flex items-center space-x-2 group">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 via-secondary-500 to-accent-500 bg-clip-text text-transparent group-hover:from-primary-500 group-hover:via-secondary-400 group-hover:to-accent-400 transition-all duration-300">
+                HIV Care
+              </span>
+              {isAdmin && (
+                <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-medium">ADMIN</span>
+              )}
+            </Link>
+          )}
           
           {/* Navigation - Hide for ADMIN users */}
-          {!isAdmin && (
+          {!isAdmin && !isDoctor && (
             <nav className="hidden md:flex justify-center flex-1 space-x-1">
               {links
                 .filter(link => {
@@ -156,15 +162,6 @@ const Header: React.FC<HeaderProps> = ({ links, isAuthenticated, user, onLogout 
                       </Link>
                     )}
                     
-                    <Link
-                      to="/settings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600
-                        transition-colors duration-200"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Cài đặt
-                    </Link>
                     <button
                       onClick={handleLogout}
                       className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50

@@ -11,6 +11,7 @@ import com.swr302.hivsystem.hivbackend.repository.MedicationScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,8 +34,22 @@ public class TreatmentReminderController {
     private MedicationScheduleRepository medicationScheduleRepository;
 
     @GetMapping
-    public List<TreatmentReminder> getAllTreatmentReminders() {
-        return treatmentReminderRepository.findAll();
+    public List<TreatmentReminder> getTreatmentReminders(
+            @RequestParam(value = "patientId", required = false) Long patientId,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "reminderType", required = false) String reminderType
+    ) {
+        if (patientId != null && status != null && reminderType != null) {
+            return treatmentReminderRepository.findByPatient_IdAndStatusAndReminderType(patientId, status, reminderType);
+        } else if (patientId != null && status != null) {
+            return treatmentReminderRepository.findByPatient_IdAndStatus(patientId, status);
+        } else if (patientId != null && reminderType != null) {
+            return treatmentReminderRepository.findByPatient_IdAndReminderType(patientId, reminderType);
+        } else if (patientId != null) {
+            return treatmentReminderRepository.findByPatient_Id(patientId);
+        } else {
+            return treatmentReminderRepository.findAll();
+        }
     }
 
     @GetMapping("/{id}")
@@ -134,5 +149,17 @@ public class TreatmentReminderController {
             }
         }
         return ResponseEntity.ok("Đã tạo " + count + " nhắc nhở uống thuốc cho bệnh nhân.");
+    }
+
+    // API xóa tất cả nhắc nhở uống thuốc (reminderType = 'MEDICATION') cho bệnh nhân
+    @DeleteMapping("/medication-reminders/patient/{patientId}")
+    public ResponseEntity<String> deleteMedicationRemindersByPatient(@PathVariable Long patientId) {
+        try {
+            treatmentReminderRepository.deleteAllMedicationRemindersByPatient(patientId, "MEDICATION");
+            return ResponseEntity.ok("Đã xóa tất cả nhắc nhở uống thuốc cho bệnh nhân " + patientId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Lỗi khi xóa nhắc nhở uống thuốc: " + e.getMessage());
+        }
     }
 } 

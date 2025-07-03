@@ -43,7 +43,7 @@ interface DoctorFormData {
   phone: string;
   specialization: string;
   experience: string;
-  education: string;
+  qualification: string;
 }
 
 interface Patient {
@@ -77,8 +77,8 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
     email: user?.email || '',
     phone: user?.phoneNumber || '',
     specialization: ((user as unknown) as Doctor)?.specialization || '',
-    experience: ((user as unknown) as Doctor)?.experience || '',
-    education: ((user as unknown) as Doctor)?.education || '',
+    experience: ((user as unknown) as Doctor)?.experience?.toString() || '',
+    qualification: '',
   });
   const [appointmentPage, setAppointmentPage] = useState(1);
   const [consultationPage, setConsultationPage] = useState(1);
@@ -100,6 +100,7 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const [showPatientDetailModal, setShowPatientDetailModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState<{patientId: string|number, plans: any[]} | null>(null);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
 
   // Đặt biến statuses ở ngoài cùng để dùng chung cho cả hai phần
   const statuses = [
@@ -151,11 +152,21 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
 
   useEffect(() => {
     if (user && user.id) {
-      // Lấy doctor profile theo userId
       api.get(`/doctors?userId=${user.id}`)
         .then(res => {
           const doctor = Array.isArray(res.data) ? res.data[0] : res.data;
-          if (doctor && doctor.id) setDoctorId(doctor.id);
+          if (doctor && doctor.id) {
+            setDoctorId(doctor.id);
+            setDoctor(doctor);
+            setFormData({
+              name: doctor.name || '',
+              email: doctor.email || '',
+              phone: doctor.phoneNumber || '',
+              specialization: doctor.specialization || '',
+              experience: doctor.experience?.toString() || '',
+              qualification: doctor.qualification || '',
+            });
+          }
         })
         .catch(() => setDoctorId(null));
     }
@@ -187,23 +198,44 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (!user) return;
-      
-      const updatedUser = {
-        ...user,
-        id: Number(user.id),
+      if (!doctorId || !doctor) return;
+      const payload = {
+        doctorCode: doctor.doctorCode || '',
         name: formData.name,
-        email: formData.email,
+        specialization: formData.specialization,
+        qualification: formData.qualification,
+        licenseNumber: doctor.licenseNumber || '',
         phoneNumber: formData.phone,
-        role: user.role,
-        username: user.username
+        email: formData.email,
+        address: doctor.address || '',
+        bio: doctor.bio || '',
+        status: (doctor.status === 'ACTIVE' || doctor.status === 'INACTIVE') ? doctor.status : 'ACTIVE',
+        experience: Number(formData.experience),
+        rating: doctor.rating || 0,
+        avatar: doctor.avatar || '',
       };
-
-      await updateUser(updatedUser);
+      await api.put(`/doctors/${doctorId}`, payload);
+      toast.success('Cập nhật thông tin thành công!');
+      // Reload lại dữ liệu
+      api.get(`/doctors?userId=${user?.id}`)
+        .then(res => {
+          const doctorData = Array.isArray(res.data) ? res.data[0] : res.data;
+          if (doctorData && doctorData.id) {
+            setDoctorId(doctorData.id);
+            setDoctor(doctorData);
+            setFormData({
+              name: doctorData.name || '',
+              email: doctorData.email || '',
+              phone: doctorData.phoneNumber || '',
+              specialization: doctorData.specialization || '',
+              experience: doctorData.experience?.toString() || '',
+              qualification: doctorData.qualification || '',
+            });
+          }
+        });
       setIsEditing(false);
-      toast.success('Profile updated successfully');
     } catch (error) {
-      toast.error('Failed to update profile');
+      toast.error('Cập nhật thông tin thất bại!');
     }
   };
 
@@ -376,6 +408,21 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
             <div className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
               <GraduationCap className="text-blue-500" size={24} />
               <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bằng cấp</label>
+                <input
+                  type="text"
+                  name="qualification"
+                  value={formData.qualification}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
+              <GraduationCap className="text-blue-500" size={24} />
+              <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Chuyên môn</label>
                 <input
                   type="text"
@@ -396,21 +443,6 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                   type="text"
                   name="experience"
                   value={formData.experience}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
-              <GraduationCap className="text-blue-500" size={24} />
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Học vấn</label>
-                <input
-                  type="text"
-                  name="education"
-                  value={formData.education}
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
@@ -1220,11 +1252,11 @@ const DoctorProfile: React.FC<DoctorProfileProps> = () => {
                         <div>
                           <h3 className="text-lg font-semibold">{patient.name}</h3>
                           <p className="text-gray-600">
-                            {patient.age} tuổi • {patient.gender === 'male' ? 'Nam' : 'Nữ'}
+                            {patient.gender === 'male' ? 'Nam' : 'Nữ'}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          {/* <p className="text-sm text-gray-600">
                             Mã BN: {patient.patientId}
-                          </p>
+                          </p> */}
                         </div>
                       </div>
                       <div className="flex justify-end gap-2">

@@ -165,7 +165,7 @@ function AppContent() {
               {/* Public routes that redirect ADMIN and STAFF users */}
               <Route path="/" element={
                 <PublicRoute>
-                  <HomePage />
+                  {user?.role?.roleName === 'ROLE_DOCTOR' ? <Navigate to="/doctor-profile" replace /> : <HomePage />}
                 </PublicRoute>
               } />
               <Route path="/services" element={
@@ -297,7 +297,7 @@ function AppContent() {
               } />
             </Routes>
           </main>
-          <Footer />
+          {user?.role?.roleName !== 'ROLE_DOCTOR' && <Footer />}
         </>
       )}
 

@@ -245,8 +245,12 @@ export const staffService = {
         api.get('/treatment-reminders'),
     getReminderById: (id: number) => 
         api.get(`/treatment-reminders/${id}`),
-    getRemindersByPatient: (patientId: number) =>
-        api.get(`/treatment-reminders?patientId=${patientId}`),
+    getRemindersByPatient: (patientId: number, status?: string, reminderType?: string) => {
+        let url = `/treatment-reminders?patientId=${patientId}`;
+        if (status) url += `&status=${status}`;
+        if (reminderType) url += `&reminderType=${reminderType}`;
+        return api.get(url);
+    },
     createReminder: (data: any) => 
         api.post('/treatment-reminders', data),
     updateReminder: (id: number, data: any) => 
@@ -259,6 +263,8 @@ export const staffService = {
         api.put(`/treatment-reminders/${id}/complete`),
     createMedicationRemindersFromSchedules: (patientId: number, createdById: number) =>
         api.post(`/treatment-reminders/medication-reminders/patient/${patientId}?createdById=${createdById}`),
+    deleteMedicationRemindersByPatient: (patientId: number) =>
+        api.delete(`/treatment-reminders/medication-reminders/patient/${patientId}`),
 
     // Lab test management
     getAllLabBookings: () => 
@@ -288,10 +294,13 @@ export const staffService = {
 export const medicationService = {
     getAllMedications: () => api.get('/medications'),
     getMedicationSchedulesByPatient: (patientId: number) => api.get(`/medication-schedules/patient/${patientId}`),
+    updateMedicationScheduleStatus: (id: number, data: any) =>
+        api.put(`/medication-schedules/${id}`, data),
 };
 
 export const prescriptionService = {
     createPrescription: (data: any) => api.post('/prescriptions', data),
+    getPrescriptionsByPatient: (patientId: number|string) => api.get(`/prescriptions/patient/${patientId}`),
 };
 
 export default api; 

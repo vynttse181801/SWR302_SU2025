@@ -92,13 +92,17 @@ const PrescriptionForm: React.FC<{ patientId: number, treatmentPlans: any[], onS
     }
     setLoading(true);
     try {
+      // Lấy ngày bắt đầu điều trị từ phác đồ
+      const selectedPlan = treatmentPlans.find(plan => plan.id === Number(form.treatmentPlanId));
+      const startDate = selectedPlan?.startDate;
       await prescriptionService.createPrescription({
         treatmentPlan: { id: Number(form.treatmentPlanId) },
         medication: { id: Number(form.medicationId) },
         dosage: form.dosage,
         frequency: form.frequency,
         durationDays: Number(form.durationDays),
-        notes: form.notes
+        notes: form.notes,
+        startDate: startDate // nếu backend cần trường này
       });
       toast.success('Kê đơn thuốc thành công!');
       setForm({ treatmentPlanId: '', medicationId: '', dosage: '', frequency: '', durationDays: '', notes: '' });
@@ -246,7 +250,16 @@ const ProfilePage: React.FC = () => {
   const [editReminder, setEditReminder] = useState<any>(null);
 
   // Thêm state cho lịch uống thuốc
-  const [medicationSchedules, setMedicationSchedules] = useState<any[]>([]);
+  interface MedicationScheduleItem {
+    id: number;
+    intakeTime: string;
+    status: string;
+    [key: string]: any;
+  }
+  const [medicationSchedules, setMedicationSchedules] = useState<MedicationScheduleItem[]>([]);
+
+  const [reminderStatusFilter, setReminderStatusFilter] = useState('');
+  const [reminderTypeFilter, setReminderTypeFilter] = useState('');
 
   // Lấy lịch uống thuốc khi có patientId
   useEffect(() => {
@@ -334,7 +347,17 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (patientId) {
       staffService.getRemindersByPatient(patientId).then(res => {
-        setReminders(res.data || []);
+        const mapped = (res.data || []).map((reminder: any) => ({
+          id: reminder.id,
+          createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : undefined,
+          patient: reminder.patient ? { id: reminder.patient.id } : undefined,
+          reminderType: reminder.reminderType,
+          reminderDate: reminder.reminderDate,
+          status: reminder.status,
+          notes: reminder.notes,
+          priority: reminder.priority
+        }));
+        setReminders(mapped);
       }).catch(() => setReminders([]));
     }
   }, [patientId]);
@@ -404,6 +427,22 @@ const ProfilePage: React.FC = () => {
       }).catch(() => setMedicationSchedules([]));
     }
   }, [activeTab, patientId]);
+
+  useEffect(() => {
+    staffService.getRemindersByPatient(user.id, reminderStatusFilter || undefined, reminderTypeFilter || undefined).then(res => {
+      const mapped = (res.data || []).map((reminder: any) => ({
+        id: reminder.id,
+        createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : undefined,
+        patient: reminder.patient ? { id: reminder.patient.id } : undefined,
+        reminderType: reminder.reminderType || reminder.type,
+        reminderDate: reminder.reminderDate || (reminder.dueDate + (reminder.dueTime ? `T${reminder.dueTime}` : '')),
+        status: reminder.status || "PENDING",
+        notes: reminder.notes,
+        priority: reminder.priority
+      }));
+      setReminders(mapped);
+    });
+  }, [user.id, reminderStatusFilter, reminderTypeFilter]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -972,197 +1011,6 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Thông tin y tế</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center gap-3">
-                <Droplet size={20} className="text-red-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Nhóm máu</p>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="medicalHistory.bloodType"
-                      value={user.medicalHistory?.bloodType || ''}
-                      onChange={handleChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                    />
-                  ) : (
-                    <p className="text-gray-900 font-semibold">{user.medicalHistory?.bloodType || 'Không có'}</p>
-                  )}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center gap-3">
-                <AlertTriangle size={20} className="text-yellow-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Dị ứng</p>
-                  {isEditing ? (
-                    <textarea
-                      name="medicalHistory.allergies"
-                      value={user.medicalHistory?.allergies?.join(', ') || ''}
-                      onChange={handleChange}
-                      rows={2}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
-                    />
-                  ) : (
-                    <p className="text-gray-900 font-semibold">{user.medicalHistory?.allergies?.join(', ') || 'Không có'}</p>
-                  )}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center gap-3">
-                <ClipboardList size={20} className="text-green-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Bệnh mãn tính</p>
-                  {isEditing ? (
-                    <textarea
-                      name="medicalHistory.chronicDiseases"
-                      value={user.medicalHistory?.chronicDiseases?.join(', ') || ''}
-                      onChange={handleChange}
-                      rows={2}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                    />
-                  ) : (
-                    <p className="text-gray-900 font-semibold">{user.medicalHistory?.chronicDiseases?.join(', ') || 'Không có'}</p>
-                  )}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center gap-3">
-                <Pill size={20} className="text-blue-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Thuốc đang sử dụng</p>
-                  {isEditing ? (
-                    <textarea
-                      name="medicalHistory.medications"
-                      value={user.medicalHistory?.medications?.join(', ') || ''}
-                      onChange={handleChange}
-                      rows={2}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  ) : (
-                    <p className="text-gray-900 font-semibold">{user.medicalHistory?.medications?.join(', ') || 'Không có'}</p>
-                  )}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center gap-3">
-                <Clock size={20} className="text-indigo-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Lần khám gần nhất</p>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      name="lastCheckup"
-                      value={user.lastCheckup || ''}
-                      onChange={handleChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  ) : (
-                    <p className="text-gray-900 font-semibold">{user.lastCheckup || 'Chưa có'}</p>
-                  )}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center gap-3">
-                <CalendarIcon size={20} className="text-purple-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Lịch hẹn tiếp theo</p>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      name="nextAppointment"
-                      value={user.nextAppointment || ''}
-                      onChange={handleChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                    />
-                  ) : (
-                    <p className="text-gray-900 font-semibold">{user.nextAppointment || 'Chưa có'}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2">
-                <PillIcon className="text-blue-500" /> Lịch uống thuốc
-              </h2>
-              {medicationSchedules.length === 0 ? (
-                <p className="text-gray-500 italic">Chưa có lịch uống thuốc</p>
-              ) : (
-                <div className="overflow-x-auto rounded-xl shadow border border-gray-200 my-4">
-                  <table className="min-w-full text-sm bg-white rounded-xl overflow-hidden">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700">
-                        <th className="px-4 py-2 border-b text-center font-semibold">Thời gian uống</th>
-                        <th className="px-4 py-2 border-b text-center font-semibold">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {medicationSchedules.map((schedule, idx) => (
-                        <tr key={schedule.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="border-b px-4 py-2 text-center">{new Date(schedule.intakeTime).toLocaleString('vi-VN')}</td>
-                          <td className="border-b px-4 py-2 text-center">{schedule.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Cài đặt thông báo</h2>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Bell size={20} className="text-teal-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Nhắc nhở uống thuốc</p>
-                    <p className="text-xs text-gray-500">Nhận thông báo để không bỏ lỡ liều thuốc.</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    value=""
-                    className="sr-only peer"
-                    checked={reminderStatus.medication}
-                    onChange={async () => {
-                      const newValue = !reminderStatus.medication;
-                      setReminderStatus(prev => ({ ...prev, medication: newValue }));
-                      if (newValue && patientId && user?.id) {
-                        try {
-                          await staffService.createMedicationRemindersFromSchedules(patientId, user.id);
-                          toast.success('Đã tạo nhắc nhở uống thuốc từ lịch có sẵn!');
-                          // Reload reminders nếu muốn
-                          staffService.getRemindersByPatient(patientId).then(res => {
-                            setReminders(res.data || []);
-                          });
-                        } catch {
-                          toast.error('Không thể tạo nhắc nhở uống thuốc!');
-                        }
-                      }
-                    }}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                </label>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center justify-between mt-4">
-                <div className="flex items-center gap-3">
-                  <Bell size={20} className="text-teal-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Nhắc nhở tái khám</p>
-                    <p className="text-xs text-gray-500">Nhận thông báo cho lịch hẹn tái khám định kỳ.</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    value=""
-                    className="sr-only peer"
-                    checked={reminderStatus.followUp}
-                    onChange={() => setReminderStatus(prev => ({ ...prev, followUp: !prev.followUp }))}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                </label>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               {!isEditing ? (
                 <>
@@ -1278,9 +1126,9 @@ const ProfilePage: React.FC = () => {
         return renderReminders();
       case 'medication-schedule':
         return (
-          <div className="max-w-2xl mx-auto mt-8">
+          <div className="bg-white rounded-lg shadow p-4 mb-6">
             <h2 className="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2">
-              <PillIcon className="text-blue-500" /> Lịch uống thuốc
+              <Pill className="text-blue-500" /> Lịch uống thuốc
             </h2>
             {medicationSchedules.length === 0 ? (
               <p className="text-gray-500 italic">Chưa có lịch uống thuốc</p>
@@ -1295,7 +1143,7 @@ const ProfilePage: React.FC = () => {
                   </thead>
                   <tbody>
                     {medicationSchedules.map((schedule, idx) => (
-                      <tr key={schedule.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <tr key={schedule.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="border-b px-4 py-2 text-center">{new Date(schedule.intakeTime).toLocaleString('vi-VN')}</td>
                         <td className="border-b px-4 py-2 text-center">{schedule.status}</td>
                       </tr>
@@ -1396,10 +1244,6 @@ const ProfilePage: React.FC = () => {
       toast.error('Vui lòng nhập đủ thông tin!');
       return;
     }
-    if (!reminderForm.notes) {
-      toast.error('Ghi chú là bắt buộc!');
-      return;
-    }
     const now = new Date();
     const selectedDate = new Date(reminderForm.reminderDate);
     if (selectedDate <= now) {
@@ -1421,7 +1265,17 @@ const ProfilePage: React.FC = () => {
       setReminderForm({ reminderType: 'MEDICATION', reminderDate: '', notes: '', priority: 'MEDIUM' });
       // Reload reminders
       staffService.getRemindersByPatient(user.id).then(res => {
-        setReminders(res.data || []);
+        const mapped = (res.data || []).map((reminder: any) => ({
+          id: reminder.id,
+          createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : undefined,
+          patient: reminder.patient ? { id: reminder.patient.id } : undefined,
+          reminderType: reminder.reminderType,
+          reminderDate: reminder.reminderDate,
+          status: reminder.status,
+          notes: reminder.notes,
+          priority: reminder.priority
+        }));
+        setReminders(mapped);
       });
     } catch {
       toast.error('Tạo nhắc nhở thất bại!');
@@ -1431,8 +1285,91 @@ const ProfilePage: React.FC = () => {
   const renderReminders = () => {
     return (
       <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold flex items-center"><Bell className="w-5 h-5 mr-2"/>Lịch nhắc nhở</h3>
+        {/* Cài đặt thông báo */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Cài đặt thông báo</h2>
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bell size={20} className="text-teal-500" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">Nhắc nhở uống thuốc</p>
+                <p className="text-xs text-gray-500">Nhận thông báo để không bỏ lỡ liều thuốc.</p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                value=""
+                className="sr-only peer"
+                checked={reminderStatus.medication}
+                onChange={async () => {
+                  const newValue = !reminderStatus.medication;
+                  setReminderStatus(prev => ({ ...prev, medication: newValue }));
+                  if (newValue && patientId && user?.id) {
+                    try {
+                      await staffService.createMedicationRemindersFromSchedules(patientId, user.id);
+                      toast.success('Đã tạo nhắc nhở uống thuốc từ lịch có sẵn!');
+                      staffService.getRemindersByPatient(patientId).then(res => {
+                        const mapped = (res.data || []).map((reminder: any) => ({
+                          id: reminder.id,
+                          createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : undefined,
+                          patient: reminder.patient ? { id: reminder.patient.id } : undefined,
+                          reminderType: reminder.reminderType,
+                          reminderDate: reminder.reminderDate,
+                          status: reminder.status,
+                          notes: reminder.notes,
+                          priority: reminder.priority
+                        }));
+                        setReminders(mapped);
+                      });
+                    } catch {
+                      toast.error('Không thể tạo nhắc nhở uống thuốc!');
+                    }
+                  } else if (!newValue && patientId) {
+                    try {
+                      await staffService.deleteMedicationRemindersByPatient(patientId);
+                      toast.success('Đã xóa tất cả nhắc nhở uống thuốc!');
+                      staffService.getRemindersByPatient(patientId).then(res => {
+                        const mapped = (res.data || []).map((reminder: any) => ({
+                          id: reminder.id,
+                          createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : undefined,
+                          patient: reminder.patient ? { id: reminder.patient.id } : undefined,
+                          reminderType: reminder.reminderType,
+                          reminderDate: reminder.reminderDate,
+                          status: reminder.status,
+                          notes: reminder.notes,
+                          priority: reminder.priority
+                        }));
+                        setReminders(mapped);
+                      });
+                    } catch {
+                      toast.error('Không thể xóa nhắc nhở uống thuốc!');
+                    }
+                  }
+                }}
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+            </label>
+          </div>
+        </div>
+        {/* ...phần còn lại của renderReminders... */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold flex items-center"><Bell className="w-5 h-5 mr-2"/>Lịch nhắc nhở</h3>
+            <select className="border rounded px-2 py-1 text-sm" value={reminderStatusFilter} onChange={e => setReminderStatusFilter(e.target.value)}>
+              <option value="">Tất cả trạng thái</option>
+              <option value="PENDING">Chờ xử lý</option>
+              <option value="SENT">Đã gửi</option>
+              <option value="COMPLETED">Hoàn thành</option>
+            </select>
+            <select className="border rounded px-2 py-1 text-sm" value={reminderTypeFilter} onChange={e => setReminderTypeFilter(e.target.value)}>
+              <option value="">Tất cả loại</option>
+              <option value="MEDICATION">Uống thuốc</option>
+              <option value="APPOINTMENT">Lịch hẹn</option>
+              <option value="FOLLOW_UP">Tái khám</option>
+              <option value="TEST">Xét nghiệm</option>
+            </select>
+          </div>
           <button className="btn-gradient-primary px-3 py-1 rounded text-white" onClick={() => setShowCreateReminderModal(true)}>Tạo nhắc nhở</button>
         </div>
         {reminders.length === 0 ? (
@@ -1442,23 +1379,84 @@ const ProfilePage: React.FC = () => {
             {reminders.map((reminder, idx) => (
               <li key={reminder.id || idx} className="py-2 flex items-center justify-between">
                 <div>
-                  <div className="font-medium">{reminder.reminderType}</div>
+                  <div className="font-medium">
+                    {reminder.reminderType === 'MEDICATION' ? 'Uống thuốc' :
+                     reminder.reminderType === 'APPOINTMENT' ? 'Lịch hẹn' :
+                     reminder.reminderType === 'FOLLOW_UP' ? 'Tái khám' :
+                     reminder.reminderType === 'TEST' ? 'Xét nghiệm' : reminder.reminderType}
+                  </div>
                   <div className="text-sm text-gray-500">{reminder.reminderDate?.replace('T', ' ')}</div>
                   {reminder.notes && <div className="text-xs text-gray-400">{reminder.notes}</div>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded ${reminder.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : reminder.status === 'SENT' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{reminder.status}</span>
+                  <span className={`text-xs px-2 py-1 rounded ${reminder.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : reminder.status === 'SENT' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                    {reminder.status === 'COMPLETED' ? 'Hoàn thành' : reminder.status === 'SENT' ? 'Đã gửi' : 'Chờ xử lý'}
+                  </span>
                   <select
                     value={reminder.status}
                     onChange={async (e) => {
                       const newStatus = e.target.value;
                       try {
                         await staffService.updateReminder(reminder.id, {
-                          ...reminder,
-                          status: newStatus
+                          id: reminder.id,
+                          createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : { id: user.id },
+                          patient: reminder.patient ? { id: reminder.patient.id } : { id: patientId },
+                          reminderType: reminder.reminderType || reminder.type,
+                          reminderDate: reminder.reminderDate || (reminder.dueDate + (reminder.dueTime ? `T${reminder.dueTime}` : '')),
+                          status: newStatus || reminder.status || "PENDING",
+                          notes: reminder.notes,
+                          priority: reminder.priority
                         });
+                        // Nếu là nhắc nhở uống thuốc thì đồng bộ trạng thái lịch uống thuốc
+                        if (reminder.reminderType === 'MEDICATION' || reminder.type === 'MEDICATION') {
+                          let newMedStatus = '';
+                          if (newStatus === 'COMPLETED') newMedStatus = 'Taken';
+                          else if (newStatus === 'PENDING' || newStatus === 'SENT') newMedStatus = 'Pending';
+                          if (newMedStatus) {
+                            // Tìm lịch uống thuốc gần nhất với thời gian nhắc nhở
+                            const reminderTime = new Date(reminder.reminderDate || (reminder.dueDate + (reminder.dueTime ? `T${reminder.dueTime}` : ''))).getTime();
+                            let minDiff = Infinity;
+                            let matchedSchedule = null;
+                            medicationSchedules.forEach(sch => {
+                              const schTime = new Date(sch.intakeTime).getTime();
+                              const diff = Math.abs(schTime - reminderTime);
+                              if (diff < minDiff) {
+                                minDiff = diff;
+                                matchedSchedule = sch;
+                              }
+                            });
+                            if (matchedSchedule) {
+                              const ms = matchedSchedule as MedicationScheduleItem;
+                              await medicationService.updateMedicationScheduleStatus(ms.id, {
+                                status: newMedStatus,
+                                intakeTime: ms.intakeTime,
+                                prescription: { id: ms.prescription?.id }
+                              });
+                            }
+                          }
+                        }
                         toast.success('Cập nhật trạng thái thành công!');
-                        staffService.getRemindersByPatient(user.id).then(res => setReminders(res.data || []));
+                        staffService.getRemindersByPatient(user.id).then(res => {
+                          const mapped = (res.data || []).map((reminder: any) => ({
+                            id: reminder.id,
+                            createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : undefined,
+                            patient: reminder.patient ? { id: reminder.patient.id } : undefined,
+                            reminderType: reminder.reminderType || reminder.type,
+                            reminderDate: reminder.reminderDate || (reminder.dueDate + (reminder.dueTime ? `T${reminder.dueTime}` : '')),
+                            status: reminder.status || "PENDING",
+                            notes: reminder.notes,
+                            priority: reminder.priority
+                          }));
+                          setReminders(mapped);
+                        });
+                        // Reload lại lịch uống thuốc
+                        if ((reminder.reminderType === 'MEDICATION' || reminder.type === 'MEDICATION') && newStatus === 'COMPLETED' && patientId) {
+                          medicationService.getMedicationSchedulesByPatient(patientId).then(res => {
+                            let data = res.data;
+                            if (!Array.isArray(data)) data = [];
+                            setMedicationSchedules(data);
+                          }).catch(() => setMedicationSchedules([]));
+                        }
                       } catch {
                         toast.error('Cập nhật trạng thái thất bại!');
                       }
@@ -1534,10 +1532,6 @@ const ProfilePage: React.FC = () => {
                     <option value="HIGH">Cao</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Ghi chú <span className="text-red-500">*</span></label>
-                  <input type="text" className="w-full border rounded px-3 py-2" placeholder="Nhập ghi chú..." value={reminderForm.notes} onChange={e => setReminderForm(f => ({ ...f, notes: e.target.value }))} />
-                </div>
               </div>
               <div className="flex justify-end space-x-2 mt-6">
                 <button className="px-4 py-2 rounded bg-gray-200" onClick={() => setShowCreateReminderModal(false)}>Hủy</button>
@@ -1572,10 +1566,6 @@ const ProfilePage: React.FC = () => {
                     <option value="HIGH">Cao</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Ghi chú <span className="text-red-500">*</span></label>
-                  <input type="text" className="w-full border rounded px-3 py-2" placeholder="Nhập ghi chú..." value={reminderForm.notes} onChange={e => setReminderForm(f => ({ ...f, notes: e.target.value }))} />
-                </div>
               </div>
               <div className="flex justify-end space-x-2 mt-6">
                 <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowEditReminderModal(false); setEditReminder(null); }}>Hủy</button>
@@ -1605,14 +1595,14 @@ const ProfilePage: React.FC = () => {
       toast.error('Vui lòng nhập đủ thông tin!');
       return;
     }
-    if (!reminderForm.notes) {
-      toast.error('Ghi chú là bắt buộc!');
-      return;
-    }
     try {
       await staffService.updateReminder(editReminder.id, {
-        reminderType: reminderForm.reminderType,
-        reminderDate: reminderForm.reminderDate,
+        id: editReminder.id,
+        createdBy: editReminder.createdBy ? { id: editReminder.createdBy.id } : { id: user.id },
+        patient: editReminder.patient ? { id: editReminder.patient.id } : { id: patientId },
+        reminderType: reminderForm.reminderType || editReminder.reminderType || editReminder.type,
+        reminderDate: reminderForm.reminderDate || editReminder.reminderDate || (editReminder.dueDate + (editReminder.dueTime ? `T${editReminder.dueTime}` : '')),
+        status: editReminder.status || "PENDING",
         notes: reminderForm.notes,
         priority: reminderForm.priority
       });
@@ -1622,7 +1612,17 @@ const ProfilePage: React.FC = () => {
       setReminderForm({ reminderType: 'MEDICATION', reminderDate: '', notes: '', priority: 'MEDIUM' });
       // Reload reminders
       staffService.getRemindersByPatient(user.id).then(res => {
-        setReminders(res.data || []);
+        const mapped = (res.data || []).map((reminder: any) => ({
+          id: reminder.id,
+          createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : undefined,
+          patient: reminder.patient ? { id: reminder.patient.id } : undefined,
+          reminderType: reminder.reminderType || reminder.type,
+          reminderDate: reminder.reminderDate || (reminder.dueDate + (reminder.dueTime ? `T${reminder.dueTime}` : '')),
+          status: reminder.status || "PENDING",
+          notes: reminder.notes,
+          priority: reminder.priority
+        }));
+        setReminders(mapped);
       });
     } catch {
       toast.error('Cập nhật nhắc nhở thất bại!');
@@ -1636,7 +1636,17 @@ const ProfilePage: React.FC = () => {
       toast.success('Đã xóa nhắc nhở!');
       // Reload reminders
       staffService.getRemindersByPatient(user.id).then(res => {
-        setReminders(res.data || []);
+        const mapped = (res.data || []).map((reminder: any) => ({
+          id: reminder.id,
+          createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : undefined,
+          patient: reminder.patient ? { id: reminder.patient.id } : undefined,
+          reminderType: reminder.reminderType || reminder.type,
+          reminderDate: reminder.reminderDate || (reminder.dueDate + (reminder.dueTime ? `T${reminder.dueTime}` : '')),
+          status: reminder.status || "PENDING",
+          notes: reminder.notes,
+          priority: reminder.priority
+        }));
+        setReminders(mapped);
       });
     } catch {
       toast.error('Xóa nhắc nhở thất bại!');
@@ -1650,7 +1660,7 @@ const ProfilePage: React.FC = () => {
     { id: 'consultation-history', label: 'Lịch tư vấn', icon: MessageSquare, color: 'accent' },
     { id: 'arv-protocol', label: 'Phác đồ ARV', icon: PillIcon, color: 'green' },
     { id: 'reminders', label: 'Lịch nhắc nhở', icon: Clock, color: 'accent' },
-    { id: 'medication-schedule', label: 'Lịch uống thuốc', icon: Clock, color: 'accent' },
+    { id: 'medication-schedule', label: 'Lịch uống thuốc', icon: Pill, color: 'blue' },
   ];
 
   // Hàm chuyển đổi timeSlotId sang giờ

@@ -16,6 +16,10 @@ interface Reminder {
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   notes?: string;
   patient: { id: number };
+  reminderType?: string;
+  reminderDate?: string;
+  createdBy?: { id: number };
+  createdById?: number;
 }
 
 interface ReminderManagementProps {
@@ -245,8 +249,14 @@ const ReminderManagement: React.FC<ReminderManagementProps> = ({
                   onChange={e => {
                     const newStatus = e.target.value;
                     onUpdateReminder(reminder.id, {
-                      ...reminder,
-                      status: newStatus
+                      id: reminder.id,
+                      createdBy: reminder.createdBy ? { id: reminder.createdBy.id } : { id: reminder.createdById || 1 },
+                      patient: reminder.patient ? { id: reminder.patient.id } : { id: reminder.patientId || 1 },
+                      reminderType: reminder.reminderType || reminder.type,
+                      reminderDate: reminder.reminderDate || (reminder.dueDate + (reminder.dueTime ? `T${reminder.dueTime}` : '')),
+                      status: newStatus || reminder.status || "PENDING",
+                      notes: reminder.notes,
+                      priority: reminder.priority
                     });
                   }}
                   className="border rounded px-2 py-1 text-xs ml-2"

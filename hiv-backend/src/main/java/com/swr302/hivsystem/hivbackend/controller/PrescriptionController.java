@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import com.swr302.hivsystem.hivbackend.dto.PrescriptionRequestDTO;
 import com.swr302.hivsystem.hivbackend.dto.PrescriptionDetailDTO;
 import com.swr302.hivsystem.hivbackend.model.PrescriptionDetail;
+import com.swr302.hivsystem.hivbackend.dto.PrescriptionDTO;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/prescriptions")
@@ -61,7 +63,7 @@ public class PrescriptionController {
 
         List<PrescriptionDetail> details = new ArrayList<>();
         List<MedicationSchedule> schedules = new ArrayList<>();
-        LocalDate startDate = LocalDate.now();
+        LocalDate startDate = treatmentPlanOpt.get().getStartDate();
         for (PrescriptionDetailDTO d : dto.getDetails()) {
             Optional<Medication> medicationOpt = medicationRepository.findById(d.getMedicationId());
             if (medicationOpt.isEmpty()) continue;
@@ -129,5 +131,13 @@ public class PrescriptionController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/patient/{patientId}")
+    public List<PrescriptionDTO> getPrescriptionsByPatient(@PathVariable Long patientId) {
+        return prescriptionRepository.findByPatientId(patientId)
+            .stream()
+            .map(PrescriptionDTO::fromEntity)
+            .collect(Collectors.toList());
     }
 } 

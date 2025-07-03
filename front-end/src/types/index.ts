@@ -33,7 +33,13 @@ export interface User {
 export interface Doctor extends User {
   specialization: string;
   experience: string;
-  education: string;
+  education?: string;
+  qualification?: string;
+  doctorCode?: string;
+  licenseNumber?: string;
+  bio?: string;
+  rating?: number;
+  avatar?: string;
 }
 
 export interface Appointment {

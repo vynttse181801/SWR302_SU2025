@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Modal from './Modal';
 import { labResultService } from '../services/api';
 import api from '../services/api';
+import { prescriptionService } from '../services/api';
 
 interface LabResult {
   id: string;
@@ -45,6 +46,8 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ isOpen, onClose
   const [loading, setLoading] = useState(false);
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [loadingPrescriptions, setLoadingPrescriptions] = useState(false);
 
   useEffect(() => {
     if (isOpen && patient?.id) {
@@ -58,9 +61,15 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ isOpen, onClose
         .then(res => setTreatmentPlans(res.data || []))
         .catch(() => setTreatmentPlans([]))
         .finally(() => setLoadingPlans(false));
+      setLoadingPrescriptions(true);
+      prescriptionService.getPrescriptionsByPatient?.(patient.id)
+        .then(res => setPrescriptions(res.data || []))
+        .catch(() => setPrescriptions([]))
+        .finally(() => setLoadingPrescriptions(false));
     } else {
       setLabResults([]);
       setTreatmentPlans([]);
+      setPrescriptions([]);
     }
   }, [isOpen, patient]);
 
@@ -75,8 +84,6 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ isOpen, onClose
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 w-full max-w-md">
           <div className="text-gray-600">Mã bệnh nhân:</div>
           <div className="font-medium">{patient.patientId || patient.id}</div>
-          <div className="text-gray-600">Tuổi:</div>
-          <div className="font-medium">{patient.age}</div>
           <div className="text-gray-600">Giới tính:</div>
           <div className="font-medium">{patient.gender === 'male' ? 'Nam' : 'Nữ'}</div>
           {patient.address && <><div className="text-gray-600">Địa chỉ:</div><div className="font-medium">{patient.address}</div></>}
@@ -139,6 +146,35 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ isOpen, onClose
                       <td className="border-b px-4 py-2">{result.testType?.name || ''}</td>
                       <td className="border-b px-4 py-2">{result.resultValue}</td>
                       <td className="border-b px-4 py-2">{result.normalRange || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        <div className="w-full mt-6">
+          <h3 className="text-lg font-semibold text-primary-700 mb-2">Lịch sử kê đơn thuốc</h3>
+          {loadingPrescriptions ? (
+            <p>Đang tải...</p>
+          ) : prescriptions.length === 0 ? (
+            <p className="text-gray-500 italic">Chưa có đơn thuốc nào</p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl shadow border border-gray-200 my-4">
+              <table className="min-w-full text-sm bg-white rounded-xl overflow-hidden">
+                <thead>
+                  <tr className="bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700">
+                    <th className="px-4 py-2 border-b text-center font-semibold">Ngày kê</th>
+                    <th className="px-4 py-2 border-b text-center font-semibold">Phác đồ</th>
+                    <th className="px-4 py-2 border-b text-center font-semibold">Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {prescriptions.map((pres, idx) => (
+                    <tr key={pres.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="border-b px-4 py-2 text-center">{pres.createdAt ? new Date(pres.createdAt).toLocaleDateString('vi-VN') : '-'}</td>
+                      <td className="border-b px-4 py-2">{pres.treatmentPlan?.arvProtocol?.name || '-'}</td>
+                      <td className="border-b px-4 py-2">{pres.notes || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
